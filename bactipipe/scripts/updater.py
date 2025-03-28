@@ -141,24 +141,6 @@ def update_conda_packages():
     else:
         print("⏭️ Skipped conda package updates.")
 
-# def check_database_versions():
-#     print("\n🧬 Checking KmerFinder database version...")
-
-#     local_version = read_local_kmerfinder_version()
-#     remote_version = get_kmerfinder_latest_version_ftp()
-
-#     if not remote_version:
-#         print("⚠️ Could not determine the latest remote version.")
-#         return
-
-#     print(f"📂 Local version:  {local_version or 'unknown'}")
-#     print(f"🌐 Remote version: {remote_version}")
-
-#     if local_version != remote_version:
-#         print("🔔 KmerFinder database is outdated.")
-#     else:
-#         print("✅ KmerFinder database is up to date.")
-
 def check_database_versions():
     print("\n🧬 Checking KmerFinder database version...")
 

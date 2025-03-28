@@ -176,7 +176,11 @@ def update_databases():
     if remote_version:
         print(f"\n📂 Local KmerFinder db version: {local_version or 'unknown'}")
         print(f"🌐 Remote KmerFinder db version: {remote_version}")
-        if remote_version != local_version:
+        
+        if local_version is None:
+            print("⚠️ Local KmerFinder database not found.")
+            setup_kmerfinder_database(kf_dir, remote_version)
+        elif remote_version != local_version:
             if prompt_user("Update KmerFinder database to the latest version?"):
                 if os.path.exists(kf_dir):
                     backup_directory(kf_dir)
