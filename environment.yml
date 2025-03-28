@@ -1,0 +1,29 @@
+name: bactipipe
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python >=3.7
+  - fastp
+  - spades
+  - flye
+  - kmerfinder
+  - nanoplot
+  - filtlong
+  - matplotlib
+  - numpy
+  - biopython
+  - pysam
+  - hmmer
+  - prodigal
+  - pplacer
+  - pip
+  - pip:
+      - -e .
+      - pyfastx
+      - tqdm
+      - colorama
+      - textwrap3
+      - psutil
+      - setuptools

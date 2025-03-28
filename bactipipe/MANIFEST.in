@@ -1,0 +1,2 @@
+include bactipipe/data/lambda.fasta
+include bactipipe/data/pathogenic_bacteria.txt
