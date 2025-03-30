@@ -11,7 +11,7 @@ from bactipipe.scripts import process_data
 from bactipipe.scripts import find_orgnanism
 from tqdm.contrib.concurrent import process_map
 from bactipipe.scripts.utils import time_print, simple_print, logger, pipeheader
-from importlib.resources import files
+from importlib.resources import files as resource_files
 
 
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -249,7 +249,7 @@ with open(sample_list, 'r') as sampL, open(sample_sheet_out, 'w') as outL:
 
 # Load pathogenic bacteria information
 bacteria = {}
-org_list = files('bactipipe.data').joinpath('pathogenic_bacteria.txt')
+org_list = resource_files('bactipipe.data').joinpath('pathogenic_bacteria.txt')
 
 with open(org_list, 'r') as orgL:
     for line in orgL:
