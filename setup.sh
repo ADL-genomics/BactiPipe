@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -e
+
 # Check if conda is installed
 check_conda_installed() {
     command -v conda >/dev/null 2>&1
