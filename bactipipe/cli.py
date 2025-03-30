@@ -53,10 +53,10 @@ def main():
             updater.update_pip_packages()
             updater.update_conda_packages()
         elif command == "update-databases":
-            update_databases()
+            update_databases(notifications="off")
         sys.exit(0)
     elif command in script_map:
-        setup_databases()
+        setup_databases(notifications="off")
         script_to_run = script_map[command]
 
     # Forward all remaining arguments to the appropriate script

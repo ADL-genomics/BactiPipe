@@ -88,15 +88,16 @@ def read_local_kmerfinder_version():
             return f.read().strip()
     return None
 
-def setup_kmerfinder_database(dest_dir, remote_version=None):
+def setup_kmerfinder_database(dest_dir, remote_version=None, notifications = "on"):
     repo_url = "https://bitbucket.org/genomicepidemiology/kmerfinder_db.git"
     repo_path = os.path.join(dest_dir, "tmp_kmerfinder_repo")
     final_db_path = os.path.join(dest_dir, "bacteria")
-
-    print("\nSetting up KmerFinder database...\n")
+    if notifications == "on":
+        print("\nSetting up KmerFinder database...\n")
 
     if os.path.exists(os.path.join(final_db_path, "bacteria.ATG.seq.b")):
-        print("✅ KmerFinder database already installed. Skipping.")
+        if notifications == "on":
+            print("✅ KmerFinder database already installed. Skipping.")
         return
 
     os.makedirs(dest_dir, exist_ok=True)
@@ -113,15 +114,16 @@ def setup_kmerfinder_database(dest_dir, remote_version=None):
     print("✅ KmerFinder database installed successfully.")
     write_version_file(final_db_path, get_kmerfinder_latest_version_ftp())
 
-def setup_checkm_database(dest_dir, checkm_db="checkm_data_2015_01_16"):
+def setup_checkm_database(dest_dir, checkm_db="checkm_data_2015_01_16", notifications = "on"):
     url = f"https://data.ace.uq.edu.au/public/CheckM_databases/{checkm_db}.tar.gz"
     filename = os.path.join(dest_dir, os.path.basename(url))
     extracted_dir = os.path.join(dest_dir, checkm_db)
-    
-    print("\nSetting up CheckM database...\n")
+    if notifications == "on":
+        print("\nSetting up CheckM database...\n")
 
     if os.path.exists(os.path.join(extracted_dir, "hmms/checkm.hmm")):
-        print("✅ CheckM database already exists. Skipping.")
+        if notifications == "on":
+            print("✅ CheckM database already exists. Skipping.")
         return
 
     os.makedirs(dest_dir, exist_ok=True)
@@ -137,11 +139,11 @@ def setup_checkm_database(dest_dir, checkm_db="checkm_data_2015_01_16"):
     write_version_file(extracted_dir, CHECKM_DB_LATEST_VERSION)
     os.remove(filename)
     
-def setup_databases():
+def setup_databases(notifications="on"):
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
     remote_version = get_kmerfinder_latest_version_ftp()
-    setup_checkm_database(base_dir)
-    setup_kmerfinder_database(os.path.join(base_dir, "kmerfinder_db"), remote_version)
+    setup_checkm_database(base_dir, notifications=notifications)
+    setup_kmerfinder_database(os.path.join(base_dir, "kmerfinder_db"), remote_version, notifications=notifications)
     
 def update_databases():
     print("\n🔄 Checking for new versions of databases...\n")

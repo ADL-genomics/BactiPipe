@@ -18,6 +18,7 @@ dependencies:
   - hmmer
   - prodigal
   - pplacer
+  - checkm-genome
   - pip
   - pip:
       - -e .
