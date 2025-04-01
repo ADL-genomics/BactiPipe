@@ -101,6 +101,10 @@ class ProcQuality:
                 'avg_quality': avg_quality,
                 'coverage': coverage
             })
+            # Delete .fxi files to save space
+            if os.path.exists(f"{fastq_file}.fxi"):
+                os.remove(f"{fastq_file}.fxi")
+
 
     def plot_quality_distribution(self):
         """ Generate stacked bar plots for the proportion of bases in each quality category at each position for each file """

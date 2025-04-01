@@ -19,6 +19,7 @@ dependencies:
   - prodigal
   - pplacer
   - checkm-genome
+  - seqkit
   - pip
   - pip:
       - -e .
