@@ -30,12 +30,10 @@ get_latest_anaconda_url() {
 # Download Anaconda installer
 download_anaconda() {
     installer_url=$(get_latest_anaconda_url)
-    
     if [[ -z "$installer_url" ]]; then
         echo "❌ Installer URL is empty. Aborting download."
         exit 1
     fi
-
     echo "✅ Downloading installer from: $installer_url"
     wget -O ~/anaconda.sh "$installer_url"
 }
@@ -64,7 +62,9 @@ fi
 # Clean up
 echo "Cleaning up..."
 # rm ~/anaconda.sh
-echo "✅ Installation script completed."
+echo "✅ Conda Installation script completed."
+
+source "$(conda info --base)/etc/profile.d/conda.sh"
 
 echo ""
 echo "🔧 Setting up conda environment for bactipipe..."
