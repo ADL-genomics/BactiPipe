@@ -50,7 +50,7 @@ optional_args.add_argument("-o", "--outdir",
                     help="Path to output directory. Default: current directory")
 
 optional_args.add_argument("-t", "--threads",
-                    help="Number of threads.Default: all available")
+                    help="Number of threads. Default: all available")
 
 optional_args.add_argument("-h", "--help",
                            action="help",
@@ -88,8 +88,6 @@ if not os.path.exists(outDir):
 
 if args.threads:
     cpus = args.threads
-elif os.cpu_count() > 3:
-    cpus = os.cpu_count() - 2
 else:
     cpus = os.cpu_count()
 
