@@ -81,7 +81,7 @@ def process_sample(line):
         return
 
     # Run QC with controlled CPU allocation
-    if sample != "sample_ID":
+    if not sample.startswith("#"):
         nano_qc.qc_nano(
             raw_folder=raw_folder,
             genome_size=genome_size,
@@ -264,23 +264,25 @@ bad_samples = []
 bad_barcodes = []
 with open(sample_list, 'r') as sampL:
     for line in sampL:
+        if line.startswith("#"):
+            continue
         sample, organism, barcode = line.strip().split('\t')
         if organism.strip() not in bacteria and organism not in [ "Lambda", "organism"]:
             print(f"Organism for sample {sample} is not a valid organism name")
             bad_organisms.append(f"{sample}:{organism}")
-        if sample != "sample_ID":
-            if not sample in os.listdir(source) and barcode.replace("NB", "barcode") not in os.listdir(source):
-                print(f"WARNING: Sample {sample} does not have corresponding fastq files.")
-                bad_samples.append(sample)
-            if "NB" not in barcode and "barcode" not in barcode:
-                print(f"Barcode for sample {sample} is not in the correct format.")
-                bad_barcodes.append(f"{sample}:{barcode}")
-            elif "NB" in barcode and len(barcode) != 4:
-                print(f"Barcode for sample {sample} is not in the correct format.")
-                bad_barcodes.append(f"{sample}:{barcode}")
-            elif "barcode" in barcode and len(barcode) != 9:
-                print(f"Barcode for sample {sample} is not in the correct format.")
-                bad_barcodes.append(f"{sample}:{barcode}")
+        
+        if not sample in os.listdir(source) and barcode.replace("NB", "barcode") not in os.listdir(source):
+            print(f"WARNING: Sample {sample} does not have corresponding fastq files.")
+            bad_samples.append(sample)
+        if "NB" not in barcode and "barcode" not in barcode:
+            print(f"Barcode for sample {sample} is not in the correct format.")
+            bad_barcodes.append(f"{sample}:{barcode}")
+        elif "NB" in barcode and len(barcode) != 4:
+            print(f"Barcode for sample {sample} is not in the correct format.")
+            bad_barcodes.append(f"{sample}:{barcode}")
+        elif "barcode" in barcode and len(barcode) != 9:
+            print(f"Barcode for sample {sample} is not in the correct format.")
+            bad_barcodes.append(f"{sample}:{barcode}")
 
 if bad_organisms or bad_barcodes:
     print("The sample sheet is not formatted correctly. Please correct the following issues:")
@@ -302,7 +304,7 @@ if bad_samples:
     time_print(f"WARNING: These samples don't have corresponding fastq data. They will be skipped: {b_s}.", "Fail")
     logger(log, f"WARNING: These samples don't have corresponding fastq data. They will be skipped: {b_s}.")
 
-sample_number = sum(1 for line in open(sample_list) if not line.startswith("sample_ID")) - len(bad_samples)
+sample_number = sum(1 for line in open(sample_list) if not line.startswith("#")) - len(bad_samples)
 
 
 qc_start_msg = "Performing Quality Control"
@@ -315,7 +317,11 @@ logger(log, f"Total number of samples to be processed: {sample_number}\n")
 
 # Read sample list and process in parallel
 with open(sample_list, 'r') as sampL:
-    sample_lines = sampL.readlines()[1:] # Skip the header row
+    lines = sampL.readlines()
+    if lines and lines[0].startswith('#'):
+        sample_lines = lines[1:]
+    else:
+        sample_lines = lines
 
 # process_map(process_sample, sample_lines, max_workers=pool_size)
 q_bar_fmt = '{l_bar} {bar:40} {n_fmt}/{total_fmt} [{elapsed}{postfix}]'
@@ -431,9 +437,9 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
     writer.writerow(["Sample",  "Mean_quality", "qc_verdict", "Expected organism", "Identified organism", "% Match", "Coverage", "cov_verdict", "tax_confirm"])
     with open(sample_list, 'r') as sampL:
         for line in sampL:
-            sample, organism, barcode = line.strip().split('\t')
-            if sample == "sample_ID":
+            if line.startswith("#"):
                 continue
+            sample, organism, barcode = line.strip().split('\t')
             genome = os.path.join(outDir, "assemblies", "genomes", f"{sample}.fasta")
             # Find quality metrics:
             qc_metrics_after = os.path.join(qc_out, sample, "quality_metrics_after_qc.txt")
