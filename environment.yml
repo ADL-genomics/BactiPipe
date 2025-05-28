@@ -7,6 +7,7 @@ dependencies:
   - python >=3.7
   - fastp
   - spades
+  - unicycler
   - flye
   - kmerfinder
   - nanoplot

@@ -1,10 +1,13 @@
-from datetime import datetime
-from colorama import Fore, Style, init
+
+import os
+import re
+import sys
 import subprocess
 import textwrap3
-import sys
-import os
+import pandas as pd
 from tqdm import tqdm
+from datetime import datetime
+from colorama import Fore, Style, init
 
 def stringwraper(text, width, s_type):
     lines = textwrap3.wrap(text, width=width, break_long_words=True)
@@ -158,6 +161,115 @@ def pipeheader(date, tech_name, hostname, ip_address, run_name, sample_list, raw
     '''
     run_info = run_info.split('\n')
     return header, run_info
+
+def excel_reader(filepath: str, platform: str = "nanopore"):
+    # — normalize function treats NaN as empty and collapses whitespace/linebreaks —
+    def normalize(x):
+        if pd.isna(x):
+            return ""
+        s = str(x).strip().strip('"')
+        return re.sub(r'\s+', ' ', s)
+
+    plat = platform.lower()
+    if plat == "nanopore":
+        needed = [
+            "Accession Number",
+            "Host and Source",
+            "Bacteria Species",
+            "gDNA Prep ID",
+            "Native Barcode Index",
+        ]
+        idx_col = "Native Barcode Index"
+        pattern = re.compile(r"^(?:NB\d{2}|barcode\d{2})$", re.IGNORECASE)
+        header_lines = 1
+
+    elif plat == "illumina":
+        needed = [
+            "Lib. Well",
+            "Accession Number",
+            "Host and Source",
+            "Bacteria Species",
+            "gDNA Prep ID",
+            "UD Set A Index Well",
+        ]
+        idx_col = "Lib. Well"
+        pattern = re.compile(r"^[A-H](?:0[1-9]|1[0-2])$")
+        header_lines = 2
+
+    else:
+        raise ValueError("`platform` must be 'nanopore' or 'illumina'")
+
+    # 1) Read every cell as raw (no header)
+    raw = pd.read_excel(filepath, sheet_name=0, header=None, engine="openpyxl")
+    n_rows, n_cols = raw.shape
+
+    # 2) Find the header block
+    header_row = None
+    header_vals = None
+
+    for i in range(n_rows - header_lines + 1):
+        if header_lines == 1:
+            row_vals = [normalize(x) for x in raw.iloc[i]]
+        else:
+            top = [normalize(x) for x in raw.iloc[i]]
+            bot = [normalize(x) for x in raw.iloc[i + 1]]
+            row_vals = [top[j] or bot[j] for j in range(n_cols)]
+        if all(col in row_vals for col in needed):
+            header_row = i
+            header_vals = row_vals
+            break
+
+    if header_row is None:
+        raise ValueError(f"Could not locate the header block for platform '{platform}'.")
+
+    # 3) Now safely compute where data starts
+    data_start = header_row + header_lines
+
+    # 4) Map each needed name to its column index
+    col_positions = [header_vals.index(col) for col in needed]
+
+    # 5) Fix merged‐cell misalignment:
+    #    if the “header” column j is blank for all data rows
+    #    but j+1 has real values, shift to j+1
+    for idx, j in enumerate(col_positions):
+        block = raw.iloc[data_start : data_start + 10, j]
+        # is it entirely blank?
+        if all(pd.isna(x) or str(x).strip() == "" for x in block):
+            # does the next column have any data?
+            if j + 1 < n_cols and any(
+                not (pd.isna(x) or str(x).strip() == "")
+                for x in raw.iloc[data_start : data_start + 10, j + 1]
+            ):
+                col_positions[idx] = j + 1
+
+    # 6) Slice out exactly those columns, build a DataFrame
+    data_block = raw.iloc[data_start:, col_positions]
+    df = pd.DataFrame(data_block.values, columns=needed)
+
+    # 7) Clean up every cell
+    df = df.apply(lambda col: col.map(normalize))
+
+    # 8) Keep only rows where the index‐column matches the regex
+    df = df[df[idx_col].astype(bool) & df[idx_col].str.match(pattern)]
+
+    # 9) Drop any row missing the two critical fields
+    df = df[df["Accession Number"].astype(bool) & df["Bacteria Species"].astype(bool)]
+
+    # 10) Return a list of TAB‐joined strings
+
+    if plat == "nanopore":
+        out = df.apply(
+            lambda row: f"{row['Accession Number']}\t{row['Bacteria Species']}\t{row[idx_col]}",
+            axis=1
+        ).tolist()
+    elif plat == "illumina":
+        out = df.apply(
+            lambda row: f"{row['Accession Number']}\t{row['Bacteria Species']}",
+            axis=1
+        ).tolist()
+    
+    return out
+
 
 init(autoreset=True)
 

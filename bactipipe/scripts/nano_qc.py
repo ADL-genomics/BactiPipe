@@ -1,6 +1,8 @@
 import os
+import sys
 import subprocess
 from bactipipe.scripts.utils import time_print
+
 
 def qc_nano(
     fastq_file=None,
@@ -64,80 +66,80 @@ def qc_nano(
         min_required_bases = min_coverage * genome_size
         if total_bases < min_required_bases:
             if single:
-                print(f"Insufficient data for {min_coverage}X coverage. Total bases available: {total_bases:,}. Required: {min_required_bases:,}.")
+               time_print(f"Insufficient data for {min_coverage}X coverage. Total bases available: {total_bases:,}. Required: {min_required_bases:,}.")
             os.rename(os.path.join(initial_out, "LengthvsQualityScatterPlot_dot.png"), f"{output_dir}/raw_reads_quality.png")
             os.rename(os.path.join(initial_out,"NanoStats.txt"), f"{output_dir}/raw_reads_quality_metrics.txt")
             return
-
-        # Step 2: Iteratively trim the reads
+        
+        # Else:
+        # Trim reads using filtlong
+        if single:
+            time_print("Trimming reads using filtlong...")
         coverage_target = desired_coverage
-        while coverage_target >= min_coverage:
-            # Calculate the required number of bases for the target coverage
-            required_bases = int(coverage_target * genome_size)
+        required_bases = int(coverage_target * genome_size)
 
-            # Check if there is enough data for the current target coverage
-            if total_bases < required_bases:
-                if single:
-                    time_print(f"Insufficient data for {coverage_target}X coverage. Total bases available: {total_bases}, Required: {required_bases:,}.")
-                coverage_target -= step_coverage
-                continue
+        trimmed_output = output_fastq.replace(".gz", "")
+        filtlong_command = ["filtlong", "--min_mean_q", min_avg_quality, "--target_bases", str(required_bases),"--min_length", "500",  fastq_file]
 
-            # Trim reads using filtlong
-            if single:
-                time_print(f"\nFiltering reads to achieve {coverage_target}X coverage...")
-            filtlong_command = ["filtlong", "--target_bases", str(required_bases), fastq_file]
-            trimmed_output = os.path.join(output_dir, f"trimmed_{coverage_target}X.fastq")
+        try:
             with open(trimmed_output, "w") as trimmed_file:
                 subprocess.run(filtlong_command, stdout=trimmed_file, stderr=subprocess.DEVNULL)
-            if single:
-                time_print("Compressing trimmed reads...")
-            gzip_command = ["gzip", "-f", trimmed_output]
-            subprocess.run(gzip_command, check=True)
-
-            # Recalculate quality metrics on the trimmed reads
-            if single:
-                print(f"Running NanoPlot on trimmed reads for {coverage_target}X coverage...")
-            last_out = os.path.join(output_dir, "nanoplot_last")
-            nanoplot_command = [
-                "NanoPlot", "--fastq", f"{trimmed_output}.gz",
-                "--threads",  cpus, "--plots", "dot",
-                "--outdir", last_out
-            ]
-
-            subprocess.run(nanoplot_command)
-
-            # Parse new quality metrics
-            summary_last = os.path.join(last_out, "NanoStats.txt")
-        
-            with open(summary_last, "r") as np_summary:
-                np_lines = np_summary.readlines()
-            
-            new_mean_quality = float(next(line for line in np_lines if "Mean read quality:" in line).split(":")[1].strip())
-
-            # Check if the new quality meets the threshold
-            if new_mean_quality >= min_avg_quality:
-                if single:
-                    time_print("\nQuality threshold met. Saving data...\n")
-                os.rename(f"{trimmed_output}.gz", output_fastq)
-                os.rename(os.path.join(initial_out, "LengthvsQualityScatterPlot_dot.png"), f"{output_dir}/raw_reads_quality.png")
-                os.rename(os.path.join(last_out,"LengthvsQualityScatterPlot_dot.png"), f"{output_dir}/quality_after_qc.png")
-                os.rename(os.path.join(last_out, "NanoStats.txt"), final_qual_file)
-                os.rename(os.path.join(initial_out,"NanoStats.txt"), f"{output_dir}/raw_reads_quality_metrics.txt")
-
-                if single:
-                    time_print(f"Trimmed reads saved to {output_fastq} with {coverage_target}X coverage and average quality {new_mean_quality:.2f}.")
-                return
-            else:
-                os.rename(os.path.join(initial_out, "LengthvsQualityScatterPlot_dot.png"), f"{output_dir}/raw_reads_quality.png")
-                os.rename(os.path.join(initial_out,"NanoStats.txt"), f"{output_dir}/raw_reads_quality_metrics.txt")
-                if single:
-                    time_print(f"Quality {new_mean_quality:.2f} below threshold for {coverage_target}X coverage.")
-                os.remove(f"{trimmed_output}.gz")
-                coverage_target -= step_coverage
-        
-        # If we exit the loop without meeting the requirements
+  
+        except subprocess.CalledProcessError as e:
+            if single:  
+                time_print(f"Error during filtering: {e}")
+            os.rename(os.path.join(initial_out, "LengthvsQualityScatterPlot_dot.png"), f"{output_dir}/raw_reads_quality.png")
+            os.rename(os.path.join(initial_out,"NanoStats.txt"), f"{output_dir}/raw_reads_quality_metrics.txt")
+            return
+        # Compress the trimmed output
         if single:
-            time_print(f"Unable to achieve {min_avg_quality} average quality with minimum coverage of {min_coverage}X.")
+            time_print("Compressing trimmed reads...")
+        gzip_command = ["gzip", "-f", trimmed_output]
+        subprocess.run(gzip_command, check=True)
+
+        # Recalculate quality metrics on the trimmed reads
+        if single:
+            print(f"Running NanoPlot on trimmed reads...")
+        last_out = os.path.join(output_dir, "nanoplot_last")
+        nanoplot_command = [
+            "NanoPlot", "--fastq", f"{trimmed_output}.gz",
+            "--threads",  cpus, "--plots", "dot",
+            "--outdir", last_out
+        ]
+
+        subprocess.run(nanoplot_command)
+
+        # Parse new quality metrics
+        summary_last = os.path.join(last_out, "NanoStats.txt")
+    
+        with open(summary_last, "r") as np_summary:
+            np_lines = np_summary.readlines()
+        
+        new_mean_quality = float(next(line for line in np_lines if "Mean read quality:" in line).split(":")[1].strip())
+
+
+        trim_bases = int(float(next(line for line in np_lines if "Total bases:" in line).split(":")[1].strip().replace(",", "")))
+        trim_coverage = int(trim_bases / genome_size)
+
+        # Check if the new quality meets the threshold
+        if new_mean_quality >= min_avg_quality:
+            if single:
+                time_print(f"\nQuality threshold met. Average quality: {new_mean_quality:.2f}. Saving data...\n", "Pass")
+            # os.rename(f"{trimmed_output}.gz", output_fastq)
+
+        else:
+            if single:
+                time_print(f"Quality threshold not met. Average quality: {new_mean_quality:.2f}.", "Fail")
+ 
+
+        os.rename(os.path.join(initial_out, "LengthvsQualityScatterPlot_dot.png"), f"{output_dir}/raw_reads_quality.png")
+        os.rename(os.path.join(last_out,"LengthvsQualityScatterPlot_dot.png"), f"{output_dir}/quality_after_qc.png")
+        os.rename(os.path.join(last_out, "NanoStats.txt"), final_qual_file)
+        os.rename(os.path.join(initial_out,"NanoStats.txt"), f"{output_dir}/raw_reads_quality_metrics.txt")
+
+        if single:
+            time_print(f"Trimmed reads saved to {output_fastq} with {trim_coverage}X coverage and average quality {new_mean_quality:.2f}.") 
+
 
         # Cleanup
         if single:

@@ -61,18 +61,20 @@ def filter_genome(input_fasta, output_fasta, min_length=500):
     SeqIO.write(records, output_fasta, 'fasta')
     return output_fasta
 
-def assemble(sample, reads, assembly_dir, sequencer="Illumina", cpus=24, logfile=None, gsize='5m', single=True):
+def assemble(sample, reads, assembly_dir, assembler="unicycler", sequencer="nanopore", cpus=24, logfile=None, gsize='5m', single=True):
     log = logfile
     if single:
         time_print(f'Assembling the genome for sample : {sample}', "Header")
         logger(log, f'Assembling the genome for sample : {sample}', "Header")
-
-    if sequencer == "Illumina":
-        assembler = "Spades"
+    
+    assembler = assembler.strip().lower()
+    if assembler.lower() == "unicycler":
+        tool = "unicycler"
+    elif assembler == "spades":
         tool = "spades.py"
-    elif sequencer == "nanopore":
-        assembler = "Flye"
+    elif assembler == "flye":
         tool = "flye"
+
     # Get tool version
     vercmd = f'{tool} --version'
     stdout = subprocess.run(vercmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -102,16 +104,38 @@ def assemble(sample, reads, assembly_dir, sequencer="Illumina", cpus=24, logfile
     finalAssembly = os.path.join(genomesDir, sample + '.fasta')
 
     if sequencer == "Illumina":
-        if len(reads) == 2:
-            cmd1 = f'spades.py --isolate -1 {read1} -2 {read2} -o {tempDir} --threads {cpus}'
-        elif len(reads) == 1:
-            cmd1 = f'spades.py --isolate -s {single_reads} -o {tempDir} --threads {cpus}'
-        draft_assembly =  f'{tempDir}/scaffolds.fasta'
-
+        if assembler.lower() == "unicycler":
+            if len(reads) == 2:
+                cmd1 = f'unicycler -1 {read1} -2 {read2} -o {tempDir} --threads {cpus}'
+            elif len(reads) == 1:
+                cmd1 = f'unicycler -s {single_reads} -o {tempDir} --threads {cpus}'
+            draft_assembly = f'{tempDir}/assembly.fasta'
+        elif assembler == "spades":
+            if len(reads) == 2:
+                cmd1 = f'spades.py --isolate -1 {read1} -2 {read2} -o {tempDir} --threads {cpus}'
+            elif len(reads) == 1:
+                cmd1 = f'spades.py --isolate -s {single_reads} -o {tempDir} --threads {cpus}'
+            draft_assembly = f'{tempDir}/scaffolds.fasta'
+        else:
+            return_info = f"Assembler {assembler} is not supported for Illumina reads. Please use Unicycler or Spades."
+            if single:
+                time_print(return_info, "Fail")
+                logger(log, return_info)
+            return
     
     elif sequencer == "nanopore":
-        cmd1 = f'flye --nano-raw {single_reads} --out-dir {tempDir} --threads {cpus} --asm-coverage 50 --g {gsize} --iterations 2'
-        draft_assembly = f'{tempDir}/assembly.fasta'
+        if assembler == "unicycler":
+            cmd1 = f'unicycler -l {single_reads} -o {tempDir} --threads {cpus}'
+            draft_assembly = f'{tempDir}/assembly.fasta'
+        elif assembler == "Flye":
+            cmd1 = f'flye --nano-raw {single_reads} --out-dir {tempDir} --threads {cpus} --asm-coverage 50 --g {gsize} --iterations 2'
+            draft_assembly = f'{tempDir}/assembly.fasta'
+        else:
+            return_info = f"Assembler {assembler} is not supported for Nanopore reads. Please use Unicycler or Flye."
+            if single:
+                time_print(return_info, "Fail")
+                logger(log, return_info)
+            return
     
     if not os.path.exists(finalAssembly):
         # message1 = f'\t---> Assembling the reads for sample {sample}'
