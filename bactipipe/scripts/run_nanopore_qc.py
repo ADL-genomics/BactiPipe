@@ -235,15 +235,7 @@ for line in run_info:
     simple_print(line)
     logger(log, line, mode="simple")
 
-# Compute pool size (number of parallel samples)
-print(f"\nRunig QC on samples in run {run_name}.\n")
-logger(log, f"Runig QC on samples in run {run_name}.\n", mode="simple")
-print(f"  --> Total CPUs available: {cpus}")
-logger(log, f"  --> Total CPUs available: {cpus}", mode="simple")
-print(f"  --> Total memory available: {int(a_mem)} GB out of {int(t_mem)} GB.")
-logger(log, f"  --> Total memory available: {int(a_mem)} GB out of {int(t_mem)} GB.", mode="simple")
-print(f"  --> Using {pool_size} parallel samples, each using {cpus_per_sample} CPU(s).\n")
-logger(log, f"  --> Using {pool_size} parallel samples, each using {cpus_per_sample} CPU(s).", mode="simple")
+
 
 qc_out = os.path.join(outDir, "qc_out")
 if not os.path.exists(qc_out):
@@ -328,9 +320,6 @@ if bad_organisms or bad_barcodes:
         logger(log, f" --> Invalid barcodes: {', '.join(bad_barcodes)}", mode="simple")
     sys.exit(1)
 
-start_time = time.time()
-logger(log, "PIPELINE STARTED", "Header")
-time_print("PIPELINE STARTED", "Header")
 
 if bad_samples:
     b_s = ", ".join(bad_samples)
@@ -338,6 +327,26 @@ if bad_samples:
     logger(log, f"WARNING: These samples don't have corresponding fastq data. They will be skipped: {b_s}.")
 
 sample_number = sum(1 for line in sample_info if not line.startswith("#")) - len(bad_samples)
+
+if pool_size < sample_number:
+    pool_size = sample_number
+    # Recalculate CPUs per sample
+    cpus_per_sample = max(1, cpus // pool_size)
+
+# Compute pool size (number of parallel samples)
+print(f"\nRunig QC on samples in run {run_name}.\n")
+logger(log, f"Runig QC on samples in run {run_name}.\n", mode="simple")
+print(f"  --> Total CPUs available: {cpus}")
+logger(log, f"  --> Total CPUs available: {cpus}", mode="simple")
+print(f"  --> Total memory available: {int(a_mem)} GB out of {int(t_mem)} GB.")
+logger(log, f"  --> Total memory available: {int(a_mem)} GB out of {int(t_mem)} GB.", mode="simple")
+print(f"  --> Using {pool_size} parallel samples, each using {cpus_per_sample} CPU(s).\n")
+logger(log, f"  --> Using {pool_size} parallel samples, each using {cpus_per_sample} CPU(s).", mode="simple")
+
+
+start_time = time.time()
+logger(log, "PIPELINE STARTED", "Header")
+time_print("PIPELINE STARTED", "Header")
 
 
 qc_start_msg = "Performing Quality Control"
