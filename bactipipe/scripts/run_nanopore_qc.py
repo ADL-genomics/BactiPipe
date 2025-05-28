@@ -334,8 +334,6 @@ if pool_size > sample_number:
     # Recalculate CPUs per sample
     cpus_per_sample = max(1, cpus // pool_size)
 
-print("Sample number:", sample_number, "Pool size:", pool_size)
-
 # Compute pool size (number of parallel samples)
 print(f"\nRunig QC on samples in run {run_name}.\n")
 logger(log, f"Runig QC on samples in run {run_name}.\n", mode="simple")
