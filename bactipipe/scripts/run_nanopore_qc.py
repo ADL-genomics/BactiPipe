@@ -502,7 +502,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
         genome_size = 48502 if organism == "Lambda" else bacteria.get(organism, None)
         if genome_size:
             coverage = total_bases/genome_size
-            cov_display = f"{coverage:.2f}x"
+            cov_display = f"{coverage:.2f}"
             if coverage >= mincov:
                 cov_verdict = "Pass"
             else:
