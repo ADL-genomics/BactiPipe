@@ -500,11 +500,15 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
         total_bases = int(float(next(line for line in lines if "Total bases:" in line).split(":")[1].strip().replace(",", "")))
         avqc = float(next(line for line in lines if "Mean read quality:" in line).split(":")[1].strip())
         genome_size = 48502 if organism == "Lambda" else bacteria.get(organism, None)
-        coverage = total_bases/genome_size
-        if coverage >= mincov:
-            cov_verdict = "Pass"
+        if genome_size:
+            coverage = total_bases/genome_size
+            if coverage >= mincov:
+                cov_verdict = "Pass"
+            else:
+                cov_verdict = "Fail"
         else:
-            cov_verdict = "Fail"
+            coverage = "N/A"
+            cov_verdict = "N/A"
 
         # Find organism 
         hit, tax_confirm, possibilities = find_orgnanism.find_species_with_kmrf(s_name=sample, lab_species=organism, genome=genome, dataOut=outDir, org_type="bacteria", logfile=log)
