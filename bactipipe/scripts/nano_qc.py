@@ -79,7 +79,7 @@ def qc_nano(
         required_bases = int(coverage_target * genome_size)
 
         trimmed_output = output_fastq.replace(".gz", "")
-        filtlong_command = ["filtlong", "--min_mean_q", min_avg_quality, "--target_bases", str(required_bases),"--min_length", "500",  fastq_file]
+        filtlong_command = ["filtlong", "--min_mean_q", str(min_avg_quality), "--target_bases", str(required_bases), "--min_length", "500", fastq_file]
 
         try:
             with open(trimmed_output, "w") as trimmed_file:
