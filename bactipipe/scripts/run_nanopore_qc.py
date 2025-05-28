@@ -114,7 +114,10 @@ def process_sample(line):
             os.system(f"rm -r {file_path}")
 
 # Function for genome assembly for one sample
-assembler = args.assembler.strip().lower()
+if args.assembler:
+    assembler = args.assembler.strip().lower()
+else:
+    assembler = "unicycler"
 def assemble_sample(assembly_input):
     sample = assembly_input[0]
     fastq = assembly_input[1]
