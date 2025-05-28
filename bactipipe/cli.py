@@ -65,7 +65,7 @@ def main():
     try:
         subprocess.run(run_command, check=True)
     except subprocess.CalledProcessError as e:
-        print(f"Error: {e}", file=sys.stderr)
+        # print(f"Error: {e}", file=sys.stderr)
         sys.exit(e.returncode)
 
 if __name__ == "__main__":

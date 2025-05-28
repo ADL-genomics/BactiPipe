@@ -70,7 +70,9 @@ args = parser.parse_args()
 
 # Function to run quality control for a single sample
 def process_sample(line):
+    print(line)
     sample, organism, barcode = line.strip().split('\t')
+    print(f"{sample} - {organism} - {barcode}")
     barcode = barcode.replace("NB", "barcode")
 
     # Determine genome size as a float, raising an error if unknown
