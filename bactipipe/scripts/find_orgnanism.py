@@ -186,8 +186,11 @@ def find_species_with_kmrf(s_name, lab_species, genome, dataOut, org_type="bacte
         others = ', '.join(other_displ) #Example: "Staphylococcus epidermidis (2.00), Staphylococcus haemolyticus (1.00)""
     else:
         others = 'N/A'
+    
+    if lab_species.lower() == "unknown":
+        tax_confirm = 'N/A'
 
-    if best_hit == lab_species:
+    elif best_hit == lab_species:
         tax_confirm = 'Pass'
     else:
         tax_confirm = 'Fail'
