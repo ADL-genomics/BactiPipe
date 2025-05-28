@@ -257,7 +257,9 @@ def make_summary(qc_summary, temp_qc_summary, header, checkm_out, logfile=None):
                 final_verdict = "Fail"
             else:
                 final_verdict = "Pass"
-            writer.writerow([sample, f'{float(avqc):.2f}', organism, hit, match, f'{float(coverage):.2f}', completeness, contamination, final_verdict])
+            cov_display = f'{float(coverage):.2f}X' if coverage != 'N/A' else 'N/A'
+
+            writer.writerow([sample, f'{float(avqc):.2f}', organism, hit, match, cov_display, completeness, contamination, final_verdict])
 
             simple_print(f'{sample} :: QC {final_verdict}!\n', final_verdict)
             logger(log, f'{sample} :: QC {final_verdict}!', final_verdict, mode="simple")
