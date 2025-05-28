@@ -328,10 +328,13 @@ if bad_samples:
 
 sample_number = sum(1 for line in sample_info if not line.startswith("#")) - len(bad_samples)
 
-if pool_size < sample_number:
+
+if pool_size > sample_number:
     pool_size = sample_number
     # Recalculate CPUs per sample
     cpus_per_sample = max(1, cpus // pool_size)
+
+print("Sample number:", sample_number, "Pool size:", pool_size)
 
 # Compute pool size (number of parallel samples)
 print(f"\nRunig QC on samples in run {run_name}.\n")
