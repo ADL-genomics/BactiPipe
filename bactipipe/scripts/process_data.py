@@ -65,7 +65,7 @@ def assemble(sample, reads, assembly_dir, assembler="unicycler", sequencer="nano
     log = logfile
     if single:
         time_print(f'Assembling the genome for sample : {sample}', "Header")
-    logger(log, f'Assembling the genome for sample : {sample}', "Header")
+        logger(log, f'Assembling the genome for sample : {sample}', "Header")
     
     assembler = assembler.strip().lower()
     if assembler.lower() == "unicycler":
@@ -86,9 +86,9 @@ def assemble(sample, reads, assembly_dir, assembler="unicycler", sequencer="nano
         simple_print(f'\t---> Number of fastq files: {len(reads)}')
         simple_print(f'\t---> Number of CPUs: {cpus}\n')
         
-    logger(log, f'\t---> Assembler: {assembler}', mode="simple")
-    logger(log, f'\t---> Number of fastq files: {len(reads)}', mode="simple")
-    logger(log, f'\t---> Number of CPUs: {cpus}\n', mode="simple")
+        logger(log, f'\t---> Assembler: {assembler}', mode="simple")
+        logger(log, f'\t---> Number of fastq files: {len(reads)}', mode="simple")
+        logger(log, f'\t---> Number of CPUs: {cpus}\n', mode="simple")
 
 
     if len(reads) == 2:
@@ -122,7 +122,7 @@ def assemble(sample, reads, assembly_dir, assembler="unicycler", sequencer="nano
             return_info = f"Assembler {assembler} is not supported for Illumina reads. Please use Unicycler or Spades."
             if single:
                 time_print(return_info, "Fail")
-            logger(log, return_info)
+                logger(log, return_info)
             return
     
     elif sequencer == "nanopore":
@@ -136,7 +136,7 @@ def assemble(sample, reads, assembly_dir, assembler="unicycler", sequencer="nano
             return_info = f"Assembler {assembler} is not supported for Nanopore reads. Please use Unicycler or Flye."
             if single:
                 time_print(return_info, "Fail")
-            logger(log, return_info)
+                logger(log, return_info)
             return
     
     if not os.path.exists(finalAssembly):
@@ -145,7 +145,7 @@ def assemble(sample, reads, assembly_dir, assembler="unicycler", sequencer="nano
         info2 = f"Running the command: {cmd1}"
         if single:
             time_print(info2, s_type="command")
-        logger(log, info2, s_type="command")
+            logger(log, info2, s_type="command")
         execute = subprocess.run(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         # for line in execute.stdout.decode('utf-8').strip().split('\n'):
         #     log.write(line + '\n')
@@ -154,13 +154,13 @@ def assemble(sample, reads, assembly_dir, assembler="unicycler", sequencer="nano
             return_info = f"Assembly failed. Check the {assembler}'s log file for more details"
             if single:
                 time_print(return_info, "Fail")
-            logger(log, return_info) #" Check the log file for more details.")
+                logger(log, return_info) #" Check the log file for more details.")
             return
         else:
             return_info = f"Command exit status: Success!"
             if single:
                 time_print(return_info, "Pass")
-            logger(log, return_info)
+                logger(log, return_info)
         
         # Filter the genome to remove smaller contigs
         filter_genome(input_fasta=draft_assembly, output_fasta=finalAssembly, min_length=400)
@@ -169,12 +169,12 @@ def assemble(sample, reads, assembly_dir, assembler="unicycler", sequencer="nano
         # log.write(message2 + '\n')
         if single:
             time_print(message2)
-        logger(log, message2)
+            logger(log, message2)
 
     outinfo = f'Done with Assembly :: Assembly file: {finalAssembly}\n'
     if single:
         time_print(outinfo, "Pass")
-    logger(log, outinfo)
+        logger(log, outinfo)
                   
 def checkM_stats(genomes_dir, outdir, cpus=24, logfile=None):
     log = logfile
