@@ -61,14 +61,14 @@ def filter_genome(input_fasta, output_fasta, min_length=500):
     SeqIO.write(records, output_fasta, 'fasta')
     return output_fasta
 
-def assemble(sample, reads, assembly_dir, assembler="unicycler", sequencer="nanopore", cpus=24, logfile=None, gsize='5m', single=True):
+def assemble(sample, reads, assembly_dir, assembler="flye", sequencer="nanopore", cpus=24, logfile=None, gsize='5m', single=True):
     log = logfile
     if single:
         time_print(f'Assembling the genome for sample : {sample}', "Header")
         logger(log, f'Assembling the genome for sample : {sample}', "Header")
     
     assembler = assembler.strip().lower()
-    if assembler.lower() == "unicycler":
+    if assembler == "unicycler":
         tool = "unicycler"
     elif assembler == "spades":
         tool = "spades.py"
@@ -105,14 +105,14 @@ def assemble(sample, reads, assembly_dir, assembler="unicycler", sequencer="nano
 
     finalAssembly = os.path.join(genomesDir, sample + '.fasta')
 
-    if sequencer == "Illumina":
-        if assembler.lower() == "unicycler":
+    if sequencer.lower() == "illumina":
+        if assembler == "unicycler":
             if len(reads) == 2:
                 cmd1 = f'unicycler -1 {read1} -2 {read2} -o {tempDir} --threads {cpus}'
             elif len(reads) == 1:
                 cmd1 = f'unicycler -s {single_reads} -o {tempDir} --threads {cpus}'
             draft_assembly = f'{tempDir}/assembly.fasta'
-        elif assembler.lower() == "spades":
+        elif assembler == "spades":
             if len(reads) == 2:
                 cmd1 = f'spades.py --isolate -1 {read1} -2 {read2} -o {tempDir} --threads {cpus}'
             elif len(reads) == 1:
@@ -125,11 +125,11 @@ def assemble(sample, reads, assembly_dir, assembler="unicycler", sequencer="nano
                 logger(log, return_info)
             return
     
-    elif sequencer == "nanopore":
+    elif sequencer.lower() == "nanopore":
         if assembler == "unicycler":
             cmd1 = f'unicycler -l {single_reads} -o {tempDir} --threads {cpus}'
             draft_assembly = f'{tempDir}/assembly.fasta'
-        elif assembler == "Flye":
+        elif assembler == "flye":
             cmd1 = f'flye --nano-raw {single_reads} --out-dir {tempDir} --threads {cpus} --asm-coverage 50 --g {gsize} --iterations 2'
             draft_assembly = f'{tempDir}/assembly.fasta'
         else:

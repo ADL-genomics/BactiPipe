@@ -117,7 +117,7 @@ def process_sample(line):
 if args.assembler:
     assembler = args.assembler.strip().lower()
 else:
-    assembler = "unicycler"
+    assembler = "flye"
 def assemble_sample(assembly_input):
     sample = assembly_input[0]
     fastq = assembly_input[1]
@@ -445,7 +445,20 @@ elif len(existing_genomes) == passed_number:
 if assembly_input:
     if num_to_assemble < pool_size:
         cpus_per_sample = max(1, cpus // num_to_assemble)
+    
+    if assembler == "unicycler":
+        cpus_per_sample = max(cpus_per_sample, 10)
+        pool_size = cpus // cpus_per_sample
 
+    vercmd = f'{assembler} --version'
+    stdout = subprocess.run(vercmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out = stdout.stdout.decode('utf-8')
+    version = out.split()[-1]
+
+    assember_message = f"Using {assembler.capitalize()} (version: {version})."
+
+    simple_print(f"  ---> {assember_message}")
+    logger(log, f"  ---> {assember_message}", mode="simple")
     simple_print(f"  ---> {cpus_per_sample} CPUs will be used per sample.")
     logger(log, f"  ---> {cpus_per_sample} CPUs will be used per sample.", mode="simple")
     print()
