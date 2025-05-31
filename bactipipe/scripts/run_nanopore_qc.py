@@ -388,6 +388,11 @@ print()
 time_print(pass_msg, "Pass")
 logger(log, pass_msg)
 
+if len(passed_samples) == 0:
+    time_print("No samples passed QC. Exiting pipeline.", "Fail")
+    logger(log, "No samples passed QC. Exiting pipeline.")
+    sys.exit(1)
+
 # Print samples that failed QC
 failed_samples = [sample for sample in os.listdir(qc_out) if not os.path.exists(os.path.join(qc_out, sample, f"{sample}.fastq.gz") and sample != "temp_qc_summary.tsv")]
 
@@ -397,6 +402,7 @@ if failed_samples:
     fail_msg = f'QC failed for samples: {failures}.'
     time_print(fail_msg, "Fail")
     logger(log, fail_msg)
+
 
 # Assemble genomes for samples that passed QC
 assembly_start_msg = "Genome Assembly for samples that passed QC" 
@@ -470,6 +476,11 @@ if failed_assembly:
     time_print(failed_assembly_msg, "Fail")
     logger(log, failed_assembly_msg, "Fail")
 
+if len(failed_assembly) == passed_number:
+    time_print("No samples were assembled. Exiting pipeline.", "Fail")
+    logger(log, "No samples were assembled. Exiting pipeline.")
+    sys.exit(1)
+
 kmer_message = "Verifying Taxonomic Identity"
 time_print(kmer_message, "Header")
 logger(log, kmer_message, "Header")
@@ -485,6 +496,10 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             continue
         sample, organism, barcode = line.strip().split('\t')
         genome = os.path.join(outDir, "assemblies", "genomes", f"{sample}.fasta")
+        if not os.path.exists(genome) or os.path.getsize(genome) == 0:
+            time_print(f"WARNING: Sample {sample} does not have a valid genome file. Skipping.", "Fail")
+            logger(log, f"WARNING: Sample {sample} does not have a valid genome file. Skipping.")
+            continue
         # Find quality metrics:
         qc_metrics_after = os.path.join(qc_out, sample, "quality_metrics_after_qc.txt")
         qc_metrics_raw = os.path.join(qc_out, sample, "raw_reads_quality_metrics.txt")
