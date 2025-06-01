@@ -1,18 +1,18 @@
-import nano_qc
-import argparse
 import sys
 import os
 import csv
 import time
-import socket
 import psutil
+import socket
+import nano_qc
+import argparse
+import subprocess
 from datetime import datetime
 from bactipipe.scripts import process_data
 from bactipipe.scripts import find_orgnanism
 from tqdm.contrib.concurrent import process_map
 from bactipipe.scripts.utils import time_print, simple_print, logger, pipeheader, excel_reader
 from importlib.resources import files as resource_files
-
 
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def __init__(self, *args, **kwargs):
