@@ -185,7 +185,7 @@ else:
 mem = psutil.virtual_memory()
 a_mem = mem.available / 1024**3  # available memory in GB
 t_mem = mem.total / 1024**3  # total memory in GB
-
+ 
 allowed_samps = a_mem // 8  # 8 GB per sample
 
 if allowed_samps < 1:

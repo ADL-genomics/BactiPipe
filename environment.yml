@@ -30,3 +30,4 @@ dependencies:
       - textwrap3
       - psutil
       - setuptools
+      - openpyxl
