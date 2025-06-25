@@ -185,14 +185,14 @@ def excel_reader(filepath: str, platform: str = "nanopore"):
 
     elif plat == "illumina":
         needed = [
-            "Lib. Well",
+            "Well",
             "Accession Number",
             "Host and Source",
             "Bacteria Species",
             "gDNA Prep ID",
             "UD Set A Index Well",
         ]
-        idx_col = "Lib. Well"
+        idx_col = "Well"
         pattern = re.compile(r"^[A-H](?:0[1-9]|1[0-2])$")
         header_lines = 2
 
