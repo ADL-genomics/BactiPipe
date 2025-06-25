@@ -61,7 +61,7 @@ def filter_genome(input_fasta, output_fasta, min_length=500):
     SeqIO.write(records, output_fasta, 'fasta')
     return output_fasta
 
-def assemble(sample, reads, assembly_dir, assembler="flye", sequencer="nanopore", cpus=24, logfile=None, gsize='5m', single=True):
+def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile=None, gsize='5m', single=True):
     log = logfile
     if single:
         time_print(f'Assembling the genome for sample : {sample}', "Header")

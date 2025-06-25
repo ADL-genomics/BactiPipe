@@ -49,6 +49,8 @@ required_args.add_argument("-l", "--sample_sheet",
 optional_args.add_argument("-o", "--outdir",
                     help="Path to output directory. Default: current directory")
 
+optional_args.add_argument ("-a", "--assembler", help="Genome assembler to use. Default: Spades",  choices=["Spades", "Unicycler"], default="Spades")
+
 optional_args.add_argument("-t", "--threads",
                     help="Number of threads. Default: all available")
 
@@ -266,7 +268,8 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
         # Assemble the genomes of the samples that passed the quality control
         assembly_dir = os.path.join(outDir, "assemblies")
         if qc_verdict == "Pass" and cov_verdict == "Pass":
-            process_data.assemble(sample=sample, reads=fastqs, assembly_dir=assembly_dir, sequencer="Illumina", cpus=cpus, logfile=log)
+            process_data.assemble(sample=sample, reads=fastqs, assembly_dir=assembly_dir, assembler=args.assembler, sequencer="Illumina", cpus=cpus, logfile=log)
+
             genome = os.path.join(assembly_dir, "genomes", f"{sample}.fasta")
 
             hit, tax_confirm, possibilities = find_orgnanism.find_species_with_kmrf(s_name=sample, lab_species=organism, genome=genome, dataOut=outDir, org_type="bacteria", logfile=log)
