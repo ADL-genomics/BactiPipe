@@ -241,7 +241,7 @@ def make_summary(qc_summary, temp_qc_summary, header, checkm_out, logfile=None):
             writer.writerow([line])
         writer.writerow(["Quality Summary"])
         writer.writerow([""])
-        writer.writerow(["Sample",  "Mean_quality", "Expected organism", "Identified organism", "Percent Match", "Coverage Depth", "Min depth", "CheckM completeness", "CheckM contamination", "Overall Quality"])
+        writer.writerow(["Sample",  "Mean_quality", "Expected organism", "Identified organism", "% Match", "Coverage Depth", "Min depth", "CheckM completeness", "CheckM contamination", "Overall Quality"])
         for line in temp_sum:
             sample, avqc, qc_verdict, organism, hit, match, coverage, min_depth, cov_verdict, tax_confirm = line.strip().split("\t")
             if sample in ["Sample", "Lambda"]:

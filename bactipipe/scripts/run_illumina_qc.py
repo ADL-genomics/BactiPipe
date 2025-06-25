@@ -214,7 +214,7 @@ if not os.path.exists(qc_out):
 temp_qc_summary = os.path.join(qc_out, "temp_qc_summary.tsv")
 with(open(temp_qc_summary , 'w')) as qc_sum:
     writer = csv.writer(qc_sum, dialect='excel-tab')
-    writer.writerow(["Sample",  "Mean_quality", "qc_verdict", "Expected organism", "Identified organism", "% Match", "Coverage", "min_cov", "cov_verdict", "tax_confirm"])
+    writer.writerow(["Sample",  "Mean_quality", "qc_verdict", "Expected organism", "Identified organism", "% Match", "Coverage Depth", "min_cov", "cov_verdict", "tax_confirm"])
 
     # with open(sample_list, 'r') as sampL:
     for line in sample_info:
@@ -284,9 +284,9 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
                 best_other_percent = best_other_hit.split(" (")[1].strip(")")
 
             if tax_confirm == "Fail":
-                writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, f'Closest: {best_other_org}', best_other_percent, f'{coverage:.2f}', cov_verdict, tax_confirm])
+                writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, f'Closest: {best_other_org}', best_other_percent, f'{coverage:.2f}', min_cov, cov_verdict, tax_confirm])
             else:
-                writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, f'{coverage:.2f}', cov_verdict, tax_confirm])
+                writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, f'{coverage:.2f}', min_cov, cov_verdict, tax_confirm])
 
         else:
             best_org = "N/A"
