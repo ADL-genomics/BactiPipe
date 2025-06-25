@@ -170,7 +170,7 @@ bad_organisms = []
 bad_samples = []
 # with open(sample_list, 'r') as sampL:
 for line in sample_info:
-    if line.starts with("#"):
+    if line.startswith("#"):
         continue  # Skip comment lines
     sample, organism = line.strip().split('\t')
     if organism.strip() not in bacteria and organism != "organism":
