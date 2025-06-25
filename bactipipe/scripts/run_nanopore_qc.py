@@ -264,7 +264,7 @@ else:
             print("Sample list file must have three columns: sample, organism, barcode.")
             logger(log, "Sample list file must have three columns: sample, organism, barcode.")
             sys.exit(1)
-# Copy the sample sheet to the output directory for reference
+# # Copy the sample sheet to the output directory for reference
 # sample_sheet_out = os.path.join(outDir, f"{run_name}_sample_sheet.tsv")
 # with open(sample_list, 'r') as sampL, open(sample_sheet_out, 'w') as outL:
 #     for line in sampL:

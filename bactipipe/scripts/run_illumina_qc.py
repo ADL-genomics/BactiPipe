@@ -8,7 +8,7 @@ from datetime import datetime
 from bactipipe.scripts import find_orgnanism
 from bactipipe.scripts import process_data
 from bactipipe.scripts.qualityProc import ProcQuality
-from bactipipe.scripts.utils import time_print, simple_print, logger, pipeheader
+from bactipipe.scripts.utils import time_print, simple_print, logger, pipeheader, excel_reader
 from importlib.resources import files as resource_files
 
 
@@ -132,18 +132,27 @@ if not os.path.exists(sample_list):
     logger(log, f"Sample list file {sample_list} does not exist.")
     sys.exit(1)
 else:
-    with open(sample_list, 'r') as sampL:
-        first_line = sampL.readline().strip().split('\t')
-        if len(first_line) != 2:
-            print("Sample list file must have two columns: sample, organism.")
-            logger(log, "Sample list file must have two columns: sample, organism.")
+    if sample_list.endswith('.xlsx') or sample_list.endswith('.xls'):
+        try:
+            sample_info = excel_reader(sample_list)
+        except Exception as e:
+            print(f"Error reading Excel file {sample_list}: {e}")
+            logger(log, f"Error reading Excel file {sample_list}: {e}")
             sys.exit(1)
+    else:
+        with open(sample_list, 'r') as sampL:
+            sample_info = sampL.readlines()
+            first_line = sample_info[0].strip().split('\t')
+            if len(first_line) != 2:
+                print("Sample list file must have two columns: sample, organism.")
+                logger(log, "Sample list file must have two columns: sample, organism.")
+                sys.exit(1)
 
-# Copy the sample sheet to the output directory for reference
-sample_sheet_out = os.path.join(outDir, f"{run_name}_sample_sheet.tsv")
-with open(sample_list, 'r') as sampL, open(sample_sheet_out, 'w') as outL:
-    for line in sampL:
-        outL.write(line)
+# # Copy the sample sheet to the output directory for reference
+# sample_sheet_out = os.path.join(outDir, f"{run_name}_sample_sheet.tsv")
+# with open(sample_list, 'r') as sampL, open(sample_sheet_out, 'w') as outL:
+#     for line in sampL:
+#         outL.write(line)
 
 # Load pathogenic bacteria information
 bacteria = {}
@@ -159,15 +168,17 @@ with open(org_list, 'r') as orgL:
 # Validate the sample sheet
 bad_organisms = []
 bad_samples = []
-with open(sample_list, 'r') as sampL:
-    for line in sampL:
-        sample, organism = line.strip().split('\t')
-        if organism.strip() not in bacteria and organism != "organism":
-            print(f"Organism for sample {sample} is not a valid organism name")
-            bad_organisms.append(f"{sample}:{organism}")
-        if not sample in ','.join(os.listdir(raw_reads)) and sample != "sample_ID":
-            print(f"Sample {sample} does not have corresponding fastq files")
-            bad_samples.append(sample)
+# with open(sample_list, 'r') as sampL:
+for line in sample_info:
+    if line.starts with("#"):
+        continue  # Skip comment lines
+    sample, organism = line.strip().split('\t')
+    if organism.strip() not in bacteria and organism != "organism":
+        print(f"Orgfor line in sample_info:anism for sample {sample} is not a valid organism name")
+        bad_organisms.append(f"{sample}:{organism}")
+    if not sample in ','.join(os.listdir(raw_reads)) and sample != "sample_ID":
+        print(f"Sample {sample} does not have corresponding fastq files")
+        bad_samples.append(sample)
 
 if bad_organisms:
     print("The sample sheet is not formatted correctly. Please correct the following issues:")
@@ -186,14 +197,12 @@ start_time = time.time()
 logger(log, "PIPELINE STARTED", "Header")
 time_print("PIPELINE STARTED", "Header")
 
-
-sample_number = sum(1 for line in open(sample_list) if not line.startswith("sample_ID")) - len(bad_samples)
-
 # Count total number of samples
-sheet_samples = sum(1 for line in open(sample_list) if not line.startswith("sample_ID")) - len(bad_samples)
+sample_number = sum(1 for line in sample_info if not line.startswith("#")) - len(bad_samples)
 
-time_print(f"\n\nTotal number of samples to be processed: {sheet_samples}\n")
-logger(log, f"Total number of samples to be processed: {sheet_samples}\n")
+
+time_print(f"\n\nTotal number of samples to be processed: {sample_number}\n")
+logger(log, f"Total number of samples to be processed: {sample_number}\n")
 
 qc_out = os.path.join(outDir, "qc_out")
 if not os.path.exists(qc_out):
@@ -205,83 +214,83 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
     writer = csv.writer(qc_sum, dialect='excel-tab')
     writer.writerow(["Sample",  "Mean_quality", "qc_verdict", "Expected organism", "Identified organism", "% Match", "Coverage", "min_cov", "cov_verdict", "tax_confirm"])
 
-    with open(sample_list, 'r') as sampL:
-        for line in sampL:
-            sample, organism = line.strip().split('\t')
-            fastqs = get_fastqs(sample, raw_reads)
+    # with open(sample_list, 'r') as sampL:
+    for line in sample_info:
+        sample, organism = line.strip().split('\t')
+        fastqs = get_fastqs(sample, raw_reads)
 
-            genome_size = bacteria.get(organism, None)[0]
-            taxID = bacteria.get(organism, None)[1]
+        genome_size = bacteria.get(organism, None)[0]
+        taxID = bacteria.get(organism, None)[1]
 
-            qualdata = ProcQuality(fastqs, genome_size, os.path.join(qc_out, sample), sample, logfile=log)
+        qualdata = ProcQuality(fastqs, genome_size, os.path.join(qc_out, sample), sample, logfile=log)
 
-            qualdata.plot_quality_distribution()
-            qualdata.plot_quality_metrics()
+        qualdata.plot_quality_distribution()
+        qualdata.plot_quality_metrics()
 
-            avqc = qualdata.average_quality
-            coverage = qualdata.coverage
+        avqc = qualdata.average_quality
+        coverage = qualdata.coverage
 
-            taxonomy = [taxID, organism]
+        taxonomy = [taxID, organism]
 
-            if avqc >= 28:
-                qc_verdict = 'Pass'
+        if avqc >= 28:
+            qc_verdict = 'Pass'
+        else:
+            qc_verdict = "Fail"
+
+        # Coverage
+        if avqc >= 30:
+            min_cov = 30
+        elif avqc >= 29:
+            min_cov = 40
+        elif avqc >= 28:
+            min_cov = 50
+
+        if organism == "Escherichia coli":
+            min_cov += 10
+
+        if coverage != "N/A" and int(coverage) >= min_cov:
+            cov_verdict = "Pass"
+        else:
+            cov_verdict = "Fail"
+
+        simple_print(f'\t---> Mean quality score: {qc_verdict} --- {avqc:.2f}', qc_verdict)
+        logger(log, f'\t---> Mean quality score: {qc_verdict} --- {avqc:.2f}', qc_verdict, mode="simple")
+
+        if coverage != 'N/A':
+            simple_print(f'\t---> Genome coverage: {cov_verdict} --- {coverage:.2f}X', cov_verdict)
+            logger(log, f'\t---> Genome coverage: {cov_verdict} --- {coverage:.2f}X', cov_verdict, mode="simple")
+        else:
+            time_print(f'\t---> Genome coverage: {coverage}')
+            logger(log, f'\t---> Genome coverage: {coverage}\n', mode="simple")
+        
+        # Assemble the genomes of the samples that passed the quality control
+        assembly_dir = os.path.join(outDir, "assemblies")
+        if qc_verdict == "Pass" and cov_verdict == "Pass":
+            process_data.assemble(sample=sample, reads=fastqs, assembly_dir=assembly_dir, sequencer="Illumina", cpus=cpus, logfile=log)
+            genome = os.path.join(assembly_dir, "genomes", f"{sample}.fasta")
+
+            hit, tax_confirm, possibilities = find_orgnanism.find_species_with_kmrf(s_name=sample, lab_species=organism, genome=genome, dataOut=outDir, org_type="bacteria", logfile=log)
+
+            #######
+            if tax_confirm == "Pass":
+                best_org = hit.split(" (")[0]
+                best_percent = hit.split(" (")[1].strip(")")
             else:
-                qc_verdict = "Fail"
+                best_other_hit = hit.split(" --- ")[0].split(": ")[1]
+                best_other_org = best_other_hit.split(" (")[0]
+                best_other_percent = best_other_hit.split(" (")[1].strip(")")
 
-            # Coverage
-            if avqc >= 30:
-                min_cov = 30
-            elif avqc >= 29:
-                min_cov = 40
-            elif avqc >= 28:
-                min_cov = 50
-
-            if organism == "Escherichia coli":
-                min_cov += 10
-
-            if coverage != "N/A" and int(coverage) >= min_cov:
-                cov_verdict = "Pass"
+            if tax_confirm == "Fail":
+                writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, f'Closest: {best_other_org}', best_other_percent, f'{coverage:.2f}', cov_verdict, tax_confirm])
             else:
-                cov_verdict = "Fail"
+                writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, f'{coverage:.2f}', cov_verdict, tax_confirm])
 
-            simple_print(f'\t---> Mean quality score: {qc_verdict} --- {avqc:.2f}', qc_verdict)
-            logger(log, f'\t---> Mean quality score: {qc_verdict} --- {avqc:.2f}', qc_verdict, mode="simple")
+        else:
+            best_org = "N/A"
+            best_percent = "N/A"
+            tax_confirm = "N/A"
 
-            if coverage != 'N/A':
-                simple_print(f'\t---> Genome coverage: {cov_verdict} --- {coverage:.2f}X', cov_verdict)
-                logger(log, f'\t---> Genome coverage: {cov_verdict} --- {coverage:.2f}X', cov_verdict, mode="simple")
-            else:
-                time_print(f'\t---> Genome coverage: {coverage}')
-                logger(log, f'\t---> Genome coverage: {coverage}\n', mode="simple")
-            
-            # Assemble the genomes of the samples that passed the quality control
-            assembly_dir = os.path.join(outDir, "assemblies")
-            if qc_verdict == "Pass" and cov_verdict == "Pass":
-                process_data.assemble(sample=sample, reads=fastqs, assembly_dir=assembly_dir, sequencer="Illumina", cpus=cpus, logfile=log)
-                genome = os.path.join(assembly_dir, "genomes", f"{sample}.fasta")
-
-                hit, tax_confirm, possibilities = find_orgnanism.find_species_with_kmrf(s_name=sample, lab_species=organism, genome=genome, dataOut=outDir, org_type="bacteria", logfile=log)
-
-                #######
-                if tax_confirm == "Pass":
-                    best_org = hit.split(" (")[0]
-                    best_percent = hit.split(" (")[1].strip(")")
-                else:
-                    best_other_hit = hit.split(" --- ")[0].split(": ")[1]
-                    best_other_org = best_other_hit.split(" (")[0]
-                    best_other_percent = best_other_hit.split(" (")[1].strip(")")
-
-                if tax_confirm == "Fail":
-                    writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, f'Closest: {best_other_org}', best_other_percent, f'{coverage:.2f}', cov_verdict, tax_confirm])
-                else:
-                    writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, f'{coverage:.2f}', cov_verdict, tax_confirm])
-
-            else:
-                best_org = "N/A"
-                best_percent = "N/A"
-                tax_confirm = "N/A"
-
-                writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, f'{coverage:.2f}', min_cov, cov_verdict, tax_confirm])
+            writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, f'{coverage:.2f}', min_cov, cov_verdict, tax_confirm])
 # Assess Genome Quality with CheckM
 genomes_dir = os.path.join(outDir, "assemblies", "genomes")
 checkm_dir = os.path.join(outDir, "checkM")
@@ -304,6 +313,6 @@ hours, remainder = divmod(elapsed_time, 3600)
 minutes, seconds = divmod(remainder, 60)
 
 # Print the execution time
-end_message = f"PIPELINE COMPLETED: Processed {sheet_samples} samples in {int(hours)} hours, {int(minutes)} minutes, {seconds:.2f} seconds"
+end_message = f"PIPELINE COMPLETED: Processed {sample_number} samples in {int(hours)} hours, {int(minutes)} minutes, {seconds:.2f} seconds"
 time_print(end_message, "Header")
 logger(log, end_message, "Header")
