@@ -241,9 +241,9 @@ def make_summary(qc_summary, temp_qc_summary, header, checkm_out, logfile=None):
             writer.writerow([line])
         writer.writerow(["Quality Summary"])
         writer.writerow([""])
-        writer.writerow(["Sample",  "Mean_quality", "Expected organism", "Identified organism", "Percent Match", "Coverage Depth", "CheckM completeness", "CheckM contamination", "Overall Quality"])
+        writer.writerow(["Sample",  "Mean_quality", "Expected organism", "Identified organism", "Percent Match", "Coverage Depth", "Min depth", "CheckM completeness", "CheckM contamination", "Overall Quality"])
         for line in temp_sum:
-            sample, avqc, qc_verdict, organism, hit, match, coverage, cov_verdict, tax_confirm = line.strip().split("\t")
+            sample, avqc, qc_verdict, organism, hit, match, coverage, min_depth, cov_verdict, tax_confirm = line.strip().split("\t")
             if sample in ["Sample", "Lambda"]:
                 continue
             if sample in checkm_out:
@@ -261,7 +261,7 @@ def make_summary(qc_summary, temp_qc_summary, header, checkm_out, logfile=None):
                 final_verdict = "Pass"
             cov_display = f'{float(coverage):.2f}' if coverage != 'N/A' else 'N/A'
 
-            writer.writerow([sample, f'{float(avqc):.2f}', organism, hit, match, cov_display, completeness, contamination, final_verdict])
+            writer.writerow([sample, f'{float(avqc):.2f}', organism, hit, match, cov_display, min_depth, completeness, contamination, final_verdict])
 
             simple_print(f'{sample} :: QC {final_verdict}!\n', final_verdict)
             logger(log, f'{sample} :: QC {final_verdict}!', final_verdict, mode="simple")

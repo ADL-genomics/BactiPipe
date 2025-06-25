@@ -54,7 +54,6 @@ optional_args.add_argument('-t', '--threads', help='Number of CPUs per sample. D
 optional_args.add_argument("--cpus_per_sample", help="Number of CPUs per sample. Must be lower than total allocated CPUs. If not provided,  it will be calculated based on available resources.", type=int)
 
 optional_args.add_argument("-m", "--mincov", help="Minimum genome coverage depth.", default=50, type=int)
-
 optional_args.add_argument("-q", "--minqual", help="Average read quality threshold.", default=15, type=int)
 optional_args.add_argument ("-a", "--assembler", help="Genome assembler to use. Default: Unicycler",  choices=["Spades", "Unicycler", "Flye"])
 
@@ -87,16 +86,16 @@ def process_sample(line):
     output_fastq = f"{sample}.fastq.gz"
     output_dir = os.path.join(qc_out, sample)
     qc_final_file = os.path.join(output_dir, "quality_metrics_after_qc.txt")
-    if os.path.exists(qc_final_file):
-        return
+    # if os.path.exists(qc_final_file):
+    #     return
 
     # Run QC with controlled CPU allocation
     if not sample.startswith("#"):
         nano_qc.qc_nano(
             raw_folder=raw_folder,
             genome_size=genome_size,
-            min_avg_quality=15,
-            min_coverage=50,
+            min_avg_quality=(minqual),
+            min_coverage=(mincov),
             desired_coverage=300,
             step_coverage=50,
             output_fastq=output_fastq,
@@ -135,13 +134,14 @@ tech_name = args.name
 run_name = args.run_name
 source = args.source
 source = os.path.join(source, run_name)
+mincov = args.mincov
+minqual = args.minqual
 if args.outdir:
     outDir = os.path.join(args.outdir, run_name)
 else:
     outDir = os.path.join(os.getcwd(), run_name)
 
-mincov = args.mincov
-minqual = args.minqual
+
 sample_list = os.path.abspath(args.sample_sheet)
 
 
@@ -502,7 +502,7 @@ logger(log, kmer_message, "Header")
 temp_qc_summary = os.path.join(qc_out, "temp_qc_summary.tsv")
 with(open(temp_qc_summary , 'w')) as qc_sum:
     writer = csv.writer(qc_sum, dialect='excel-tab')
-    writer.writerow(["Sample",  "Mean_quality", "qc_verdict", "Expected organism", "Identified organism", "% Match", "Coverage", "cov_verdict", "tax_confirm"])
+    writer.writerow(["Sample",  "Mean_quality", "qc_verdict", "Expected organism", "Identified organism", "% Match", "Coverage", "min_cov", "cov_verdict", "tax_confirm"])
 
     for line in sample_info:
         if line.startswith("#"):
@@ -560,7 +560,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             tax_confirm = "Not confirmed" if organism.lower() == "unknown" else "N/A"
 
 
-            writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, cov_display, cov_verdict, tax_confirm])                    
+            writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, cov_display, mincov, cov_verdict, tax_confirm])                    
 
 # Assess Genome Quality with CheckM
 genomes_dir = os.path.join(outDir, "assemblies", "genomes")
