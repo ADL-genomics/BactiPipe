@@ -134,7 +134,7 @@ if not os.path.exists(sample_list):
 else:
     if sample_list.endswith('.xlsx') or sample_list.endswith('.xls'):
         try:
-            sample_info = excel_reader(sample_list)
+            sample_info = excel_reader(sample_list, "illumina")
         except Exception as e:
             print(f"Error reading Excel file {sample_list}: {e}")
             logger(log, f"Error reading Excel file {sample_list}: {e}")
