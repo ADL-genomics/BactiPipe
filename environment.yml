@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python >=3.7
+  - python=3.11
   - fastp
   - spades
   - unicycler
@@ -22,12 +22,28 @@ dependencies:
   - checkm-genome
   - seqkit
   - pip
+  - django
+  - Celery
+  - boto3
+  - gunicorn
+  - django-environ
+  - awscli
+  - hcc::basespace-cli
   - pip:
       - -e .
       - pyfastx
+      - redis
+      - plotly
       - tqdm
       - colorama
       - textwrap3
       - psutil
       - setuptools
       - openpyxl
+      - django-crispy-forms
+      - crispy-bootstrap5
+      - django-allauth
+      - django-db-signals
+      - django-celery-beat
+      - psycopg2-binary    
+      - django-grappelli

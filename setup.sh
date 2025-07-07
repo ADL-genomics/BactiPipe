@@ -1,62 +1,64 @@
 #!/usr/bin/env bash
 set -e
 
-# Check if conda is installed
-check_conda_installed() {
-    command -v conda >/dev/null 2>&1
+# 1) Detect host OS and set the "platform" string used on repo.anaconda.com
+detect_platform() {
+  local os
+  os=$(uname -s)
+  case "$os" in
+    Linux)   PLATFORM="Linux"   ;;
+    Darwin)  PLATFORM="MacOSX"  ;;  # macOS installers use “MacOSX”
+    *) 
+      echo "❌ Unsupported OS: $os" >&2
+      exit 1
+      ;;
+  esac
 }
 
-# Get the latest Anaconda Linux x86_64 installer URL
+# 2) Get the latest Anaconda x86_64 installer URL for that platform
 get_latest_anaconda_url() {
-    archive_url="https://repo.anaconda.com/archive/"
+  archive_url="https://repo.anaconda.com/archive/"
+  echo "🔍 Looking for latest Anaconda3-x86_64 for ${PLATFORM}..." >&2
 
-    # Debug message to stderr (won't be captured by command substitution)
-    echo "Retrieving latest Anaconda installer URL..." >&2
+  latest_filename=$(
+    curl -s "$archive_url" |
+    grep -oE "Anaconda3-[0-9]+\.[0-9]+-[0-9]+-${PLATFORM}-x86_64\.sh" |
+    sort -V |
+    tail -n1
+  )
 
-    latest_filename=$(curl -s "$archive_url" | \
-        grep -o 'Anaconda3-[0-9.]\+-[0-9]\+-Linux-x86_64.sh' | \
-        sort -V | \
-        tail -n 1)
+  if [[ -z "$latest_filename" ]]; then
+    echo "❌ Could not find an Anaconda installer for ${PLATFORM}-x86_64." >&2
+    return 1
+  fi
 
-    if [[ -z "$latest_filename" ]]; then
-        echo "❌ Could not find the latest Anaconda installer." >&2
-        return 1
-    fi
-
-    # Only echo the final URL (captured by caller)
-    echo "${archive_url}${latest_filename}"
+  echo "${archive_url}${latest_filename}"
 }
 
-# Download Anaconda installer
+# 3) Download + install
 download_anaconda() {
-    installer_url=$(get_latest_anaconda_url)
-    if [[ -z "$installer_url" ]]; then
-        echo "❌ Installer URL is empty. Aborting download."
-        exit 1
-    fi
-    echo "✅ Downloading installer from: $installer_url"
-    wget -O ~/anaconda.sh "$installer_url"
+  installer_url=$(get_latest_anaconda_url)
+  echo "✅ Downloading: $installer_url"
+  wget -O ~/anaconda.sh "$installer_url"
 }
 
-# Install Anaconda
 install_anaconda() {
-    echo "Installing Anaconda..."
-    echo "Follow the prompts to complete the installation."
-    echo "Press Ctrl+C to cancel the installation if you don't want to proceed."
-    echo "You can also run the installer manually: bash ~/anaconda.sh"
-    bash ~/anaconda.sh -b -p "$HOME/anaconda3"
-    echo "Initializing conda..."
-    "$HOME/anaconda3/bin/conda" init
-    echo "✅ Anaconda installed. Restart your terminal or run: source ~/.bashrc"
+  echo "🚀 Installing Anaconda into \$HOME/anaconda3…"
+  bash ~/anaconda.sh -b -p "$HOME/anaconda3"
+  echo "🔧 Initializing conda…"
+  "$HOME/anaconda3/bin/conda" init
+  echo "✅ Installed and initialized. Restart your shell or run: source ~/.bashrc"
 }
 
-# Main
-if check_conda_installed; then
-    echo "✅ Anaconda is already installed."
+# ——— Main ———
+detect_platform
+
+if command -v conda >/dev/null 2>&1; then
+  echo "✅ conda already installed."
 else
-    echo "⚠️  Anaconda not found. Installing latest version..."
-    download_anaconda
-    install_anaconda
+  echo "⚠️  conda not found; installing latest Anaconda3-x86_64 for ${PLATFORM}…"
+  download_anaconda
+  install_anaconda
 fi
 
 # Clean up
