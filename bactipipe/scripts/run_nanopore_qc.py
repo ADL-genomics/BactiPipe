@@ -548,12 +548,12 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             if tax_confirm == "Pass":
                 best_org = hit.split(" (")[0]
                 best_percent = hit.split(" (")[1].strip(")")
-                writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, cov_display, cov_verdict, tax_confirm])
+                writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, cov_display, mincov, cov_verdict, tax_confirm])
             else:
                 best_other_hit = hit.split(" --- ")[0].split(": ")[1]
                 best_other_org = best_other_hit.split(" (")[0]
                 best_other_percent = best_other_hit.split(" (")[1].strip(")")
-                writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, f'Closest: {best_other_org}', best_other_percent, cov_display, cov_verdict, tax_confirm])
+                writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, f'Closest: {best_other_org}', best_other_percent, cov_display, mincov, cov_verdict, tax_confirm])
         else:
             best_org = "N/A"
             best_percent = "N/A"
