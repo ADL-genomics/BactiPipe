@@ -66,8 +66,6 @@ echo "Cleaning up..."
 # rm ~/anaconda.sh
 echo "✅ Conda Installation script completed."
 
-source "$(conda info --base)/etc/profile.d/conda.sh"
-
 echo ""
 echo "🔧 Setting up conda environment for bactipipe..."
 echo ""
@@ -90,7 +88,13 @@ else
     exit 1
 fi
 
-echo "🚀 Optionally checking for updates..."
-bactipipe check-updates
+# Install basespace-cli
+echo "🔧 Installing basespace-cli..."
+if [ "$PLATFORM" == "Linux" ]; then
+    wget "https://launch.basespace.illumina.com/CLI/latest/amd64-linux/bs" -O $HOME/bin/bs
+elif [ "$PLATFORM" == "MacOSX" ]; then
+    wget "https://launch.basespace.illumina.com/CLI/latest/amd64-osx/bs" -O $HOME/bin/bs
+fi
 
+chmod +x $HOME/bin/bs
 echo "🎉 Setup complete. You're ready to use bactipipe!"

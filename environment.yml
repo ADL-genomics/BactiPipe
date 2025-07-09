@@ -28,7 +28,6 @@ dependencies:
   - gunicorn
   - django-environ
   - awscli
-  - hcc::basespace-cli
   - pip:
       - -e .
       - pyfastx
