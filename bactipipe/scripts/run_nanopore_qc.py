@@ -516,17 +516,26 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
         # Find quality metrics:
         qc_metrics_after = os.path.join(qc_out, sample, "quality_metrics_after_qc.txt")
         qc_metrics_raw = os.path.join(qc_out, sample, "raw_reads_quality_metrics.txt")
-        if os.path.exists(qc_metrics_after):
-            qc_verdict = "Pass"
+
+        if os.path.exists(qc_metrics_after) and os.path.getsize(qc_metrics_after) > 0:
             qc_file = qc_metrics_after
-        else:
-            qc_verdict = "Fail"
+        elif os.path.exists(qc_metrics_raw) and os.path.getsize(qc_metrics_raw) > 0:
             qc_file = qc_metrics_raw
+        else:
+            time_print(f"WARNING: No valid QC metrics file found for sample {sample}. Skipping.", "Fail")
+            logger(log, f"WARNING: No valid QC metrics file found for sample {sample}. Skipping.")
+            continue
+   
         with open(qc_file, 'r') as qcF:
             lines = qcF.readlines()
         
         total_bases = int(float(next(line for line in lines if "Total bases:" in line).split(":")[1].strip().replace(",", "")))
         avqc = float(next(line for line in lines if "Mean read quality:" in line).split(":")[1].strip())
+        if avqc < minqual:
+            qc_verdict = "Fail"
+        else:
+            qc_verdict = "Pass"
+            
         genome_size = 48502 if organism == "Lambda" else bacteria.get(organism, None)
         if genome_size:
             coverage = total_bases/genome_size
