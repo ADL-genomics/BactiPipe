@@ -218,6 +218,12 @@ if not os.path.exists(temp_dir) and args.storage_type != "local":
     time_print(f"Storage @ {args.storage_type} - Creating temporary directory for raw reads: {temp_dir}")
     os.makedirs(temp_dir)
 
+temp_dir = os.path.join(outDir, "temp")
+if args.storage_type != "local":
+    os.makedirs(temp_dir, exist_ok=True)
+    logger(log, f"Storage @ {args.storage_type} - Created temporary directory for raw reads: {temp_dir}")
+    time_print(f"Storage @ {args.storage_type} - Created temporary directory for raw reads: {temp_dir}")
+
 if args.storage_type == "s3":
     time_print(f"Downloading raw reads from S3 bucket: {args.s3_bucket}, prefix: {args.s3_prefix}")
     raw_reads = download_s3(bucket="adl-pathogen-bucket", prefix=f"ngslab/DATA/illuminaData/{run_name}", target_root=temp_dir)

@@ -215,6 +215,9 @@ class ProcQuality:
                 combined_avg_quality = self.combined_quality_sum / self.combined_total_bases if self.combined_total_bases > 0 else 0
                 combined_coverage = self.combined_total_bases / self.genome_size if self.genome_size else "N/A"
                 comb_cov = f"{combined_coverage:.2f}X" if isinstance(combined_coverage, float) else combined_coverage
+
+                print(f"Pair 1 + Pair 2:\n\nAvg Quality: {combined_avg_quality}\nTotal reads: {self.combined_num_reads}\nTotal bases: {self.combined_total_bases}\nGenome cov: {comb_cov}")
+
                 combined_stats_text = (f"Pair 1 + Pair 2:\n\n"
                                     f"Avg Quality: {combined_avg_quality:.2f}\n"
                                     f"Total reads: {self.combined_num_reads:,}\n"
