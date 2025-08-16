@@ -270,6 +270,28 @@ def excel_reader(filepath: str, platform: str = "nanopore"):
     
     return out
 
+def download_s3(bucket: str, prefix: str, target_root: str) -> str:
+    s3 = boto3.client("s3")
+    norm_prefix = prefix.strip("/")
+    base_name = norm_prefix.split("/")[-1]
+    local_base = os.path.join(target_root, base_name)
+    os.makedirs(local_base, exist_ok=True)
+
+    paginator = s3.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket, Prefix=norm_prefix + "/"):
+        for obj in page.get("Contents", []):
+            key = obj["Key"]
+            if key.endswith("/"):
+                continue
+            rel_path = key[len(norm_prefix):].lstrip("/")
+            if not rel_path:
+                continue
+            dest_path = os.path.join(local_base, rel_path)
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+            s3.download_file(bucket, key, dest_path)
+
+    return local_base
+
 
 init(autoreset=True)
 
