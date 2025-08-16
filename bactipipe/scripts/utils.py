@@ -2,6 +2,7 @@
 import os
 import re
 import sys
+import boto3
 import subprocess
 import textwrap3
 import pandas as pd
