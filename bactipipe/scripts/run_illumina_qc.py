@@ -4,11 +4,13 @@ import argparse
 import csv
 import time
 import socket
+import shutil
+import subprocess
 from datetime import datetime
 from bactipipe.scripts import find_orgnanism
 from bactipipe.scripts import process_data
 from bactipipe.scripts.qualityProc import ProcQuality
-from bactipipe.scripts.utils import time_print, simple_print, logger, pipeheader, excel_reader
+from bactipipe.scripts.utils import time_print, simple_print, logger, pipeheader, excel_reader, download_s3
 from importlib.resources import files as resource_files
 
 
@@ -210,6 +212,22 @@ qc_out = os.path.join(outDir, "qc_out")
 if not os.path.exists(qc_out):
     os.makedirs(qc_out)
 
+temp_dir = os.path.join(outDir, "temp")
+if not os.path.exists(temp_dir) and args.storage_type != "local":
+    logger(log, f"Storage @ {args.storage_type} - Creating temporary directory for raw reads: {temp_dir}")
+    time_print(f"Storage @ {args.storage_type} - Creating temporary directory for raw reads: {temp_dir}")
+    os.makedirs(temp_dir)
+
+if args.storage_type == "s3":
+    time_print(f"Downloading raw reads from S3 bucket: {args.s3_bucket}, prefix: {args.s3_prefix}")
+    raw_reads = download_s3(bucket="adl-pathogen-bucket", prefix=f"ngslab/DATA/illuminaData/{run_name}", target_root=temp_dir)
+
+elif args.storage_type == "network_mount":
+    time_print(f"Copying raw reads from network mount: {raw_reads} to temporary directory: {temp_dir}")
+    cp_cmd = f"cp -r {raw_reads} {temp_dir}"
+    subprocess.run(cp_cmd, shell=True, check=True)
+    raw_reads = os.path.join(temp_dir, os.path.basename(raw_reads))
+
 #Write the temporary summary file that will be updated after CheckM analysis
 temp_qc_summary = os.path.join(qc_out, "temp_qc_summary.tsv")
 with(open(temp_qc_summary , 'w')) as qc_sum:
@@ -306,6 +324,11 @@ time_print('Final summary', "Header")
 logger(log, 'Final summary', "Header")
 
 process_data.make_summary(qc_summary=qc_summary, temp_qc_summary=temp_qc_summary, header=header, checkm_out=checkm_out, logfile=log)
+
+if os.path.exists(temp_dir):
+    shutil.rmtree(temp_dir)
+    time_print(f"Temporary directory removed.")
+    logger(log, f"Temporary directory removed.")
 
 # End the timer
 end_time = time.time()
