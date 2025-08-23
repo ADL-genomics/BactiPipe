@@ -81,7 +81,6 @@ def get_kmerfinder_latest_version_ftp():
     return None
 
 def read_local_kmerfinder_version():
-    print(f"Data dir: {DATA_DIR}")
     version_file = os.path.join(DATA_DIR,"kmerfinder_db", "bacteria", "VERSION.txt")
     if os.path.exists(version_file):
         with open(version_file) as f:
@@ -130,8 +129,6 @@ def setup_checkm_database(dest_dir, checkm_db="checkm_data_2015_01_16", notifica
 
     if not os.path.exists(filename):
         download_with_progress(url, filename)
-
-    print(f"DB Path: {extracted_dir}")
 
     print("Extracting CheckM database...")
     with tarfile.open(filename, "r:gz") as tar:
