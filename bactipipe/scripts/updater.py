@@ -4,6 +4,9 @@ import sys
 import json
 from datetime import datetime
 from bactipipe.scripts.downloader import get_kmerfinder_latest_version_ftp, read_local_kmerfinder_version, read_local_version
+from .config import DATA_DIR
+
+
 def get_timestamp():
     return datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -162,8 +165,9 @@ def check_database_versions():
 
     CHECKM_DB_LATEST_VERSION = "checkm_data_2015_01_16"
     checkm_db = CHECKM_DB_LATEST_VERSION
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+    base_dir = DATA_DIR
     checkm_db_dir = os.path.join(base_dir, checkm_db)
+    print(f"Looking at {checkm_db_dir}")
     local_checkm_version = read_local_version(checkm_db_dir)
 
     print(f"📂 Local version:  {local_checkm_version or 'unknown'}")

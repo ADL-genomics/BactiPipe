@@ -7,6 +7,8 @@ import tarfile
 import sys
 from datetime import datetime
 from ftplib import FTP
+from .config import DATA_DIR
+
 
 CHECKM_DB_LATEST_VERSION = "checkm_data_2015_01_16"
 checkm_db = f"{CHECKM_DB_LATEST_VERSION}"
@@ -79,10 +81,8 @@ def get_kmerfinder_latest_version_ftp():
     return None
 
 def read_local_kmerfinder_version():
-    version_file = os.path.join(
-        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data")),
-        "kmerfinder_db", "bacteria", "VERSION.txt"
-    )
+    print(f"Data dir: {DATA_DIR}")
+    version_file = os.path.join(DATA_DIR,"kmerfinder_db", "bacteria", "VERSION.txt")
     if os.path.exists(version_file):
         with open(version_file) as f:
             return f.read().strip()
@@ -131,6 +131,8 @@ def setup_checkm_database(dest_dir, checkm_db="checkm_data_2015_01_16", notifica
     if not os.path.exists(filename):
         download_with_progress(url, filename)
 
+    print(f"DB Path: {extracted_dir}")
+
     print("Extracting CheckM database...")
     with tarfile.open(filename, "r:gz") as tar:
         tar.extractall(path=extracted_dir)
@@ -140,14 +142,14 @@ def setup_checkm_database(dest_dir, checkm_db="checkm_data_2015_01_16", notifica
     os.remove(filename)
     
 def setup_databases(notifications="on"):
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+    base_dir = DATA_DIR
     remote_version = get_kmerfinder_latest_version_ftp()
     setup_checkm_database(base_dir, notifications=notifications)
     setup_kmerfinder_database(os.path.join(base_dir, "kmerfinder_db"), remote_version, notifications=notifications)
     
 def update_databases():
     print("\n🔄 Checking for new versions of databases...\n")
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data"))
+    base_dir = DATA_DIR
 
     # --- CheckM ---
     checkm_db_dir = os.path.join(base_dir, checkm_db)

@@ -30,7 +30,6 @@ dependencies:
   - awscli
   - pip:
       - -e .
-      - pyfastx
       - redis
       - plotly
       - tqdm

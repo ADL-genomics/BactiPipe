@@ -1,12 +1,72 @@
 #!/usr/bin/env python3
-
-import os
-import pyfastx
 import matplotlib
 import numpy as np
-from tqdm import tqdm
 import matplotlib.pyplot as plt
 from bactipipe.scripts.utils import time_print, simple_print, logger
+
+import os, sys, shutil, bz2, lzma
+from tqdm import tqdm
+
+# Faster gzip if present
+try:
+    from isal import igzip as gzmod
+except Exception:
+    import gzip as gzmod
+
+def _iter_fastq_with_progress(fastq_path, desc):
+    total_bytes = os.path.getsize(fastq_path)
+    raw = open(fastq_path, 'rb', buffering=1024 * 1024)
+
+    if fastq_path.endswith('.gz'):
+        fh = gzmod.GzipFile(fileobj=raw, mode='rb'); tell = raw.tell
+    elif fastq_path.endswith('.bz2'):
+        fh = bz2.BZ2File(raw); tell = raw.tell
+    elif fastq_path.endswith(('.xz', '.lzma')):
+        fh = lzma.LZMAFile(raw); tell = raw.tell
+    else:
+        fh = raw; tell = fh.tell
+
+    cols = shutil.get_terminal_size(fallback=(100, 20)).columns
+    # account for your desc length (expand tabs conservatively)
+    desc_display = desc.expandtabs(2)
+    # reserve ~40 chars for counters/ETA; cap bar width between 10 and 30
+    bar_cols = max(10, min(30, cols - 40 - len(desc_display)))
+    bar_format = (
+        f"{{desc}} |{{bar:{bar_cols}}}| {{percentage:3.0f}}% "
+        f"({{n_fmt}}/{{total_fmt}}) [{{elapsed}}<{{remaining}}]"
+    )
+
+    try:
+        with tqdm(
+            total=total_bytes,
+            file=sys.stdout,
+            ncols=cols,
+            bar_format=bar_format,
+            ascii=True,
+            position=0,
+            leave=False,
+            mininterval=0.20,
+            smoothing=0.1,
+            disable=not sys.stdout.isatty()
+        ) as pbar:
+            prev = tell()
+            r = fh.readline
+            while True:
+                title = r()
+                if not title:
+                    break
+                seq = r(); plus = r(); qual = r()
+
+                cur = tell(); delta = cur - prev
+                if delta > 0:
+                    pbar.update(delta); prev = cur
+
+                yield qual
+    finally:
+        try: fh.close()
+        finally:
+            if fh is not raw:
+                raw.close()
 
 class ProcQuality:
     def __init__(self, fastq_files, genome_size=None, plot_path='output_plots', sample=None, logfile=None):
@@ -27,83 +87,99 @@ class ProcQuality:
         self._process_fastq_files()
 
     def _process_fastq_files(self):
-        """ Process each fastq file to collect quality statistics separately 
-        Write important information to a log file"""
-
+        """Process each fastq file to collect quality statistics separately
+        Write important information to a log file
+        """
         log = self.log
         if self.sample:
             time_print(f'QC assessment for sample : {self.sample}', "Header")
             logger(log, f'QC assessment for sample : {self.sample}', "Header")
-        
-        info = f'Reading the quality data from fastq files using the python module "pyfastx" (version: {pyfastx.__version__})'
+
+        # Updated info messages (no pyfastx / no index)
+        info = ('Reading quality data from FASTQ by streaming (xopen or gzip), '
+                f'NumPy version: {np.__version__}')
         logger(log, info)
         time_print(info)
 
-        outinfo = f'Loading quality and base count data from the fastq files for easy arithmetic operations using the python module "Numpy" (version: {np.__version__})'
+        outinfo = ('Loading quality and base count data into NumPy for fast vectorized operations '
+                f'(NumPy {np.__version__})')
         logger(log, outinfo)
         time_print(outinfo)
 
-        for i, fastq_file in enumerate(self.fastq_files):
-            fq = pyfastx.Fastq(fastq_file)
-            file_total_bases = 0
-            file_num_reads = 0
-            file_quality_sum = 0
-            quality_counts_above_30 = []
-            quality_counts_20_to_30 = []
-            quality_counts_below_20 = []
-            total_counts = []
+        try:
+            for i, fastq_file in enumerate(self.fastq_files):
+                # Per-file accumulators — keep original variable names
+                file_total_bases = 0
+                file_num_reads = 0
+                file_quality_sum = 0
 
-            for read in tqdm(fq, desc=f"\t---> Processing file {i+1}/{len(self.fastq_files)}", unit=" reads", colour='yellow', bar_format='{l_bar}{bar:30} {n_fmt}/{total_fmt} [{elapsed} | {rate_fmt}{postfix}]'):
-                qualities = np.array([ord(char) - 33 for char in read.qual], dtype=np.int32)
-                file_total_bases += len(qualities)
-                file_num_reads += 1
-                file_quality_sum += qualities.sum()
+                # Positional quality tallies (grow as needed)
+                quality_counts_above_30 = np.zeros(0, dtype=np.int64)
+                quality_counts_20_to_30 = np.zeros(0, dtype=np.int64)
+                quality_counts_below_20 = np.zeros(0, dtype=np.int64)
+                total_counts = np.zeros(0, dtype=np.int64)
 
-                # Dynamically resize the arrays if the current read is longer than the initialized arrays
-                if len(quality_counts_above_30) < len(qualities):
-                    quality_counts_above_30 = np.pad(quality_counts_above_30, (0, len(qualities) - len(quality_counts_above_30)), 'constant')
-                    quality_counts_20_to_30 = np.pad(quality_counts_20_to_30, (0, len(qualities) - len(quality_counts_20_to_30)), 'constant')
-                    quality_counts_below_20 = np.pad(quality_counts_below_20, (0, len(qualities) - len(quality_counts_below_20)), 'constant')
-                    total_counts = np.pad(total_counts, (0, len(qualities) - len(total_counts)), 'constant')
+                desc = f"\t---> Processing file {i+1}/{len(self.fastq_files)}"
+                for qual in _iter_fastq_with_progress(fastq_file, desc=desc):
+                    # Vectorized Phred+33 decode
+                    # Strip newlines but keep as bytes for frombuffer
+                    qv = np.frombuffer(qual.rstrip(b"\r\n"), dtype=np.uint8).astype(np.int32) - 33
+                    L = qv.size
 
-                # Update quality counts
-                quality_counts_above_30[:len(qualities)] += (qualities >= 30)
-                quality_counts_20_to_30[:len(qualities)] += ((qualities >= 20) & (qualities < 30))
-                quality_counts_below_20[:len(qualities)] += (qualities < 20)
-                total_counts[:len(qualities)] += 1
+                    # Grow positional arrays if this read is longer than what we've seen
+                    if L > quality_counts_above_30.size:
+                        pad = L - quality_counts_above_30.size
+                        quality_counts_above_30 = np.pad(quality_counts_above_30, (0, pad))
+                        quality_counts_20_to_30 = np.pad(quality_counts_20_to_30, (0, pad))
+                        quality_counts_below_20 = np.pad(quality_counts_below_20, (0, pad))
+                        total_counts = np.pad(total_counts, (0, pad))
 
-            # Store quality counts and total counts for this file
-            self.file_quality_counts.append({
-                'above_30': quality_counts_above_30,
-                'between_20_and_30': quality_counts_20_to_30,
-                'below_20': quality_counts_below_20
-            })
-            self.total_counts.append(total_counts)
+                    # Update per-position categories (use original variable names)
+                    quality_counts_above_30[:L] += (qv >= 30)
+                    quality_counts_20_to_30[:L] += ((qv >= 20) & (qv < 30))
+                    quality_counts_below_20[:L] += (qv < 20)
+                    total_counts[:L] += 1
 
-            # Accumulate combined statistics
-            self.combined_total_bases += file_total_bases
-            self.combined_num_reads += file_num_reads
-            self.combined_quality_sum += file_quality_sum
+                    # Update per-file totals
+                    file_total_bases += L
+                    file_num_reads += 1
+                    file_quality_sum += int(qv.sum())
 
-            # Save individual file statistics
-            avg_quality = file_quality_sum / file_total_bases if file_total_bases > 0 else 0
-            perc_above_30 = (np.sum(quality_counts_above_30) / file_total_bases * 100) if file_total_bases > 0 else 0
-            perc_20_to_30 = (np.sum(quality_counts_20_to_30) / file_total_bases * 100) if file_total_bases > 0 else 0
-            perc_below_20 = (np.sum(quality_counts_below_20) / file_total_bases * 100) if file_total_bases > 0 else 0
-            coverage = file_total_bases / self.genome_size if self.genome_size else "N/A"
+                # Store quality counts and total counts for this file (original structure)
+                self.file_quality_counts.append({
+                    'above_30': quality_counts_above_30,
+                    'between_20_and_30': quality_counts_20_to_30,
+                    'below_20': quality_counts_below_20
+                })
+                self.total_counts.append(total_counts)
 
-            self.individual_stats.append({
-                'num_reads': file_num_reads,
-                'total_bases': file_total_bases,
-                'perc_above_30': perc_above_30,
-                'perc_20_to_30': perc_20_to_30,
-                'perc_below_20': perc_below_20,
-                'avg_quality': avg_quality,
-                'coverage': coverage
-            })
-            # Delete .fxi files to save space
-            if os.path.exists(f"{fastq_file}.fxi"):
-                os.remove(f"{fastq_file}.fxi")
+                # Accumulate combined statistics (original variables)
+                self.combined_total_bases += file_total_bases
+                self.combined_num_reads += file_num_reads
+                self.combined_quality_sum += file_quality_sum
+
+                # Save individual file statistics (original keys)
+                avg_quality = file_quality_sum / file_total_bases if file_total_bases > 0 else 0
+                perc_above_30 = (np.sum(quality_counts_above_30) / file_total_bases * 100) if file_total_bases > 0 else 0
+                perc_20_to_30 = (np.sum(quality_counts_20_to_30) / file_total_bases * 100) if file_total_bases > 0 else 0
+                perc_below_20 = (np.sum(quality_counts_below_20) / file_total_bases * 100) if file_total_bases > 0 else 0
+                coverage = file_total_bases / self.genome_size if self.genome_size else "N/A"
+
+                self.individual_stats.append({
+                    'num_reads': file_num_reads,
+                    'total_bases': file_total_bases,
+                    'perc_above_30': perc_above_30,
+                    'perc_20_to_30': perc_20_to_30,
+                    'perc_below_20': perc_below_20,
+                    'avg_quality': avg_quality,
+                    'coverage': coverage
+                })
+
+        except Exception as e:
+            error_info = f'Error processing FASTQ files: {e}'
+            logger(log, error_info)
+            time_print(error_info, "Fail")
+            raise
 
 
     def plot_quality_distribution(self):
@@ -152,7 +228,6 @@ class ProcQuality:
                 else:
                     ax.set_title("Base Quality Distribution", fontsize=14)
 
-
             # Add a legend to the first plot only
             axes[0].legend()
 
@@ -177,47 +252,57 @@ class ProcQuality:
         time_print(outinfo)
 
         metrics_plot = f"{self.plot_path}_metrics.png"
+        metrics_txt = f"{self.plot_path}_metrics.txt"
         if not os.path.exists(metrics_plot):
             num_files = len(self.fastq_files)
             fig2, metrics_ax = plt.subplots(figsize=(7, 2) if num_files == 2 else (1.5, 1))
             metrics_ax.axis('off')  # Hide axis
+            with open(metrics_txt, 'a') as metrics_file:
 
-            for i, stats in enumerate(self.individual_stats):
-                if num_files == 1 and self.genome_size:
-                    stats_text = (f"Tot reads: {stats['num_reads']:,}\n"
-                                f"Tot bases: {stats['total_bases']:,}\n"
-                                f"Q30+: {stats['perc_above_30']:.2f}%\n"
-                                f"Q20-29: {stats['perc_20_to_30']:.2f}%\n"
-                                f"Q<20: {stats['perc_below_20']:.2f}%\n"
-                                f"Avg Quality: {stats['avg_quality']:.2f}\n"
-                                f"Genome cov: {stats['coverage']:.2f}X")
-                else:
-                    stats_text = (f"Pair {i+1}:\n\n"
-                                f"Reads: {stats['num_reads']:,}\n"
-                                f"Bases: {stats['total_bases']:,}\n"
-                                f"Q30+: {stats['perc_above_30']:.2f}%\n"
-                                f"Q20-29: {stats['perc_20_to_30']:.2f}%\n"
-                                f"Q<20: {stats['perc_below_20']:.2f}%\n"
-                                f"Avg Quality: {stats['avg_quality']:.2f}\n")
+                for i, stats in enumerate(self.individual_stats):
+                    if num_files == 1 and self.genome_size:
+                        stats_text = (f"Tot reads: {stats['num_reads']:,}\n"
+                                    f"Tot bases: {stats['total_bases']:,}\n"
+                                    f"Q30+: {stats['perc_above_30']:.2f}%\n"
+                                    f"Q20-29: {stats['perc_20_to_30']:.2f}%\n"
+                                    f"Q<20: {stats['perc_below_20']:.2f}%\n"
+                                    f"Avg Quality: {stats['avg_quality']:.2f}\n"
+                                    f"Genome cov: {stats['coverage']:.2f}X")
+                        metrics_file.write(stats_text + "\n")
+                    else:
+                        stats_text = (f"Pair {i+1}:\n\n"
+                                    f"Reads: {stats['num_reads']:,}\n"
+                                    f"Bases: {stats['total_bases']:,}\n"
+                                    f"Q30+: {stats['perc_above_30']:.2f}%\n"
+                                    f"Q20-29: {stats['perc_20_to_30']:.2f}%\n"
+                                    f"Q<20: {stats['perc_below_20']:.2f}%\n"
+                                    f"Mean Quality: {stats['avg_quality']:.2f}\n")
+                        metrics_file.write(stats_text + "\n")
 
-                if i == 0:
-                    metrics_ax.text(0, 0.5, stats_text, fontsize=12, va='center', ha='left', 
+                    if i == 0:
+                        metrics_ax.text(0, 0.5, stats_text, fontsize=12, va='center', ha='left', 
+                                        bbox=dict(facecolor='white', edgecolor='black', boxstyle="round,pad=0.3"))
+                    else:
+                        metrics_ax.text(0.70, 0.5, stats_text, fontsize=12, va='center', ha='left', 
+                                        bbox=dict(facecolor='white', edgecolor='black', boxstyle="round,pad=0.3"))
+
+                if num_files == 2:
+                    combined_avg_quality = self.combined_quality_sum / self.combined_total_bases if self.combined_total_bases > 0 else 0
+                    combined_coverage = self.combined_total_bases / self.genome_size if self.genome_size else "N/A"
+                    comb_cov = f"{combined_coverage:.2f}X" if isinstance(combined_coverage, float) else combined_coverage
+
+                    print(f"Pair 1 + Pair 2:\n\nAvg Quality: {combined_avg_quality}\nTotal reads: {self.combined_num_reads}\nTotal bases: {self.combined_total_bases}\nGenome cov: {comb_cov}")
+
+                    combined_stats_text = (f"Pair 1 + Pair 2:\n\n"
+                                        f"Avg Quality: {combined_avg_quality:.2f}\n"
+                                        f"Total reads: {self.combined_num_reads:,}\n"
+                                        f"Total bases: {self.combined_total_bases:,}\n"
+                                        f"Genome cov: {comb_cov}")
+
+                    metrics_file.write(combined_stats_text + "\n")
+
+                    metrics_ax.text(0.31, 0.5, combined_stats_text, fontsize=12, va='center', ha='left', 
                                     bbox=dict(facecolor='white', edgecolor='black', boxstyle="round,pad=0.3"))
-                else:
-                    metrics_ax.text(0.70, 0.5, stats_text, fontsize=12, va='center', ha='left', 
-                                    bbox=dict(facecolor='white', edgecolor='black', boxstyle="round,pad=0.3"))
-
-            if num_files == 2:
-                combined_avg_quality = self.combined_quality_sum / self.combined_total_bases if self.combined_total_bases > 0 else 0
-                combined_coverage = self.combined_total_bases / self.genome_size if self.genome_size else "N/A"
-                combined_stats_text = (f"Pair 1 + Pair 2:\n\n"
-                                    f"Avg Quality: {combined_avg_quality:.2f}\n"
-                                    f"Total reads: {self.combined_num_reads:,}\n"
-                                    f"Total bases: {self.combined_total_bases:,}\n"
-                                    f"Genome cov: {combined_coverage:.2f}X")
-
-                metrics_ax.text(0.31, 0.5, combined_stats_text, fontsize=12, va='center', ha='left', 
-                                bbox=dict(facecolor='white', edgecolor='black', boxstyle="round,pad=0.3"))
 
             plt.tight_layout()
             plt.savefig(metrics_plot, dpi=300, bbox_inches='tight')

@@ -63,119 +63,121 @@ def filter_genome(input_fasta, output_fasta, min_length=500):
 
 def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile=None, gsize='5m', single=True):
     log = logfile
-    if single:
-        time_print(f'Assembling the genome for sample : {sample}', "Header")
-        logger(log, f'Assembling the genome for sample : {sample}', "Header")
-    
-    assembler = assembler.strip().lower()
-    if assembler == "unicycler":
-        tool = "unicycler"
-    elif assembler == "spades":
-        tool = "spades.py"
-    elif assembler == "flye":
-        tool = "flye"
-
-    # Get tool version
-    vercmd = f'{tool} --version'
-    stdout = subprocess.run(vercmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out = stdout.stdout.decode('utf-8')
-    version = out.split()[-1]
-
-    if single:
-        simple_print(f'\t---> Assembler: {assembler} (version: {version})')
-        simple_print(f'\t---> Number of fastq files: {len(reads)}')
-        simple_print(f'\t---> Number of CPUs: {cpus}\n')
-        
-        logger(log, f'\t---> Assembler: {assembler}', mode="simple")
-        logger(log, f'\t---> Number of fastq files: {len(reads)}', mode="simple")
-        logger(log, f'\t---> Number of CPUs: {cpus}\n', mode="simple")
-
-
-    if len(reads) == 2:
-        read1 = reads[0]
-        read2 = reads[1]
-    elif len(reads) == 1:
-        single_reads = reads[0]
-
-    # assembly_dir = os.path.join(outDir, 'assemblies')   
-    tempDir = os.path.join(assembly_dir, sample)
-    genomesDir = os.path.join(assembly_dir, 'genomes')
-    if not os.path.exists(genomesDir):
-        os.makedirs(genomesDir)
-
-    finalAssembly = os.path.join(genomesDir, sample + '.fasta')
-
-    if sequencer.lower() == "illumina":
-        if assembler == "unicycler":
-            if len(reads) == 2:
-                cmd1 = f'unicycler -1 {read1} -2 {read2} -o {tempDir} --threads {cpus}'
-            elif len(reads) == 1:
-                cmd1 = f'unicycler -s {single_reads} -o {tempDir} --threads {cpus}'
-            draft_assembly = f'{tempDir}/assembly.fasta'
-        elif assembler == "spades":
-            if len(reads) == 2:
-                cmd1 = f'spades.py --isolate -1 {read1} -2 {read2} -o {tempDir} --threads {cpus}'
-            elif len(reads) == 1:
-                cmd1 = f'spades.py --isolate -s {single_reads} -o {tempDir} --threads {cpus}'
-            draft_assembly = f'{tempDir}/scaffolds.fasta'
-        else:
-            return_info = f"Assembler {assembler} is not supported for Illumina reads. Please use Unicycler or Spades."
-            if single:
-                time_print(return_info, "Fail")
-                logger(log, return_info)
-            return
-    
-    elif sequencer.lower() == "nanopore":
-        if assembler == "unicycler":
-            cmd1 = f'unicycler -l {single_reads} -o {tempDir} --threads {cpus}'
-            draft_assembly = f'{tempDir}/assembly.fasta'
-        elif assembler == "flye":
-            cmd1 = f'flye --nano-raw {single_reads} --out-dir {tempDir} --threads {cpus} --asm-coverage 50 --g {gsize} --iterations 2'
-            draft_assembly = f'{tempDir}/assembly.fasta'
-        else:
-            return_info = f"Assembler {assembler} is not supported for Nanopore reads. Please use Unicycler or Flye."
-            if single:
-                time_print(return_info, "Fail")
-                logger(log, return_info)
-            return
-    
-    if not os.path.exists(finalAssembly):
-        # message1 = f'\t---> Assembling the reads for sample {sample}'
-        # print(message1)
-        info2 = f"Running the command: {cmd1}"
+    try:
         if single:
-            time_print(info2, s_type="command")
-            logger(log, info2, s_type="command")
-        execute = subprocess.run(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        # for line in execute.stdout.decode('utf-8').strip().split('\n'):
-        #     log.write(line + '\n')
+            time_print(f'Assembling the genome for sample : {sample}', "Header")
+            logger(log, f'Assembling the genome for sample : {sample}', "Header")
+        
+        assembler = assembler.strip().lower()
+        if assembler == "unicycler":
+            tool = "unicycler"
+        elif assembler == "spades":
+            tool = "spades.py"
+        elif assembler == "flye":
+            tool = "flye"
 
-        if execute.returncode != 0:
-            return_info = f"Assembly failed. Check the {assembler}'s log file for more details"
+        # Get tool version
+        vercmd = f'{tool} --version'
+        stdout = subprocess.run(vercmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out = stdout.stdout.decode('utf-8')
+        version = out.split()[-1]
+
+        if single:
+            simple_print(f'\t---> Assembler: {assembler} (version: {version})')
+            simple_print(f'\t---> Number of fastq files: {len(reads)}')
+            simple_print(f'\t---> Number of CPUs: {cpus}\n')
+            
+            logger(log, f'\t---> Assembler: {assembler}', mode="simple")
+            logger(log, f'\t---> Number of fastq files: {len(reads)}', mode="simple")
+            logger(log, f'\t---> Number of CPUs: {cpus}\n', mode="simple")
+
+
+        if len(reads) == 2:
+            read1 = reads[0]
+            read2 = reads[1]
+        elif len(reads) == 1:
+            single_reads = reads[0]
+
+        # assembly_dir = os.path.join(outDir, 'assemblies')   
+        tempDir = os.path.join(assembly_dir, sample)
+        genomesDir = os.path.join(assembly_dir, 'genomes')
+        if not os.path.exists(genomesDir):
+            os.makedirs(genomesDir)
+
+        finalAssembly = os.path.join(genomesDir, sample + '.fasta')
+
+        if sequencer.lower() == "illumina":
+            if assembler == "unicycler":
+                if len(reads) == 2:
+                    cmd1 = f'unicycler -1 {read1} -2 {read2} -o {tempDir} --threads {cpus}'
+                elif len(reads) == 1:
+                    cmd1 = f'unicycler -s {single_reads} -o {tempDir} --threads {cpus}'
+                draft_assembly = f'{tempDir}/assembly.fasta'
+            elif assembler == "spades":
+                if len(reads) == 2:
+                    cmd1 = f'spades.py --isolate -1 {read1} -2 {read2} -o {tempDir} --threads {cpus}'
+                elif len(reads) == 1:
+                    cmd1 = f'spades.py --isolate -s {single_reads} -o {tempDir} --threads {cpus}'
+                draft_assembly = f'{tempDir}/scaffolds.fasta'
+            else:
+                return_info = f"Assembler {assembler} is not supported for Illumina reads. Please use Unicycler or Spades."
+                if single:
+                    time_print(return_info, "Fail")
+                    logger(log, return_info)
+                return
+        
+        elif sequencer.lower() == "nanopore":
+            if assembler == "unicycler":
+                cmd1 = f'unicycler -l {single_reads} -o {tempDir} --threads {cpus}'
+                draft_assembly = f'{tempDir}/assembly.fasta'
+            elif assembler == "flye":
+                cmd1 = f'flye --nano-raw {single_reads} --out-dir {tempDir} --threads {cpus} --asm-coverage 50 --g {gsize} --iterations 2'
+                draft_assembly = f'{tempDir}/assembly.fasta'
+            else:
+                return_info = f"Assembler {assembler} is not supported for Nanopore reads. Please use Unicycler or Flye."
+                if single:
+                    time_print(return_info, "Fail")
+                    logger(log, return_info)
+                return
+        
+        if not os.path.exists(finalAssembly):
+            # message1 = f'\t---> Assembling the reads for sample {sample}'
+            # print(message1)
+            info2 = f"Running: {cmd1}"
             if single:
+                time_print(info2, s_type="command")
+                logger(log, info2, s_type="command")
+            execute = subprocess.run(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+            if execute.returncode != 0:
+                return_info = f"Assembly failed for {sample}: exit {execute.returncode}"
                 time_print(return_info, "Fail")
                 logger(log, return_info) #" Check the log file for more details.")
-            return
+                return
+            else:
+                return_info = f"Command exit status: Success!"
+                if single:
+                    time_print(return_info, "Pass")
+                    logger(log, return_info)
+            
+            # Filter the genome to remove smaller contigs
+            filter_genome(input_fasta=draft_assembly, output_fasta=finalAssembly, min_length=400)
         else:
-            return_info = f"Command exit status: Success!"
+            message2 = f'The assembly file for the sample {sample} exists already. Skipping the assembly!\n'
+            # log.write(message2 + '\n')
             if single:
-                time_print(return_info, "Pass")
-                logger(log, return_info)
-        
-        # Filter the genome to remove smaller contigs
-        filter_genome(input_fasta=draft_assembly, output_fasta=finalAssembly, min_length=400)
-    else:
-        message2 = f'The assembly file for the sample {sample} exists already. Skipping the assembly!\n'
-        # log.write(message2 + '\n')
-        if single:
-            time_print(message2)
-            logger(log, message2)
+                time_print(message2)
+                logger(log, message2)
 
-    outinfo = f'Done with Assembly :: Assembly file: {finalAssembly}\n'
-    if single:
-        time_print(outinfo, "Pass")
-        logger(log, outinfo)
-                  
+        outinfo = f'Done with Assembly :: Assembly file: {finalAssembly}\n'
+        if single:
+            time_print(outinfo, "Pass")
+            logger(log, outinfo)
+    except Exception as e:
+        time_print(f"Unexpected error in assemble for {sample}: {e}", "Fail")
+        logger(log, f"Unexpected error in assemble for {sample}: {e}")
+        return
+                            
 def checkM_stats(genomes_dir, outdir, cpus=24, logfile=None):
     log = logfile
     if not os.path.exists(outdir):
@@ -186,6 +188,7 @@ def checkM_stats(genomes_dir, outdir, cpus=24, logfile=None):
     stdout = subprocess.run(vercmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if stdout.returncode != 0:
         message = f"CheckM is not installed. Please install CheckM to proceed"
+        logger(log, message)
         return
     else:
         out = stdout.stdout.decode('utf-8')
@@ -211,7 +214,7 @@ def checkM_stats(genomes_dir, outdir, cpus=24, logfile=None):
                 time_print(message)
                 checkM_done = True
     if not checkM_done:
-        info3 = f"Running the command: {cmd}"
+        info3 = f"Running: {cmd}"
         time_print(info3, s_type='command')
         logger(log, info3, s_type='command')
         execute = subprocess.run(cmd, shell=True)
@@ -241,7 +244,7 @@ def make_summary(qc_summary, temp_qc_summary, header, checkm_out, logfile=None):
             writer.writerow([line])
         writer.writerow(["Quality Summary"])
         writer.writerow([""])
-        writer.writerow(["Sample",  "Mean_quality", "Expected organism", "Identified organism", "% Match", "Coverage Depth", "Min depth", "CheckM completeness", "CheckM contamination", "Overall Quality"])
+        writer.writerow(["Sample ID",  "Mean_quality", "Expected organism", "Identified organism", "% Match", "Coverage Depth", "Required depth", "CheckM completeness", "CheckM contamination", "Overall Quality"])
         for line in temp_sum:
             sample, avqc, qc_verdict, organism, hit, match, coverage, min_depth, cov_verdict, tax_confirm = line.strip().split("\t")
             if sample in ["Sample", "Lambda"]:
@@ -255,13 +258,14 @@ def make_summary(qc_summary, temp_qc_summary, header, checkm_out, logfile=None):
                 completeness_verdict = "Fail"
                 contamination_verdict = "Fail"
 
-            if any([qc_verdict == "Fail", cov_verdict == "Fail", tax_confirm == "Fail", tax_confirm == "N/A", completeness_verdict == "Fail", contamination_verdict == "Fail"]):
+            if any([qc_verdict == "Fail", cov_verdict == "Fail", tax_confirm == "Fail",  completeness_verdict == "Fail", contamination_verdict == "Fail"]):
                 final_verdict = "Fail"
             else:
                 final_verdict = "Pass"
-            cov_display = f'{float(coverage):.2f}' if coverage != 'N/A' else 'N/A'
+            coverage = coverage.replace("X", "")
+            cov_display = f'{float(coverage):.2f}X' if coverage != 'N/A' else 'N/A'
 
-            writer.writerow([sample, f'{float(avqc):.2f}', organism, hit, match, cov_display, min_depth, completeness, contamination, final_verdict])
+            writer.writerow([sample, f'{float(avqc):.2f}', organism, hit, match, cov_display, f"{min_depth}X", completeness, contamination, final_verdict])
 
             simple_print(f'{sample} :: QC {final_verdict}!\n', final_verdict)
             logger(log, f'{sample} :: QC {final_verdict}!', final_verdict, mode="simple")

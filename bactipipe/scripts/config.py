@@ -5,6 +5,18 @@ from datetime import datetime, timedelta
 CONFIG_DIR = os.path.expanduser("~/.bactipipe")
 CONFIG_PATH = os.path.join(CONFIG_DIR, "config.json")
 
+# Fallback to the “data” folder inside the package
+PACKAGE_DIR      = os.path.dirname(__file__)            # .../bactipipe/scripts
+DEFAULT_DATA_DIR = os.path.normpath(os.path.join(PACKAGE_DIR, "..", "data"))
+
+# In Docker it will be /opt/bactipipe/data)
+# otherwise fall back to the shipped data folder.
+DATA_DIR = os.environ.get("BACTIPIPE_DB_DIR", DEFAULT_DATA_DIR)
+
+# CHECKM_DATA_DIR      = os.path.join(DATA_DIR, "checkm_data")
+# KMERFINDER_DB_PARENT = os.path.join(DATA_DIR, "kmerfinder_db")
+
+
 DEFAULT_CONFIG = {
     "last_update_check": None,
     "update_check_interval_days": 60
