@@ -177,10 +177,13 @@ for line in sample_info:
     if line.startswith("#"):
         continue  # Skip comment lines
     sample, organism = line.strip().split('\t')
+    logger(log, f"Validating sample: {sample}, organism: {organism}")
     if organism.strip() not in bacteria and organism.lower() not in ["organism", "unknown"]:
         time_print(f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
         logger(log, f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
         bad_organisms.append(f"{sample}:{organism}")
+    else:
+        print(f"Organism [{organism.strip()}] for sample {sample} is valid.")
     if not sample in ','.join(os.listdir(raw_reads)) and sample != "sample_ID":
         time_print(f"WARNING: Sample [{sample}] does not have corresponding fastq files", "Fail")
         logger(log, f"WARNING: Sample [{sample}] does not have corresponding fastq files")
@@ -189,8 +192,6 @@ for line in sample_info:
 if bad_organisms:
     time_print("WARNING: Invalid organism names may cause QC failures.", "Fail")
     logger(log, "WARNING: Invalid organism names may cause QC failures.")
-
-    # sys.exit(1)
 
 if bad_samples:
     b_s = ", ".join(bad_samples)
@@ -334,7 +335,6 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
                 best_other_hit = hit.split(" --- ")[0].split(": ")[1]
                 best_other_org = best_other_hit.split(" (")[0]
                 best_other_percent = best_other_hit.split(" (")[1].strip(")")
-
             # Update coverage for samples with pre-unknown organisms
             if coverage == "N/A" and organism != "unknown":
                 if best_org:
