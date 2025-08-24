@@ -264,7 +264,7 @@ else:
             time_print("Sample list file must have three columns: sample, organism, barcode.", "Fail")
             sys.exit(1)
 
-# Load pathogenic bacteria information
+# Load pathogenPlease coic bacteria information
 bacteria = {}
 org_list = resource_files('bactipipe.data').joinpath('pathogenic_bacteria.txt')
 
@@ -287,8 +287,8 @@ for line in sample_info:
         continue
     sample, organism, barcode = line.strip().split('\t')
     if organism.strip() not in bacteria and organism.lower() not in [ "lambda", "organism", "unknown"]:
-        logger(log, f"Organism for sample {sample} is not a valid organism name")
-        time_print(f"Organism for sample {sample} is not a valid organism name", "Fail")
+        logger(log, f"WARNING: Organism for sample {sample} is not a valid organism name")
+        time_print(f"WARNING: Organism for sample {sample} is not a valid organism name")
         bad_organisms.append(f"{sample}:{organism}")
     
     if not sample in os.listdir(source) and barcode.replace("NB", "barcode") not in os.listdir(source):
@@ -308,17 +308,16 @@ for line in sample_info:
         time_print(f"Barcode for sample {sample} is not in the correct format.", "Fail")
         bad_barcodes.append(f"{sample}:{barcode}")
 
-if bad_organisms or bad_barcodes:
+if bad_barcodes:
     logger(log, "The sample sheet is not formatted correctly. Please correct the following issues:")
-    time_print("The sample sheet is not formatted correctly. Please correct the following issues:", "Fail")
-    if bad_organisms:
-        logger(log, f" --> Invalid organisms: {', '.join(bad_organisms)}")
-        time_print(f" --> Invalid organisms: {', '.join(bad_organisms)}")
-    if bad_barcodes:
-        logger(log, f" --> Invalid barcodes: {', '.join(bad_barcodes)}")
-        time_print(f" --> Invalid barcodes: {', '.join(bad_barcodes)}")
+    time_print("The sample sheet is not formatted correctly. rrect the following issues:", "Fail")
+    logger(log, f" --> Invalid barcodes: {', '.join(bad_barcodes)}")
+    time_print(f" --> Invalid barcodes: {', '.join(bad_barcodes)}")
     sys.exit(1)
 
+if bad_organisms:
+    time_print("WARNING: Invalid organism names may cause QC failures.", "Fail")
+    logger(log, "WARNING: Invalid organism names may cause QC failures.")
 
 if bad_samples:
     b_s = ", ".join(bad_samples)
@@ -511,6 +510,14 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
         if line.startswith("#"):
             continue
         sample, organism, barcode = line.strip().split('\t')
+
+        if organism not in bacteria:
+            sys_organism = "unknown"
+            genome_size = None
+        else:
+            sys_organism = organism
+            genome_size = 48502 if organism == "Lambda" else bacteria.get(organism, None)  
+
         genome = os.path.join(outDir, "assemblies", "genomes", f"{sample}.fasta")
         if not os.path.exists(genome) or os.path.getsize(genome) == 0:
             time_print(f"WARNING: Sample {sample} does not have a valid genome file. Skipping.", "Fail")
@@ -545,7 +552,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             qc_verdict = "Fail"
         else:
             qc_verdict = "Pass"
-        genome_size = 48502 if organism == "Lambda" else bacteria.get(organism, None)
+
         if genome_size:
             coverage = total_bases/genome_size
             cov_display = f"{coverage:.2f}"
@@ -559,18 +566,35 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             cov_display = "N/A"
 
         # Find organism 
-        hit, tax_confirm, possibilities = find_organism.find_species_with_kmrf(s_name=sample, lab_species=organism, genome=genome, dataOut=outDir, org_type="bacteria", logfile=log)
+        hit, tax_confirm, possibilities = find_organism.find_species_with_kmrf(s_name=sample, lab_species=sys_organism, genome=genome, dataOut=outDir, org_type="bacteria", logfile=log)
 
-        if tax_confirm == "Pass":
+        best_org = None
+        best_percent = None
+        best_other_org = None
+        if tax_confirm == "Pass" or tax_confirm == "N/A":
             best_org = hit.split(" (")[0]
             best_percent = hit.split(" (")[1].strip(")")
-            writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, cov_display, mincov, cov_verdict, tax_confirm])
         else:
             best_other_hit = hit.split(" --- ")[0].split(": ")[1]
             best_other_org = best_other_hit.split(" (")[0]
             best_other_percent = best_other_hit.split(" (")[1].strip(")")
+
+        # Update coverage for samples with pre-unknown organisms
+        if coverage == "N/A" and organism != "unknown":
+            if best_org:
+                identified_org = best_org
+            elif best_other_org:
+                identified_org = best_other_org
+            if identified_org in bacteria:
+                g_size = bacteria.get(identified_org, None)[0]
+                coverage = total_bases / int(g_size)
+                cov_display = f"{coverage:.2f}X"
+
+        if best_org:
+            writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, cov_display, mincov, cov_verdict, tax_confirm])
+        else:
             writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, f'Closest: {best_other_org}', best_other_percent, cov_display, mincov, cov_verdict, tax_confirm])
-              
+
 # Assess Genome Quality with CheckM
 genomes_dir = os.path.join(outDir, "assemblies", "genomes")
 checkm_dir = os.path.join(outDir, "checkM")
