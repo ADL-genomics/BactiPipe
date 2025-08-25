@@ -78,14 +78,11 @@ def process_sample(line):
 
     sample, organism, barcode = line.strip().split('\t')
     barcode = barcode.replace("NB", "barcode")
-
     # Determine genome size as a float, raising an error if unknown
     if organism == "Lambda":
         genome_size = 48502
-    elif organism.lower() == "unknown":
-        genome_size = 5e6 # Placeholder for unknown organisms/ Recalculate after assembly
     else:
-        size = bacteria.get(organism)
+        size = bacteria.get(organism, 5e6) # Placeholder for unknown organisms/ Recalculate after assembly
         if size is None:
             raise ValueError(f"Unknown organism: {organism}")
         genome_size = int(size)
@@ -287,8 +284,8 @@ for line in sample_info:
         continue
     sample, organism, barcode = line.strip().split('\t')
     if organism.strip() not in bacteria and organism.lower() not in [ "lambda", "organism", "unknown"]:
-        logger(log, f"WARNING: Organism for sample {sample} is not a valid organism name")
-        time_print(f"WARNING: Organism for sample {sample} is not a valid organism name")
+        logger(log, f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
+        time_print(f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
         bad_organisms.append(f"{sample}:{organism}")
     
     if not sample in os.listdir(source) and barcode.replace("NB", "barcode") not in os.listdir(source):
@@ -364,7 +361,6 @@ if sample_info[0].startswith('#'):
     sample_lines = [line.strip() for line in sample_info[1:]]
 else:
     sample_lines = sample_info
-
 
 # QC stage (multiprocessing) ----
 q_bar_fmt = '{l_bar} {bar:40} {n_fmt}/{total_fmt} [{elapsed}{postfix}]'
