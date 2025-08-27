@@ -2,7 +2,6 @@ import os
 import subprocess
 from bactipipe.scripts.utils import fastq_metrics, filtlong_with_metrics, merge_gz_fastqs, merge_gz_fastqs_s3, logger as file_logger
 
- 
 def qc_nano(
     fastq_file=None,
     raw_folder=None,
@@ -25,7 +24,6 @@ def qc_nano(
     def log(msg, level="Norm", mode="timestamp"):
         file_logger(worker_log, msg, message_type=level, mode=mode)
 
-
     log(f"[{s_name}] Starting QC for {s_name} with genome size {genome_size} and min coverage {min_coverage}X.")
 
     if s3 and not bucket:
@@ -37,29 +35,28 @@ def qc_nano(
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         output_fastq = os.path.join(output_dir, output_fastq)
-
-        if raw_folder:
-            fastq_file = os.path.join(output_dir, os.path.basename(raw_folder) + ".fastq.gz")
-            log(f"Processing: {os.path.basename(raw_folder)}--->{os.path.basename(output_fastq)}\n")
-            clutter.append(fastq_file)
-            log(f"[{s_name}] Consolidating nanopore raw reads into one file...")
-            if not os.path.exists(fastq_file):
-                if s3:
-                    s3_glob = f"s3://{bucket}/{raw_folder}/*.fastq.gz"
-                    if not merge_gz_fastqs_s3(s3_glob, fastq_file, concurrency=32):
-                        return
-
-                elif not merge_gz_fastqs(raw_folder, fastq_file):
-                    return
-                
-            else:
-                log(f"File {fastq_file} already exists. Skipping consolidation.")
-        else:
-            log(f"Processing: {os.path.basename(fastq_file)} ---> {os.path.basename(output_fastq)}\n")
-
-        # Step 1: Compute raw FASTQ metrics
         final_qual_file = os.path.join(output_dir, "quality_metrics.txt")
         if not os.path.exists(final_qual_file):
+            if raw_folder:
+                fastq_file = os.path.join(output_dir, os.path.basename(raw_folder) + ".fastq.gz")
+                log(f"Processing: {os.path.basename(raw_folder)}--->{os.path.basename(output_fastq)}\n")
+                clutter.append(fastq_file)
+                log(f"[{s_name}] Consolidating nanopore raw reads into one file...")
+                if not os.path.exists(fastq_file):
+                    if s3:
+                        s3_glob = f"s3://{bucket}/{raw_folder}/*.fastq.gz"
+                        if not merge_gz_fastqs_s3(s3_glob, fastq_file, concurrency=32):
+                            return
+
+                    elif not merge_gz_fastqs(raw_folder, fastq_file):
+                        return
+                    
+                else:
+                    log(f"File {fastq_file} already exists. Skipping consolidation.")
+            else:
+                log(f"Processing: {os.path.basename(fastq_file)} ---> {os.path.basename(output_fastq)}\n")
+
+            # Step 1: Compute raw FASTQ metrics
             log(f"[{s_name}] Computing quality metrics for raw reads...")
             
             try:
@@ -133,19 +130,16 @@ def qc_nano(
                 log(f"[{s_name}] Quality threshold not met. Average quality: {new_mean_quality:.2f}.", "Warn")
 
             log(f"[{s_name}] Trimmed reads saved to {output_fastq} with {trim_coverage}X coverage and average quality {new_mean_quality:.2f}.")
-
             # Cleanup
             log(f"[{s_name}] Cleaning up intermediate files...")
             for item in clutter:
-               if os.path.exists(item):
-                   if os.path.isdir(item):
-                       subprocess.run(["rm", "-r", item])
-                   else:
-                       os.remove(item)
-
+                if os.path.exists(item):
+                    if os.path.isdir(item):
+                        subprocess.run(["rm", "-r", item])
+                    else:
+                        os.remove(item)
             if coverage_target < min_coverage:
                 log(f"[{s_name}] Unable to achieve {min_avg_quality} average quality with minimum coverage of {min_coverage}X.")
-
         else:
             log(f"[{s_name}] Quality metrics file already exists. Skipping quality assessment.")
 
