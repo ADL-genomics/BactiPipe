@@ -526,7 +526,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             lines = qcF.readlines()
         
         # Extract total bases
-        bases_line = next((l for l in lines if "Total bases:" in l), None)
+        bases_line = next((l for l in lines if "Trimmed Total Bases:" in l), None)
         if bases_line is None:
             bases_line = next((l for l in lines if "Raw Total Bases:" in l), None)
         if bases_line is None:
@@ -551,7 +551,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
 
         if genome_size:
             coverage = total_bases/genome_size
-            cov_display = f"{coverage:.2f}"
+            cov_display = f"{coverage:.2f}X"
             if coverage >= mincov:
                 cov_verdict = "Pass"
             else:
@@ -576,7 +576,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             best_other_percent = best_other_hit.split(" (")[1].strip(")")
 
         # Update coverage for samples with pre-unknown organisms
-        if coverage == "N/A" and organism != "unknown":
+        if coverage == "N/A":# and organism != "unknown":
             if best_org:
                 identified_org = best_org
             elif best_other_org:

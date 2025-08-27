@@ -70,7 +70,7 @@ args = parser.parse_args()
 sample_list = os.path.abspath(args.sample_sheet)
 run_name = args.run_name
 raw_reads = os.path.abspath(args.fastq_dir)
-raw_reads = os.path.join(raw_reads, run_name)
+# raw_reads = os.path.join(raw_reads, run_name)
 tech_name = args.name
 
 outDir = os.path.join(args.outdir, run_name)
@@ -177,13 +177,11 @@ for line in sample_info:
     if line.startswith("#"):
         continue  # Skip comment lines
     sample, organism = line.strip().split('\t')
-    logger(log, f"Validating sample: {sample}, organism: {organism}")
     if organism.strip() not in bacteria and organism.lower() not in ["organism", "unknown"]:
         time_print(f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
         logger(log, f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
         bad_organisms.append(f"{sample}:{organism}")
-    else:
-        print(f"Organism [{organism.strip()}] for sample {sample} is valid.")
+
     if not sample in ','.join(os.listdir(raw_reads)) and sample != "sample_ID":
         time_print(f"WARNING: Sample [{sample}] does not have corresponding fastq files", "Fail")
         logger(log, f"WARNING: Sample [{sample}] does not have corresponding fastq files")
@@ -242,6 +240,8 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
     # with open(sample_list, 'r') as sampL:
     for line in sample_info:
         sample, organism = line.strip().split('\t')
+        if sample in bad_samples:
+            continue
         fastqs = get_fastqs(sample, raw_reads)
         if organism not in bacteria:
             sys_organism = "unknown"
@@ -336,7 +336,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
                 best_other_org = best_other_hit.split(" (")[0]
                 best_other_percent = best_other_hit.split(" (")[1].strip(")")
             # Update coverage for samples with pre-unknown organisms
-            if coverage == "N/A" and organism != "unknown":
+            if coverage == "N/A":# and organism != "unknown":
                 if best_org:
                     identified_org = best_org
                 elif best_other_org:
