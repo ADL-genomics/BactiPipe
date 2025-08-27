@@ -582,7 +582,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             elif best_other_org:
                 identified_org = best_other_org
             if identified_org in bacteria:
-                g_size = bacteria.get(identified_org, None)[0]
+                g_size = bacteria.get(identified_org, None)
                 coverage = total_bases / int(g_size)
                 cov_display = f"{coverage:.2f}X"
 
