@@ -376,13 +376,10 @@ process_map(
 )
 
 # Count the number of samples that passed QC
-passed_samples = [sample for sample in os.listdir(qc_out) if os.path.exists(os.path.join(qc_out, sample, sample + ".fastq")) and os.path.exists(os.path.join(qc_out, sample, "quality_metrics.txt"))]
+passed_samples = [sample for sample in os.listdir(qc_out) if os.path.exists(os.path.join(qc_out, sample, "quality_metrics.txt"))]
 
 passed_number = len(passed_samples)
-pass_msg = f"Available for assembly: {passed_number} of {sample_number} samples."
 print()
-time_print(pass_msg, "Pass")
-logger(log, pass_msg)
 
 if len(passed_samples) == 0:
     time_print("No samples passed QC. Exiting pipeline.", "Fail")
@@ -390,7 +387,7 @@ if len(passed_samples) == 0:
     sys.exit(1)
 
 # Print samples that failed QC
-failed_samples = [sample for sample in os.listdir(qc_out) if not os.path.exists(os.path.join(qc_out, sample, f"{sample}.fastq")) and sample != "temp_qc_summary.tsv"]
+failed_samples = [sample for sample in os.listdir(qc_out) if not os.path.exists(os.path.join(qc_out, sample, "quality_metrics.txt")) and sample != "temp_qc_summary.tsv"]
 
 if failed_samples:
     print()
@@ -404,7 +401,18 @@ assembly_start_msg = "Genome Assembly for samples that passed QC"
 time_print(assembly_start_msg, "Header")
 logger(log, assembly_start_msg, "Header")
 
-fastq_files = [os.path.join(qc_out, sample, f"{sample}.fastq") for sample in os.listdir(qc_out) if os.path.exists(os.path.join(qc_out, sample, f"{sample}.fastq"))]
+fastq_files = []
+for sample in os.listdir(qc_out):
+    p_fastq = os.path.join(qc_out, sample, f"{sample}.fastq")
+    p_gz = os.path.join(qc_out, sample, f"{sample}.fastq.gz")
+    if os.path.exists(p_fastq):
+        fastq_files.append(p_fastq)
+    elif os.path.exists(p_gz):
+        fastq_files.append(p_gz)
+
+pass_msg = f"Available for assembly: {len(fastq_files)} of {sample_number} samples."
+time_print(pass_msg, "Pass")
+logger(log, pass_msg)
 
 genomes_dir = os.path.join(outDir, "assemblies", "genomes")
 if not os.path.exists(genomes_dir):
@@ -413,16 +421,16 @@ if not os.path.exists(genomes_dir):
 existing_genomes = [f.split(".")[0] for f in os.listdir(genomes_dir) if f.endswith(".fasta") and os.path.getsize(os.path.join(genomes_dir, f)) > 0]
 
 if len(existing_genomes) == 0:
-    num_to_assemble = passed_number
+    num_to_assemble = len(fastq_files)
     assembly_input = [[sample, fastq] for sample in os.listdir(qc_out) 
                       for fastq in fastq_files 
                       if os.path.basename(fastq).startswith(sample)]
 
-    print(f"  ---> Genomes for {passed_number} samples will be assembled.")
-    logger(log, f"  ---> Genomes for {passed_number} samples will be assembled.")
+    print(f"  ---> Genomes for {len(fastq_files)} samples will be assembled.")
+    logger(log, f"  ---> Genomes for {len(fastq_files)} samples will be assembled.")
 
-elif len(existing_genomes) > 0 and len(existing_genomes) < passed_number:
-    num_to_assemble = passed_number - len(existing_genomes)
+elif len(existing_genomes) > 0 and len(existing_genomes) < len(fastq_files):
+    num_to_assemble = len(fastq_files) - len(existing_genomes)
     assembly_input = [[sample, fastq] for sample in os.listdir(qc_out) 
                       for fastq in fastq_files 
                       if os.path.basename(fastq).startswith(sample)]
@@ -531,6 +539,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             bases_line = next((l for l in lines if "Raw Total Bases:" in l), None)
         if bases_line is None:
             logger(log, f"Total bases line not found in QC metrics for sample {sample}")
+            time_print(f"Total bases line not found in QC metrics for sample {sample}", "Fail")
             continue
         total_bases = int(float(bases_line.split(":")[1].strip().replace(",", "")))
 
@@ -540,6 +549,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             qual_line = next((l for l in lines if "Raw Mean Read Quality:" in l), None)
         if qual_line is None:
             logger(log, f"Mean read quality line not found in QC metrics for sample {sample}")
+            time_print(f"Mean read quality line not found in QC metrics for sample {sample}", "Fail")
             continue
         total_bases = int(float(bases_line.split(":")[1].strip().replace(",", "")))
         avqc = float(qual_line.split(":")[1].strip())

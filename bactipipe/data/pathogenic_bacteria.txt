@@ -90,7 +90,7 @@
 70856	4676189	NZ_CAWQDX000000000	Aeromonas popoffii
 948519	4504821	NZ_JBHFFG000000000	Aeromonas rivipollensis
 648794	4531124	NZ_CDBJ00000000	Aeromonas rivuli
-645	4764100	NZ_JADKRF000000000	Aeromonas salmonicida subsp. salmonicida
+645	4764100	NZ_JADKRF000000000	Aeromonas salmonicida
 652	4400034	NZ_CP013067	Aeromonas schubertii
 218936	4006273	NZ_JAMJQG000000000	Aeromonas simiae
 646	4465192	NZ_CAMTHQ000000000	Aeromonas sobria
@@ -153,7 +153,7 @@
 64104	5629087	NZ_VELP00000000	Bacillus pseudomycoides
 1408	3688733	NZ_VTEO00000000	Bacillus pumilus
 2715209	4510026	NZ_JABUXO000000000	Bacillus rugosus
-561879	3723436	NZ_CP172339	Bacillus safensis subsp. safensis
+561879	3723436	NZ_CP172339	Bacillus safensis
 1983719	4440119	NZ_CP084703	Bacillus shivajii
 659243	4020075	NZ_CP101610	Bacillus siamensis
 1479	3244746	NZ_BCVY00000000	Bacillus smithii
@@ -215,13 +215,13 @@
 165694	1751757	NZ_JBCAUL000000000	Bartonella schoenbuchensis
 33046	2018620	NZ_CADEAG000000000	Bartonella taylorii
 85701	2212063	NZ_CADDYI000000000	Bartonella tribocorum
-33047	1939248	NZ_CADEAJ000000000	Bartonella vinsonii subsp. vinsonii
+33047	1939248	NZ_CADEAJ000000000	Bartonella vinsonii
 47735	2402510	NZ_RRUC00000000	Bibersteinia trehalosi
 1687	1734546	NZ_CP006018	Bifidobacterium indicum
 638619	1830060	NZ_CP011786	Bifidobacterium actinocoloniiforme
 1680	2291597	NZ_AP031418	Bifidobacterium adolescentis
 1683	2030049	NZ_JBDFYL000000000	Bifidobacterium angulatum
-28025	2089535	NZ_JAGGCX000000000	Bifidobacterium animalis subsp. lactis
+28025	2089535	NZ_JAGGCX000000000	Bifidobacterium animalis
 3059038	2359920	NZ_CP129674	Bifidobacterium aquikefiricola
 1684	2167340	NZ_QGLK00000000	Bifidobacterium asteroides
 1681	2395154	NZ_CAAKNT000000000	Bifidobacterium bifidum
@@ -237,7 +237,7 @@
 216816	2470342	NZ_JBAMGP000000000	Bifidobacterium longum
 28026	2238113	NZ_JBAMGM000000000	Bifidobacterium pseudocatenulatum
 1694	2053787	NZ_RAYV00000000	Bifidobacterium pseudolongum
-78448	2073298	NZ_JACJMI000000000	Bifidobacterium pullorum subsp. saeculare
+78448	2073298	NZ_JACJMI000000000	Bifidobacterium pullorum
 762210	2773425	NZ_JDUT00000000	Bifidobacterium saguini
 158787	3100929	NZ_JAWGGU000000000	Bifidobacterium scardovii
 77635	2765266	NZ_AUFH00000000	Bifidobacterium subtile
@@ -340,17 +340,17 @@
 28898	1880762	NZ_VRMA00000000	Campylobacter helveticus
 1813019	1484469	NZ_QURV00000000	Campylobacter hepaticus
 76517	1716948	NZ_UFUL00000000	Campylobacter hominis
-198	1796518	NZ_VZON00000000	Campylobacter hyointestinalis subsp. lawsonii
+198	1796518	NZ_VZON00000000	Campylobacter hyointestinalis
 1244531	1809624	NZ_CP010995	Campylobacter iguaniorum
 260714	1473106	NZ_JANPQZ000000000	Campylobacter insulaenigrae
 197	1622307	NZ_JBFMKU000000000	Campylobacter jejuni
 75658	1478134	NZ_JALFUF000000000	Campylobacter lanienae
-201	1465880	NZ_VZOP00000000	Campylobacter lari subsp. concheus
+201	1465880	NZ_VZOP00000000	Campylobacter lari
 202	1833570	NZ_LIWN00000000	Campylobacter mucosalis
 2267891	1493169	NZ_JAENKU000000000	Campylobacter novaezeelandiae
 1848766	1668500	NZ_LXSU00000000	Campylobacter ornithocola
 488546	1704518	NZ_VOWB00000000	Campylobacter peloridis
-1965231	1782665	NZ_CP012546	Campylobacter pinnipediorum subsp. pinnipediorum
+1965231	1782665	NZ_CP012546	Campylobacter pinnipediorum
 1660073	1634329	NZ_MJLI00000000	Campylobacter porcelli
 203	2491340	NZ_RQYP00000000	Campylobacter rectus
 204	2229356	NZ_CALEYF000000000	Campylobacter showae
@@ -436,7 +436,7 @@
 84032	4505652	NZ_NIOK00000000	Clostridium thermosuccinogenes
 1519	2992947	NZ_JAEKIT000000000	Clostridium tyrobutyricum
 38284	2510621	NZ_JALXXF000000000	Corynebacterium accolens
-38286	2345615	NZ_LXGG00000000	Corynebacterium afermentans subsp. afermentans
+38286	2345615	NZ_LXGG00000000	Corynebacterium afermentans
 1697	2738618	NZ_BQKK00000000	Corynebacterium ammoniagenes
 43765	2425544	NZ_VYWH00000000	Corynebacterium amycolatum
 2684406	2223380	NZ_WWCA00000000	Corynebacterium anserum
@@ -587,7 +587,7 @@
 69218	4849547	NZ_JAQOLZ000000000	Enterobacter cancerogenus
 2494701	5087745	NZ_CP143738	Enterobacter chengduensis
 2497875	5097059	NZ_JBHGSI000000000	Enterobacter chuandaensis
-550	5012139	NZ_JBBMEH000000000	Enterobacter cloacae subsp. cloacae
+550	5012139	NZ_JBBMEH000000000	Enterobacter cloacae
 2797506	4611734	NZ_JBDZYM000000000	Enterobacter dykesii
 158836	4803806	NZ_CP150011	Enterobacter hormaechei
 2494702	4973357	NZ_JANVEY000000000	Enterobacter huaxiensis
@@ -725,7 +725,7 @@
 28110	1950311	NZ_JBGFDD000000000	Francisella philomiragia
 2599927	1983101	NZ_VOJA00000000	Francisella salimarina
 573569	2035931	NC_015696	Francisella salina
-263	1906976	NZ_JACVMD000000000	Francisella tularensis subsp. novicida
+263	1906976	NZ_JACVMD000000000	Francisella tularensis
 573570	2237379	NZ_CP016796	Francisella uliginis
 76859	2594621	NZ_CAXSMW000000000	Fusobacterium animalis
 285729	2224456	NZ_RQYY00000000	Fusobacterium canifelinum
@@ -733,8 +733,8 @@
 2764326	2072767	NZ_CP060637	Fusobacterium hominis
 1583098	2521574	NZ_CP013334	Fusobacterium hwasookii
 850	2635401	NZ_CABMMQ000000000	Fusobacterium mortiferum
-859	2450159	NZ_CAXOVC000000000	Fusobacterium necrophorum subsp. funduliforme
-851	2299539	NZ_CP028109	Fusobacterium nucleatum subsp. Nucleatum
+859	2450159	NZ_CAXOVC000000000	Fusobacterium necrophorum
+851	2299539	NZ_CP028109	Fusobacterium nucleatum
 860	2561874	NZ_CABFLP000000000	Fusobacterium periodonticum
 76857	2533326	NZ_NIRP00000000	Fusobacterium polymorphum
 2663009	2651118	NZ_CP024700	Fusobacterium pseudoperiodonticum
@@ -802,7 +802,7 @@
 96232	3981457	NZ_JBGORX000000000	Legionella lytica
 451	3366993	NZ_JABTVM000000000	Legionella micdadei
 29423	2711454	NZ_LCUA00000000	Legionella oakridgensis
-446	3500943	NZ_CP017458	Legionella pneumophila subsp. fraseri
+446	3500943	NZ_CP017458	Legionella pneumophila
 28087	4516585	NZ_UFAM00000000	Legionella sainthelensi
 66969	3665700	NZ_CAAAIQ000000000	Legionella waltersii
 172	3879078	NZ_RQHD00000000	Leptospira biflexa
@@ -818,7 +818,7 @@
 28184	4265366	NZ_MSFX00000000	Leptospira weilii
 1641	2891252	NZ_JBHUNM000000000	Listeria grayi
 1642	2832799	NZ_JAASAA000000000	Listeria innocua
-1638	3014509	NZ_JAENOD000000000	Listeria ivanovii subsp. londoniensis
+1638	3014509	NZ_JAENOD000000000	Listeria ivanovii
 1639	3053148	NZ_JBBGDB000000000	Listeria monocytogenes
 1497681	3417543	NZ_AZHN00000000	Listeria newyorkensis
 1640	3140155	NZ_CM001051	Listeria seeligeri
@@ -896,13 +896,13 @@
 1784	5729327	NZ_VTZN00000000	Mycobacterium simiae
 470076	6223474	NZ_JACKSO000000000	Mycobacterium stomatepiae
 1773	4348302	NZ_LUKS00000000	Mycobacterium tuberculosis
-1809	5899681	NZ_AP017624	Mycobacterium ulcerans subsp. shinshuense
+1809	5899681	NZ_AP017624	Mycobacterium ulcerans
 1719132	6266765	NZ_CP059165	Mycobacterium vicinigordonae
 1789	4889461	NZ_JAQGFY000000000	Mycobacterium xenopi
 273136	1029022	NZ_HG937516	Mycoplasma amphoriforme
 519450	959110	NZ_CP042295	Mycoplasma anserisalpingitidis
 2963128	998113	NZ_JAJHZQ000000000	Mycoplasma bradburyae
-2095	964004	NZ_LBMF00000000	Mycoplasma capricolum subsp. capricolum
+2095	964004	NZ_LBMF00000000	Mycoplasma capricolum
 51364	1016659	NZ_CP103424	Mycoplasma cottewii
 50052	934379	NC_014014	Mycoplasma crocodyli
 1179777	1084341	NZ_CP104008	Mycoplasma feriruminatoris
@@ -912,7 +912,7 @@
 2105	1008443	NZ_LAUU00000000	Mycoplasma leachii
 754515	815486	NZ_CP053096	Mycoplasma miroungigenitalium
 754516	779550	NZ_CP053097	Mycoplasma miroungirhinis
-2102	1190241	NZ_LAEX00000000	Mycoplasma mycoides subsp. mycoides
+2102	1190241	NZ_LAEX00000000	Mycoplasma mycoides
 353852	805093	NZ_CP041147	Mycoplasma nasistruthionis
 171632	702511	NC_023062	Mycoplasma ovis
 984991	564395	NC_022575	Mycoplasma parvum
@@ -1020,14 +1020,14 @@
 28137	2986735	NZ_ACVA00000000	Prevotella veroralis
 556499	2889322	NZ_JBHROC000000000	Propionibacterium acidifaciens
 119981	2917019	NZ_UNQJ00000000	Propionibacterium australiense
-1744	2559653	NZ_JBHSTU000000000	Propionibacterium freudenreichii subsp. shermanii
+1744	2559653	NZ_JBHSTU000000000	Propionibacterium freudenreichii
 3034648	4105600	NZ_CP127389	Proteus appendicitidis
 1987580	3944719	NZ_CAXOMZ000000000	Proteus columbae
 2050967	3757698	NZ_QEXA00000000	Proteus faecis
 183417	4145824	NZ_JBEEUB000000000	Proteus hauseri
 584	4241446	NZ_JBDYTF000000000	Proteus mirabilis
 102862	3923093	NZ_JAEOXK000000000	Proteus penneri
-1574161	3820524	NZ_JADSUM000000000	Proteus terrae subsp. cibarius
+1574161	3820524	NZ_JADSUM000000000	Proteus terrae
 585	4031466	NZ_JBIMQC000000000	Proteus vulgaris
 126385	4668940	NZ_JBEFAB000000000	Providencia alcalifaciens
 3031799	4704856	NZ_JBFTCI000000000	Providencia hangzhouensis
@@ -1069,7 +1069,7 @@
 2993566	5194245	NZ_JAPFGF000000000	Pseudomonas benzopyrenica
 2726956	5654212	NZ_CP142429	Pseudomonas berkeleyensis
 2681983	6841155	NZ_JAJQKS000000000	Pseudomonas bijieensis
-930166	6733367	NZ_VZPJ00000000	Pseudomonas brassicacearum subsp. brassicacearum
+930166	6733367	NZ_VZPJ00000000	Pseudomonas brassicacearum
 129817	6553598	NZ_JBGRCL000000000	Pseudomonas brenneri
 2316085	5080789	NZ_CABIVM000000000	Pseudomonas bubulae
 915099	6419592	NZ_AYTD00000000	Pseudomonas canadensis
@@ -1079,7 +1079,7 @@
 2320867	4949615	NZ_CP032419	Pseudomonas cavernae
 651740	6107235	NZ_PCQE00000000	Pseudomonas cedrina
 1583341	5884203	NZ_JACSZQ000000000	Pseudomonas cerasi
-587753	7005951	NZ_VZPK00000000	Pseudomonas chlororaphis subsp. aureofaciens
+587753	7005951	NZ_VZPK00000000	Pseudomonas chlororaphis
 36746	5986012	NZ_CP162521	Pseudomonas cichorii
 53408	7192313	NZ_BCZY00000000	Pseudomonas citronellolis
 1605838	4860141	NZ_DAMCQM000000000	Pseudomonas coleopterorum
@@ -1257,7 +1257,7 @@
 787	1320572	NZ_AKVZ00000000	Rickettsia australis
 33990	1618071	NZ_LAOJ00000000	Rickettsia bellii
 788	1159772	NC_009879	Rickettsia canadensis
-781	1260331	NZ_AJUR00000000	Rickettsia conorii subsp. Caspia
+781	1260331	NZ_AJUR00000000	Rickettsia conorii
 42862	1546970	NZ_JSEM00000000	Rickettsia felis
 354585	1347499	NZ_AWXL00000000	Rickettsia gravesii
 35789	1417015	NZ_AICO00000000	Rickettsia helvetica
@@ -1273,7 +1273,7 @@
 783	1288010	NZ_CP130460	Rickettsia rickettsii
 35793	1281771	NZ_CP170619	Rickettsia sibirica
 35794	1275720	NC_017065	Rickettsia slovaca
-334545	1777907	NZ_CP113531	Rickettsia tamurae subsp. buchneri
+334545	1777907	NZ_CP113531	Rickettsia tamurae
 2761623	1438972	NZ_CP060138	Rickettsia tillamookensis
 785	1112957	NC_017062	Rickettsia typhi
 34085	2164213	NZ_JAOTKX000000000	Riemerella anatipestifer
@@ -1347,12 +1347,12 @@
 522262	2340780	NZ_PPRF00000000	Staphylococcus rostri
 33028	2349581	NZ_RXXC00000000	Staphylococcus saccharolyticus
 29385	2674410	NZ_JBITWJ000000000	Staphylococcus saprophyticus
-1295	2472690	NZ_RXXB00000000	Staphylococcus schleiferi subsp. schleiferi
+1295	2472690	NZ_RXXB00000000	Staphylococcus schleiferi
 1654388	2742952	NZ_PPQS00000000	Staphylococcus schweitzeri
 2912228	3176161	NZ_JBCLTY000000000	Staphylococcus shinii
 308354	2546639	NZ_JAFNMC000000000	Staphylococcus simiae
 1286	2714075	NZ_CP094696	Staphylococcus simulans
-61015	2887686	NZ_LCSH00000000	Staphylococcus succinus subsp. succinus
+61015	2887686	NZ_LCSH00000000	Staphylococcus succinus
 94138	2711342	NZ_JBIRLL000000000	Staphylococcus ureilyticus
 1292	2552015	NZ_JBITTX000000000	Staphylococcus warneri
 1288	2868892	NZ_JBIANQ000000000	Staphylococcus xylosus
@@ -1394,7 +1394,7 @@
 2282420	2227898	NZ_CP163513	Streptococcus hillyeri
 1888195	2150488	NZ_BMJN00000000	Streptococcus himalayensis
 1156431	2023580	NC_022582	Streptococcus ilei
-102684	1827584	NZ_JAHDJM000000000	Streptococcus infantarius subsp. infantarius
+102684	1827584	NZ_JAHDJM000000000	Streptococcus infantarius
 68892	1779237	NZ_CAXTDJ000000000	Streptococcus infantis
 1346	2110154	NZ_CP129326	Streptococcus iniae
 1338	1970384	NZ_PNRH00000000	Streptococcus intermedius
@@ -1408,7 +1408,7 @@
 28037	1955330	NZ_JBHVEF000000000	Streptococcus mitis
 1309	2073547	NZ_CP172847	Streptococcus mutans
 3140788	2018446	NZ_CP152419	Streptococcus nidrosiense
-1303	1995586	NZ_JAFJLY000000000	Streptococcus oralis subsp. oralis
+1303	1995586	NZ_JAFJLY000000000	Streptococcus oralis
 2781599	2197335	NZ_CP073084	Streptococcus oriscaviae
 1811193	2241302	NZ_CP014699	Streptococcus pantholopis
 2993430	2327012	NZ_AP026968	Streptococcus parapneumoniae
@@ -1445,7 +1445,7 @@
 163	3432571	NZ_FOFU00000000	Treponema bryantii
 158	2920478	NZ_CP038800	Treponema denticola
 58231	2886632	NZ_CP027017	Treponema medium
-160	1139789	NZ_CP170146	Treponema pallidum subsp. pertenue
+160	1139789	NZ_CP170146	Treponema pallidum
 53435	1232425	NZ_JAMZQX000000000	Treponema paraluiscuniculi
 138851	2658287	NZ_CP054142	Treponema parvum
 409322	3077465	NZ_CP061839	Treponema pedis
@@ -1455,7 +1455,7 @@
 221027	2951713	NZ_CP038802	Treponema putidum
 744515	3323429	NZ_JACHFQ000000000	Treponema ruminis
 165	3453898	NZ_AGRW00000000	Treponema saccharophilum
-53419	2365349	NZ_JBHRHH000000000	Treponema socranskii subsp. buccale
+53419	2365349	NZ_JBHRHH000000000	Treponema socranskii
 167	2134406	NZ_CAMEMO000000000	Treponema succinifaciens
 69710	2711984	NZ_JBHOFH000000000	Treponema vincentii
 331680	3876957	NZ_JPUF00000000	Treponema zioleckii
@@ -1471,7 +1471,7 @@
 248315	2041290	NZ_LT906470	Veillonella rodentium
 423477	2176161	NZ_JAPVXS000000000	Veillonella rogosae
 92172	5250260	NZ_FQXZ00000000	Vibrio aerogenes
-28171	4195841	NZ_CALYKZ000000000	Vibrio aestuarianus subsp. francensis
+28171	4195841	NZ_CALYKZ000000000	Vibrio aestuarianus
 1074311	3190762	NZ_AP019849	Vibrio alfacsensis
 2662262	2518765	NZ_CP045699	Vibrio algicola
 663	5086537	NZ_JBBKVA000000000	Vibrio alginolyticus
@@ -1552,7 +1552,7 @@
 379097	4987565	NZ_JBHMEN000000000	Vibrio sinaloensis
 3034029	3298328	NZ_CP017916	Vibrio syngnathi
 2572923	2974694	NZ_AP019651	Vibrio taketomensis
-52443	5198637	NZ_JAUFQV000000000	Vibrio tapetis subsp. quintayensis
+52443	5198637	NZ_JAUFQV000000000	Vibrio tapetis
 2014742	4021660	NZ_QKKJ00000000	Vibrio tarriae
 212663	5517543	NZ_MDBG00000000	Vibrio tasmaniensis
 1194427	4563366	NZ_FLOD00000000	Vibrio toranzoniae
