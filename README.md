@@ -1,4 +1,4 @@
-bactiPipe: Quality Assessment and Control for Bacterial Whole Genome Data
+**bactiPipe: Quality Assessment and Control for Bacterial Whole Genome Data**
 
 bactiPipe is a pipeline that integrates multiple tools to evaluate and improve the quality of raw sequencing reads from Illumina and Nanopore platforms. It assesses read quality based on user-defined thresholds for average Phred scores and genome coverage depth. If necessary, the pipeline applies corrective measures to enhance data quality.
 
