@@ -11,7 +11,7 @@ import pandas as pd
 from tqdm import tqdm
 from datetime import datetime
 from colorama import Fore, Style, init
-from typing import Iterable, Callable, Optional, Dict, List, Tuple
+from typing import Iterable, Callable, Optional, Dict, List, Tuple, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import io, gzip, threading, math
@@ -368,7 +368,7 @@ def compress_qc_fastqs(
         _log("Neither pigz nor gzip found on PATH; skipping compression.", "Warn")
         return {"total": 0, "ok": 0, "failed": 0, "skipped": 0}
 
-    # ---- Gather jobs -------------------------------------------------------
+    # ---- Gather jobs ----------------------
     jobs: List[Tuple[str, str]] = []  # (in_fastq, out_gz)
     skipped = 0
 
@@ -703,121 +703,30 @@ def filtlong_with_metrics(filtlong_cmd, out_fastq_path: str):
 
 
 ## For merging files
-
-def _natural_key(s: str):
-    # e.g., "file_10" > "file_2"
-    return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]
-
-def _iter_local_gz_sources(sources_or_dir: Iterable[str] | str) -> List[str]:
-    exts = (".fastq.gz", ".fq.gz")
-    if isinstance(sources_or_dir, str):
-        if os.path.isdir(sources_or_dir):
-            files = [os.path.join(sources_or_dir, f)
-                     for f in os.listdir(sources_or_dir)
-                     if f.endswith(exts)]
-            return sorted(files, key=_natural_key)
-        else:
-            # single path
-            return [sources_or_dir] if sources_or_dir.endswith(exts) else []
-    else:
-        # iterable of paths
-        files = [os.path.abspath(p) for p in sources_or_dir if str(p).endswith((".fastq.gz", ".fq.gz"))]
-        return sorted(files, key=_natural_key)
-
-def _gz_integrity_ok(gz_path: str) -> bool:
-    tester = shutil.which("pigz") or shutil.which("gzip")
-    if not tester:
-        return True
-    r = subprocess.run([tester, "-t", gz_path],
-                       stdin=subprocess.DEVNULL,
-                       stdout=subprocess.DEVNULL,
-                       stderr=subprocess.DEVNULL)
-    return r.returncode == 0
-
-def merge_gz_fastqs(
-    sources_or_dir: Iterable[str] | str,
-    output_path: str,
-    pigz_threads: int = 1,
-    verify: bool = False,
-    logger_fn: Optional[Callable[[str, str], None]] = None,
-) -> dict:
+def merge_gz_fastqs(raw_folder: str, output_gz: str, *, verify: bool = False) -> str:
     """
-    Merge multiple *.fastq.gz (or *.fq.gz) into a single file.
-
-    If output_path ends with .gz:
-      - Fast path: raw-concatenate gz members (valid gzip; fastest; no recompress).
-    Else (output is .fastq/.fq):
-      - Stream-decompress each source and write plain FASTQ.
-        Uses pigz -dc (per-file) if available; falls back to Python gzip.
-
-    Returns:
-      {"inputs": N, "bytes_written": B, "output": output_path}
+    Merge all *.fastq.gz in raw_folder into output_gz using a single `cat`.
+    Writes to <output_gz>.tmp then atomically renames. Returns output path.
     """
-    def log(msg: str, level: str = "Norm"):
-        if logger_fn:
-            try:
-                logger_fn(msg, level)
-            except Exception:
-                pass
+    if not output_gz.endswith(".gz"):
+        raise ValueError("output_gz must end with .gz")
 
-    inputs = _iter_local_gz_sources(sources_or_dir)
-    if not inputs:
-        raise FileNotFoundError("No input .fastq.gz/.fq.gz files found to merge.")
+    out_dir = os.path.dirname(os.path.abspath(output_gz)) or "."
+    os.makedirs(out_dir, exist_ok=True)
 
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
-    tmp_out = output_path + ".tmp"
-    try:
-        if output_path.endswith(".gz"):
-            # Just concatenate raw gz members
-            log(f"Merging {len(inputs)} gz FASTQs -> {output_path} (raw concat).")
-            total = 0
-            with open(tmp_out, "wb") as out:
-                for p in inputs:
-                    with open(p, "rb") as src:
-                        shutil.copyfileobj(src, out, length=8 * 1024 * 1024)
-                        total += os.path.getsize(p)
-            if verify and not _gz_integrity_ok(tmp_out):
-                raise RuntimeError("Gzip integrity test failed for merged output.")
-            os.replace(tmp_out, output_path)
-            return {"inputs": len(inputs), "bytes_written": total, "output": output_path}
-        else:
-            # Write uncompressed; decompress sources streaming
-            log(f"Merging {len(inputs)} gz FASTQs -> {output_path} (decompress).")
-            total = 0
-            dec = shutil.which("pigz") or shutil.which("gzip")  # for -dc
-            with open(tmp_out, "wb") as out:
-                for p in inputs:
-                    if dec:
-                        cmd = [dec, "-dc", p]
-                        if os.path.basename(dec) == "pigz":
-                            try:
-                                t = max(1, int(pigz_threads))
-                            except Exception:
-                                t = 1
-                            if t > 1:
-                                cmd = [dec, "-p", str(t), "-dc", p]
-                        # stream decode
-                        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-                        assert proc.stdout is not None
-                        with proc.stdout as s:
-                            shutil.copyfileobj(s, out, length=8 * 1024 * 1024)
-                        proc.wait()
-                        if proc.returncode != 0:
-                            raise subprocess.CalledProcessError(proc.returncode, cmd)
-                    else:
-                        # Python gzip fallback (single-threaded)
-                        import gzip
-                        with gzip.open(p, "rb") as s:
-                            shutil.copyfileobj(s, out, length=8 * 1024 * 1024)
-                total = os.path.getsize(tmp_out)
-            os.replace(tmp_out, output_path)
-            return {"inputs": len(inputs), "bytes_written": total, "output": output_path}
-    finally:
-        try:
-            if os.path.exists(tmp_out):
-                os.remove(tmp_out)
-        except Exception:
-            pass
+    tmp_out = output_gz + ".tmp"
+
+    # One fast cat. Important: command string is a single, quoted argument after -c.
+    cmd = f'cat "{raw_folder}"/*.fastq.gz > "{tmp_out}"'
+    subprocess.run(["/bin/sh", "-c", cmd], check=True)
+
+    if verify:
+        gz = shutil.which("pigz") or shutil.which("gzip")
+        if gz:
+            subprocess.run([gz, "-t", tmp_out], check=True)
+
+    os.replace(tmp_out, output_gz)
+    return output_gz
 
 #S3 sources: merge_gz_fastqs_s3
 
@@ -851,16 +760,7 @@ def merge_gz_fastqs_s3(
     logger_fn: Optional[Callable[[str, str], None]] = None,
 ) -> dict:
     """
-    Merge *.fastq.gz stored on S3 into a single file.
-
-    s3_sources_or_prefix:
-      - list of 's3://bucket/key.fastq.gz' (explicit order is ignored; we natural-sort), OR
-      - single 's3://bucket/prefix/' to merge all *fastq.gz under that prefix.
-
-    Output:
-      - If output_path endswith .gz -> raw-concat gzip members.
-      - Else -> stream-decompress each object and write plain FASTQ.
-
+    Fast merge of S3 .fastq.gz/.fq.gz objects -> local .gz or uncompressed FASTQ.
     Requires boto3.
     """
     def log(msg: str, level: str = "Norm"):
