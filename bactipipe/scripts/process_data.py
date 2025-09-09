@@ -62,11 +62,11 @@ def filter_genome(input_fasta, output_fasta, min_length=500):
     return output_fasta
 
 def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile=None, gsize='5m', single=True):
-    log = logfile
+    log = os.path.join(assembly_dir, sample, sample + ".log")
     try:
         if single:
             time_print(f'Assembling the genome for sample : {sample}', "Header")
-            logger(log, f'Assembling the genome for sample : {sample}', "Header")
+        logger(log, f'Assembling the genome for sample : {sample}', "Header")
         
         assembler = assembler.strip().lower()
         if assembler == "unicycler":
@@ -87,9 +87,9 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
             simple_print(f'\t---> Number of fastq files: {len(reads)}')
             simple_print(f'\t---> Number of CPUs: {cpus}\n')
             
-            logger(log, f'\t---> Assembler: {assembler}', mode="simple")
-            logger(log, f'\t---> Number of fastq files: {len(reads)}', mode="simple")
-            logger(log, f'\t---> Number of CPUs: {cpus}\n', mode="simple")
+        logger(log, f'\t---> Assembler: {assembler}', mode="simple")
+        logger(log, f'\t---> Number of fastq files: {len(reads)}', mode="simple")
+        logger(log, f'\t---> Number of CPUs: {cpus}\n', mode="simple")
 
 
         if len(reads) == 2:
@@ -123,7 +123,7 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
                 return_info = f"Assembler {assembler} is not supported for Illumina reads. Please use Unicycler or Spades."
                 if single:
                     time_print(return_info, "Fail")
-                    logger(log, return_info)
+                logger(log, return_info)
                 return
         
         elif sequencer.lower() == "nanopore":
@@ -137,7 +137,7 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
                 return_info = f"Assembler {assembler} is not supported for Nanopore reads. Please use Unicycler or Flye."
                 if single:
                     time_print(return_info, "Fail")
-                    logger(log, return_info)
+                logger(log, return_info)
                 return
         
         if not os.path.exists(finalAssembly):
@@ -146,7 +146,7 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
             info2 = f"Running: {cmd1}"
             if single:
                 time_print(info2, s_type="command")
-                logger(log, info2, s_type="command")
+            logger(log, info2, s_type="command")
             execute = subprocess.run(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
             if execute.returncode != 0:
@@ -158,7 +158,7 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
                 return_info = f"Command exit status: Success!"
                 if single:
                     time_print(return_info, "Pass")
-                    logger(log, return_info)
+                logger(log, return_info)
             
             # Filter the genome to remove smaller contigs
             filter_genome(input_fasta=draft_assembly, output_fasta=finalAssembly, min_length=400)
@@ -167,12 +167,12 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
             # log.write(message2 + '\n')
             if single:
                 time_print(message2)
-                logger(log, message2)
+            logger(log, message2)
 
         outinfo = f'Done with Assembly :: Assembly file: {finalAssembly}\n'
         if single:
             time_print(outinfo, "Pass")
-            logger(log, outinfo)
+        logger(log, outinfo)
     except Exception as e:
         time_print(f"Unexpected error in assemble for {sample}: {e}", "Fail")
         logger(log, f"Unexpected error in assemble for {sample}: {e}")
