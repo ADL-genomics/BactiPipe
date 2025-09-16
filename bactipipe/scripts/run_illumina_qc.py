@@ -70,6 +70,8 @@ args = parser.parse_args()
 sample_list = os.path.abspath(args.sample_sheet)
 run_name = args.run_name
 raw_reads = os.path.abspath(args.fastq_dir)
+raw_reads = os.path.join(raw_reads, run_name)
+
 # raw_reads = os.path.join(raw_reads, run_name)
 tech_name = args.name
 
@@ -206,6 +208,11 @@ sample_number = sum(1 for line in sample_info if not line.startswith("#")) - len
 time_print(f"Total number of samples to be processed: {sample_number}\n")
 logger(log, f"Total number of samples to be processed: {sample_number}\n")
 
+if sample_number == 0:
+    time_print("No valid samples to process. Exiting pipeline.", "Fail")
+    logger(log, "No valid samples to process. Exiting pipeline.")
+    sys.exit(1)
+
 qc_out = os.path.join(outDir, "qc_out")
 if not os.path.exists(qc_out):
     os.makedirs(qc_out)
@@ -313,9 +320,18 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
         # Assemble the genomes of the samples that passed the quality control
         assembly_dir = os.path.join(outDir, "assemblies")
         if qc_verdict == "Pass" and cov_verdict == "Pass":
-            process_data.assemble(sample=sample, reads=fastqs, assembly_dir=assembly_dir, assembler=args.assembler, sequencer="Illumina", cpus=cpus, logfile=log)
+            time_print(f"Starting assembly for sample {sample} with {args.assembler}")
+            logger(log, f"Starting assembly for sample {sample} with {args.assembler}")
+            try:
+                process_data.assemble(sample=sample, reads=fastqs, assembly_dir=assembly_dir, assembler=args.assembler, sequencer="Illumina", cpus=cpus, logfile=log)
 
-            genome = os.path.join(assembly_dir, "genomes", f"{sample}.fasta")
+                genome = os.path.join(assembly_dir, "genomes", f"{sample}.fasta")
+                time_print(f"Assembly completed for sample {sample}")
+                logger(log, f"Assembly completed for sample {sample}")
+            except Exception as e:
+                time_print(f"Error at assembly step: {e}", "Fail")
+                logger(log, f"Error at assembly step: {e}")
+                genome = None
 
             try:
                 hit, tax_confirm, possibilities = find_organism.find_species_with_kmrf(s_name=sample, lab_species=sys_organism, genome=genome, dataOut=outDir, org_type="bacteria", logfile=log)
