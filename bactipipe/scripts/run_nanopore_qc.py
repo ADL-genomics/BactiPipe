@@ -120,7 +120,7 @@ def assemble_sample(assembly_input):
     genome = os.path.join(assembly_dir, "genomes", f"{sample}.fasta")
     if os.path.exists(genome):
         return
-    process_data.assemble(sample=sample, reads=[fastq], assembly_dir=assembly_dir, assembler=assembler, sequencer="nanopore", cpus=cpus_per_sample, gsize = genome_size, single=False) # type: ignore
+    process_data.assemble(sample=sample, reads=[fastq], assembly_dir=assembly_dir, assembler=assembler, sequencer="nanopore", cpus=cpus_per_sample, logfile=log, gsize=genome_size, single=False) # type: ignore
     return
 
 # Run the pipeline
@@ -445,6 +445,11 @@ elif len(existing_genomes) == passed_number:
     assembly_input = []
     time_print("Genomes for all samples have been assembled already. Skiping assembly!")
     logger(log, "Genomes for all samples have been assembled already. Skiping assembly!")
+
+if not assembly_input:
+    time_print("No samples to assemble. Exiting pipeline.", "Fail")
+    logger(log, "No samples to assemble. Exiting pipeline.")
+    sys.exit(1)
 
 if assembly_input:
     if num_to_assemble < pool_size:
