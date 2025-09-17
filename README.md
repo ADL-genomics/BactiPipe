@@ -1,7 +1,7 @@
-**BactiPipe: Quality Assessment and Control for Bacterial Whole Genome Data**
+# BactiPipe  
 
-BactiPipe is a pipeline that integrates multiple tools to evaluate and improve the quality of raw sequencing reads from Illumina and Nanopore platforms. It assesses read quality based on user-defined thresholds for average Phred scores and genome coverage depth. If necessary, the pipeline applies corrective measures to enhance data quality.
+**BactiPipe** was developed and is actively used by the **NGS section of the Penn State Animal Diagnostic Laboratory** to bring **consistency** to the analysis of bacterial whole-genome sequencing (WGS) data. In diagnostic laboratories, multiple tools and parameters are available for genomic data analysis, but this flexibility often leads to variability in results from run to run. Such variability may compromize one of the most critical aspects of quality control in a diagnostic setting: **reproducibility and standardization**. BactiPipe addresses this challenge by wrapping together the core tools used in our laboratory with carefully chosen and fixed parameters, ensuring consistent analysis across all sequencing runs.  
 
-Reads that pass the quality control (QA/QC) step are assembled into genome sequences, and the resulting assemblies undergo further evaluation. This assessment includes verifying taxonomic consistency and determining assembly completeness and contamination using CheckM.
+BactiPipe provides **end-to-end quality control and genome assembly workflows** for both **Illumina** and **Oxford Nanopore** sequencing data. It automates read QC, genome assembly, organism identification, and assembly quality checks using tools such as **fastp, filtlong, Spades, Unicycler, Flye, KmerFinder, Kraken2,** and **CheckM**. The pipeline supports data from **local directories, network-mounted storage, and Amazon S3**, making it suitable for both on-premises and cloud-based environments. Outputs include detailed logs, quality metrics plots, assembled genomes, and comprehensive QC summary reports.  
 
-This page provides a detailed overview of the pipeline's steps and usage instructions.
+For a detailed description of the pipeline, workflows, and usage examples, please see the [**Wiki Page**](https://github.com/mauricebyuka/bactiPipe/wiki).  
