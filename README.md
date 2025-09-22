@@ -4,4 +4,4 @@
 
 BactiPipe provides **end-to-end quality control and genome assembly workflows** for both **Illumina** and **Oxford Nanopore** sequencing data. It automates read QC, genome assembly, organism identification, and assembly quality checks using tools such as **fastp, filtlong, Spades, Unicycler, Flye, KmerFinder, Kraken2,** and **CheckM**. The pipeline supports data from **local directories, network-mounted storage, and Amazon S3**, making it suitable for both on-premises and cloud-based environments. Outputs include detailed logs, quality metrics plots, assembled genomes, and comprehensive QC summary reports.  
 
-For a detailed description of the pipeline, workflows, and usage examples, please see the [**BactiPipe Wiki Page**](https://github.com/mauricebyuka/bactiPipe/wiki).  
+For a detailed description of the pipeline, workflows, and usage examples, please see the [**BactiPipe Wiki Page**](https://github.com/ADL-genomics/BactiPipe/wiki).  
