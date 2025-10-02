@@ -2,6 +2,16 @@ import os
 import subprocess
 from bactipipe.scripts.utils import fastq_metrics, filtlong_with_metrics, merge_gz_fastqs, merge_gz_fastqs_s3, logger as file_logger
 
+def filtlong_version():
+    vercmd = ["filtlong", "--version"]
+    try:
+        process = subprocess.Popen(vercmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        filtlong_ver = out.decode('utf-8', errors='replace').strip().split()[-1]
+    except Exception as e:
+        filtlong_ver = "Unknown"
+    return filtlong_ver
+
 def qc_nano(
     fastq_file=None,
     raw_folder=None,
@@ -81,8 +91,9 @@ def qc_nano(
             # Trim reads using filtlong
             # Check if there is enough data for min coverage
             min_required_bases = min_coverage * genome_size
-            trimmed_output = output_fastq
-            log(f"[{s_name}] Trimming reads using filtlong...")
+            trimmed_output = output_fastq 
+
+            log(f"[{s_name}] Trimming reads using filtlong (version: {filtlong_version()})...")
             if total_bases < min_required_bases:
                 log(f"[{s_name}] Insufficient data for {min_coverage}X coverage. Total bases available: {total_bases:,}. Required: {min_required_bases:,}.")
                 log(f"[{s_name}] Keeping the best 90% of reads...")

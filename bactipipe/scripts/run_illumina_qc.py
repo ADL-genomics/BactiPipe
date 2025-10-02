@@ -9,10 +9,10 @@ import subprocess
 from datetime import datetime
 from bactipipe.scripts import find_organism
 from bactipipe.scripts import process_data
-from bactipipe.scripts.qualityProc import ProcQuality
+from bactipipe.scripts.qualityProc import ProcQuality, fastp_version
 from bactipipe.scripts.utils import time_print, simple_print, logger, pipeheader, excel_reader, download_s3
 from importlib.resources import files as resource_files
-
+from collections import OrderedDict
 
 # Argument Parsing
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -54,7 +54,7 @@ required_args.add_argument("-l", "--sample_sheet",
 optional_args.add_argument("-o", "--outdir",
                     help="Path to output directory. Default: current directory")
 
-optional_args.add_argument ("-a", "--assembler", help="Genome assembler to use. Default: Spades",  choices=["Spades", "Unicycler"], default="Spades")
+optional_args.add_argument ("-a", "--assembler", help="Genome assembler to use.",  choices=["Spades", "Unicycler", "Skesa"], default="Skesa")
 
 optional_args.add_argument("-t", "--threads",
                     help="Number of threads. Default: all available")
@@ -67,15 +67,41 @@ optional_args.add_argument("-h", "--help",
 
 args = parser.parse_args()
 
+# Version of BactiPipe
+bactipipe_version = "v0.1.1" # To be updated manually
+
 sample_list = os.path.abspath(args.sample_sheet)
 run_name = args.run_name
 raw_reads = os.path.abspath(args.fastq_dir)
-raw_reads = os.path.join(raw_reads, run_name)
 
 # raw_reads = os.path.join(raw_reads, run_name)
 tech_name = args.name
 
 outDir = os.path.join(args.outdir, run_name)
+
+def assembly_version():
+    assembler = args.assembler.lower()
+    if assembler == "spades":
+        assembler = "spades.py"
+    elif assembler == "unicycler":
+        assembler = "unicycler"
+    elif assembler == "skesa":
+        assembler = "skesa"
+    
+    vercmd = [assembler, "--version"]
+    try:
+        process = subprocess.Popen(vercmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        if assembler == "skesa":
+            res_line = out.decode('utf-8', errors='replace').strip().split('\n')[-1]
+            assembly_ver = res_line.split()[-1]
+        else:
+            assembly_ver = out.decode('utf-8', errors='replace').strip().split()[-1]
+        if not assembly_ver.lower().startswith("v"):
+            assembly_ver = "v" + assembly_ver
+    except Exception as e:
+        assembly_ver = "Unknown"
+    return assembly_ver
 
 def get_fastqs(sample, raw_reads):
     fastqs = []
@@ -127,7 +153,7 @@ except Exception as e:
     ip_address = f"Unable to resolve hostname: {e}"
     ip_address = "Unable to resolve hostname"
 
-header_info = pipeheader(date, tech_name, hostname, ip_address, run_name, sample_list, raw_reads, outDir, cpus)
+header_info = pipeheader("Illumina", date, tech_name, hostname, ip_address, run_name, sample_list, raw_reads, outDir, cpus)
 
 header = header_info[0]
 run_info = header_info[1]
@@ -386,13 +412,37 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
 # Assess Genome Quality with CheckM
 genomes_dir = os.path.join(outDir, "assemblies", "genomes")
 checkm_dir = os.path.join(outDir, "checkM")
-checkm_out = process_data.checkM_stats(genomes_dir=genomes_dir, cpus=cpus, outdir=checkm_dir, logfile=log)
+checkm_out, checkm_ver = process_data.checkM_stats(genomes_dir=genomes_dir, cpus=cpus, outdir=checkm_dir, logfile=log)
 
 # Update the summary file with CheckM results
 # qc_summary = os.path.join(qc_out, "qc_summary.tsv")
 qc_summary = os.path.join(outDir, f"{run_name}_qc_summary.tsv")
 time_print('Final summary', "Header")
 logger(log, 'Final summary', "Header")
+
+tools = OrderedDict([
+    ("BactiPipe", bactipipe_version),
+    ("Fastp", fastp_version()),
+    (args.assembler, assembly_version()),
+    ("KmerFinder", find_organism.kmerfinder_version),
+    ("CheckM", checkm_ver)
+])
+
+tool_lines = ["\n"] # Blank line before tools section
+for tool, version in tools.items():
+    tool_lines.append(f"{tool}>>{version}")
+tool_lines.extend([
+    "Required Mean quality>>28",
+    "Completeness cutoff>>90%",
+    "Contamination cutoff>>10%"
+])
+
+sep_len = max(len(line) for line in tool_lines)
+sep = "=" * sep_len
+tools_block = [sep] + tool_lines + [sep]
+
+header += tools_block
+
 
 process_data.make_summary(qc_summary=qc_summary, temp_qc_summary=temp_qc_summary, header=header, checkm_out=checkm_out, logfile=log)
 

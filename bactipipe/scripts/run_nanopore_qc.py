@@ -5,15 +5,16 @@ import time
 import psutil
 import shutil
 import socket
-import nano_qc
 import argparse
 import subprocess
 from datetime import datetime
+from bactipipe.scripts import nano_qc
 from bactipipe.scripts import process_data
 from bactipipe.scripts import find_organism
 from importlib.resources import files as resource_files
 from bactipipe.scripts.utils import compress_qc_fastqs, logger, pipeheader, excel_reader, time_print, simple_print
 from tqdm.contrib.concurrent import process_map
+from collections import OrderedDict
 
 
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -57,7 +58,7 @@ optional_args.add_argument("--cpus_per_sample", help="Number of CPUs per sample.
 
 optional_args.add_argument("-m", "--mincov", help="Minimum genome coverage depth.", default=50, type=int)
 optional_args.add_argument("-q", "--minqual", help="Average read quality threshold.", default=15, type=int)
-optional_args.add_argument ("-a", "--assembler", help="Genome assembler to use. Default: Unicycler",  choices=["Flye", "Unicycler"], default="Flye")
+optional_args.add_argument ("-a", "--assembler", help="Genome assembler to use.",  choices=["Flye", "Unicycler"], default="Flye")
 
 optional_args.add_argument("--use-s3", help="Use S3 for input. Default: False", action="store_true")
 
@@ -72,6 +73,9 @@ optional_args.add_argument("-h", "--help",
                            help="Show this help message and exit.")
 
 args = parser.parse_args()
+
+# Version of BactiPipe
+bactipipe_version = "v0.1.1" # To be updated manually
 
     # Function to run quality control for a single sample
 def process_sample(line):
@@ -114,7 +118,7 @@ else:
 def assemble_sample(assembly_input):
     sample = assembly_input[0]
     fastq = assembly_input[1]
-    genome_size = 48502 if organism == "Lambda" else bacteria.get(organism, None)
+    genome_size = 48502 if organism == "Lambda" else bacteria.get(organism, 5e6)
     # Assemble the genomes of the samples that passed the quality control
     assembly_dir = os.path.join(outDir, "assemblies")
     genome = os.path.join(assembly_dir, "genomes", f"{sample}.fasta")
@@ -220,7 +224,7 @@ else:
     time_print(f"fastq_pass sub-folder not found in {source}.", "Fail")
     sys.exit(1)
 
-header_info = pipeheader(date, tech_name, hostname, ip_address, run_name, sample_list, source, outDir, cpus)
+header_info = pipeheader("Oxford Nanopore", date, tech_name, hostname, ip_address, run_name, sample_list, source, outDir, cpus)
 
 header = header_info[0]
 run_info = header_info[1]
@@ -462,12 +466,14 @@ if assembly_input:
     vercmd = f'{assembler} --version'
     stdout = subprocess.run(vercmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out = stdout.stdout.decode('utf-8')
-    version = out.split()[-1]
+    assembly_version = out.split()[-1]
+    if not assembly_version.lower().startswith("v"):
+        assembly_version = "v" + assembly_version
 
-    assember_message = f"Using {assembler.capitalize()} (version: {version})."
+    assembler_message = f"Using {assembler.capitalize()} (version: {assembly_version})."
 
-    simple_print(f"  ---> {assember_message}")
-    logger(log, f"  ---> {assember_message}")
+    simple_print(f"  ---> {assembler_message}")
+    logger(log, f"  ---> {assembler_message}")
 
     simple_print(f"  ---> {cpus_per_sample} CPUs will be used per sample.")
     logger(log, f"  ---> {cpus_per_sample} CPUs will be used per sample.")
@@ -513,7 +519,7 @@ logger(log, kmer_message, "Header")
 temp_qc_summary = os.path.join(qc_out, "temp_qc_summary.tsv")
 with(open(temp_qc_summary , 'w')) as qc_sum:
     writer = csv.writer(qc_sum, dialect='excel-tab')
-    writer.writerow(["Sample",  "Mean_quality", "qc_verdict", "Expected organism", "Identified organism", "% Match", "Coverage", "min_cov", "cov_verdict", "tax_confirm"])
+    writer.writerow(["Sample",  "Mean quality", "qc_verdict", "Expected organism", "Identified organism", "% Match", "Coverage", "min_cov", "cov_verdict", "tax_confirm"])
 
     for line in sample_info:
         if line.startswith("#"):
@@ -609,12 +615,35 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
 # Assess Genome Quality with CheckM
 genomes_dir = os.path.join(outDir, "assemblies", "genomes")
 checkm_dir = os.path.join(outDir, "checkM")
-checkm_out = process_data.checkM_stats(genomes_dir=genomes_dir, cpus=cpus, outdir=checkm_dir, logfile=log)
+checkm_out, checkm_ver = process_data.checkM_stats(genomes_dir=genomes_dir, cpus=cpus, outdir=checkm_dir, logfile=log)
 
 # Final summary
 qc_summary = os.path.join(outDir, f"{run_name}_qc_summary.tsv")
 time_print('Final summary', "Header")
 logger(log, 'Final summary', "Header")
+
+tools = OrderedDict([
+    ("BactiPipe", bactipipe_version),
+    ("Filtlong", nano_qc.filtlong_version()),
+    (args.assembler, assembly_version),
+    ("KmerFinder", find_organism.kmerfinder_version),
+    ("CheckM", checkm_ver)
+])
+
+tool_lines = ["\n"] # Blank line before tools section
+for tool, version in tools.items():
+    tool_lines.append(f"{tool}>>{version}")
+tool_lines.extend([
+    "Required Mean quality>>15",
+    "Completeness cutoff>>90%",
+    "Contamination cutoff>>10%"
+])
+
+sep_len = max(len(line) for line in tool_lines)
+sep = "=" * sep_len
+tools_block = [sep] + tool_lines + [sep]
+
+header += tools_block
 
 process_data.make_summary(qc_summary=qc_summary, temp_qc_summary=temp_qc_summary, header=header, checkm_out=checkm_out, logfile=log)
 

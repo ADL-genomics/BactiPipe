@@ -4,6 +4,8 @@ import subprocess
 import os
 import csv
 
+from bactipipe.scripts.pdf_renderer import render_pdf_from_tsv, LayoutConfig
+from reportlab.lib.units import inch
 
 def trimmer(sample, raw_reads, newReadsFolder, cpus=24, logfile=None):
     # with open (self.log, 'a') as log:
@@ -42,7 +44,6 @@ def trimmer(sample, raw_reads, newReadsFolder, cpus=24, logfile=None):
     if execute.returncode != 0:
         time_print("Failed to trimming reads for quality.", "Fail") # Check the log file for more details.")
         return
-
     else:
         message = '\n\t Trimmed reads exist already. Skiping QC!!!'
         # log.write(message +'\n')
@@ -75,6 +76,8 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
             tool = "spades.py"
         elif assembler == "flye":
             tool = "flye"
+        elif assembler == "skesa":
+            tool = "skesa"
 
         # Get tool version
         vercmd = f'{tool} --version'
@@ -90,7 +93,6 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
         logger(log, f'\t---> Assembler: {assembler}', mode="simple")
         logger(log, f'\t---> Number of fastq files: {len(reads)}', mode="simple")
         logger(log, f'\t---> Number of CPUs: {cpus}\n', mode="simple")
-
 
         if len(reads) == 2:
             read1 = reads[0]
@@ -119,8 +121,14 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
                 elif len(reads) == 1:
                     cmd1 = f'spades.py --isolate -s {single_reads} -o {tempDir} --threads {cpus}'
                 draft_assembly = f'{tempDir}/scaffolds.fasta'
+            elif assembler == "skesa":
+                if len(reads) == 2:
+                    cmd1 = f'skesa --reads {read1},{read2} --contigs_out {tempDir}/assembly.fasta --cores {cpus}'
+                elif len(reads) == 1:
+                    cmd1 = f'skesa --reads {single_reads} --contigs_out {tempDir}/assembly.fasta --cores {cpus}'
+                draft_assembly = f'{tempDir}/assembly.fasta'
             else:
-                return_info = f"Assembler {assembler} is not supported for Illumina reads. Please use Unicycler or Spades."
+                return_info = f"Assembler {assembler} is not supported for Illumina reads. Please use Skesa, Spades or Unicycler."
                 if single:
                     time_print(return_info, "Fail")
                 logger(log, return_info)
@@ -234,7 +242,7 @@ def checkM_stats(genomes_dir, outdir, cpus=24, logfile=None):
                 line = line.strip().split('\t')
                 checkM_output[line[0]] = [line[-3], line[-2]] # Completeness and contamination
 
-    return checkM_output
+    return checkM_output, version
 
 def make_summary(qc_summary, temp_qc_summary, header, checkm_out, logfile=None):
     log = logfile
@@ -244,7 +252,7 @@ def make_summary(qc_summary, temp_qc_summary, header, checkm_out, logfile=None):
             writer.writerow([line])
         writer.writerow(["Quality Summary"])
         writer.writerow([""])
-        writer.writerow(["Sample ID",  "Mean_quality", "Expected organism", "Identified organism", "% Match", "Coverage Depth", "Required depth", "CheckM completeness", "CheckM contamination", "Overall Quality"])
+        writer.writerow(["Sample ID",  "Mean quality", "Expected organism", "Identified organism", "% Match", "Coverage Depth", "Required depth", "CheckM completeness", "CheckM contamination", "Overall Quality"])
         for line in temp_sum:
             sample, avqc, qc_verdict, organism, hit, match, coverage, min_depth, cov_verdict, tax_confirm = line.strip().split("\t")
             if sample in ["Sample", "Lambda"]:
@@ -285,3 +293,26 @@ def make_summary(qc_summary, temp_qc_summary, header, checkm_out, logfile=None):
             logger(log, f'---> CheckM completeness: {completeness}', completeness_verdict, mode="simple")
             simple_print(f'---> CheckM contamination: {contamination}\n', contamination_verdict)
             logger(log, f'---> CheckM contamination: {contamination}\n', contamination_verdict, mode="simple")
+    # Write the pdf summary
+    run_name = ""
+    if os.path.exists(qc_summary):
+        with open(qc_summary, "r") as tsv:
+            for line in tsv:
+                if "Run name:" in line:
+                    run_name = line.strip().split(":")[1] 
+                    break
+        
+        title = f"Run {run_name}: QC Metrics"
+        layout = LayoutConfig(
+            reserved_cols=(2, 3),          
+            reserved_width=1.7*inch,       
+            last3_narrow_width=0.8*inch,   
+            # left_align_cols=(0, 2, 3),
+            # left_panel_ratio=0.65, 
+            # right_panel_ratio=0.35
+        )
+        pdf_file = qc_summary.replace('.tsv', '.pdf')
+        render_pdf_from_tsv(tsv_path=qc_summary, pdf_path=pdf_file, title=title, layout=layout, run_name=run_name)
+        if os.path.exists(pdf_file):
+            simple_print(f'PDF summary file generated: {pdf_file}', "Pass")
+            logger(log, f'PDF summary file generated: {pdf_file}', mode="simple")

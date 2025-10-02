@@ -3,7 +3,7 @@ import subprocess
 from bactipipe.scripts.utils import time_print, simple_print, logger
 from .config import DATA_DIR
 
-kmerfinder_version = "3.0.2" # To be updated manually
+kmerfinder_version = "v3.0.2" # To be updated manually
 
 def parse_kkn(kkn_report, logfile=None):
     log = logfile
@@ -114,7 +114,6 @@ def find_species_with_kkn(reads, kkn_db, s_name, expected_taxonomy, dataOut, org
         bh_display = f'Determined: {bh_display}) --- Expected: {lab_taxid}:{lab_species}'
 
     return bh_display, tax_confirm, others
-
 
 def find_species_with_kmrf(s_name, lab_species, genome, dataOut, org_type="bacteria", logfile=None):
     log = logfile

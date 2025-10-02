@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import subprocess
 import matplotlib
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,6 +13,17 @@ try:
     from isal import igzip as gzmod
 except Exception:
     import gzip as gzmod
+
+def fastp_version():
+    vercmd = ["fastp", "--version"]
+    try:
+        process = subprocess.Popen(vercmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = process.communicate()
+        fastp_ver = out.decode('utf-8', errors='replace').strip().split()[-1]
+        fastp_ver = "v" + fastp_ver
+    except Exception as e:
+        fastp_ver = "Unknown"
+    return fastp_ver
 
 def _iter_fastq_with_progress(fastq_path, desc):
     total_bytes = os.path.getsize(fastq_path)
