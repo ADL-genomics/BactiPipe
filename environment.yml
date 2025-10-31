@@ -3,6 +3,7 @@ channels:
   - bioconda
   - conda-forge
   - defaults
+  - hcc
 dependencies:
   - python=3.11
   - fastp
