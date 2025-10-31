@@ -21,6 +21,7 @@ def main():
     \nPipeline commands:
       QC-illumina      :  Run Illumina QC pipeline.
       QC-nanopore      :  Run Nanopore QC pipeline.
+      Relate-genomes   :  Type assembled genomes and compute relatedness (ANI/SKA).
     \nUse 'bactipipe <command> -h' to see help for the selected pipeline. [Only for pipeline commands.]\n'''
 
     if len(sys.argv) < 2 or sys.argv[1] in ["-h", "--help"]:
@@ -35,7 +36,8 @@ def main():
     script_dir = os.path.join(os.path.dirname(__file__), "scripts")
     script_map = {
         "qc-illumina": os.path.join(script_dir, "run_illumina_qc.py"),
-        "qc-nanopore": os.path.join(script_dir, "run_nanopore_qc.py")
+        "qc-nanopore": os.path.join(script_dir, "run_nanopore_qc.py"),
+        "relate": os.path.join(script_dir, "type_genomes.py"),
     }
 
     if command not in script_map and command not in tool_manage_commands:
@@ -55,7 +57,9 @@ def main():
         elif command == "update-databases":
             update_databases()
         sys.exit(0)
+
     elif command in script_map:
+        # Ensure databases are present before running any pipeline
         setup_databases(notifications="off")
         script_to_run = script_map[command]
 
@@ -65,7 +69,6 @@ def main():
     try:
         subprocess.run(run_command, check=True)
     except subprocess.CalledProcessError as e:
-        # print(f"Error: {e}", file=sys.stderr)
         sys.exit(e.returncode)
 
 if __name__ == "__main__":

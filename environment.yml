@@ -9,8 +9,8 @@ dependencies:
   - spades
   - unicycler
   - flye
+  - skesa
   - kmerfinder
-  - nanoplot
   - filtlong
   - matplotlib
   - numpy
@@ -25,9 +25,11 @@ dependencies:
   - django
   - Celery
   - boto3
-  - gunicorn
   - django-environ
   - awscli
+  - skani
+  - ska2
+  - hcc::basespace-cli
   - pip:
       - -e .
       - redis

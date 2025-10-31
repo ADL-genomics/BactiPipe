@@ -1,4 +1,4 @@
-
+from __future__ import annotations
 import os
 import re
 import sys
@@ -11,12 +11,27 @@ import pandas as pd
 from tqdm import tqdm
 from datetime import datetime
 from colorama import Fore, Style, init
-from typing import Iterable, Callable, Optional, Dict, List, Tuple, Union
+from typing import Iterable, Callable, Optional, Dict, List, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
 import io, gzip, threading, math
 from Bio import SeqIO
+import csv
+import socket
+from pathlib import Path
 
+# ReportLab imports
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.lib import colors
+from reportlab.lib.units import inch, cm
+from reportlab.pdfbase.pdfmetrics import stringWidth
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Table, TableStyle,
+    Spacer #, Image
+)
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+
+bactipipe_version = "v1.0.0"  # Update as needed
 
 _LEVEL_MAP = {
     "Norm": logging.INFO,
@@ -78,7 +93,6 @@ def logger(logfile, message="", message_type="Norm", mode="timestamp", s_type='p
     elif mode == "simple":
         with open(logfile, 'a') as log:
             simple_logger(logfile=log, message=message, message_type=message_type, s_type=s_type)
-
 
 def time_print(message, message_type="", s_type='plain'):
     tstamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
@@ -833,3 +847,1106 @@ def merge_gz_fastqs_s3(
                 os.remove(tmp_out)
         except Exception:
             pass
+
+##########TYPING ANALYSIS HELPERS ##########
+
+def _fmt_int_commas(val: str) -> str:
+    """Format integers with thousands separators; pass through NA/blank."""
+    v = (val or "").strip()
+    if v == "" or v.upper() == "NA":
+        return v or "NA"
+    try:
+        # SKA 'Distance' is integer; guard against accidental floats/strings
+        i = int(float(v))
+        return f"{i:,}"
+    except Exception:
+        return v
+
+# Typer reports
+# bactipipe/scripts/utils.py  (append these helpers)
+# If your runner is available, use it; otherwise fallback to subprocess
+try:
+    from .runner import run as _run  # signature: (cmd: List[str], cwd: Optional[Path], log, env_name: Optional[str]) -> (rc, out)
+except Exception:
+    _run = None  # fallback below
+
+
+def _run_cmd(cmd: List[str], env_name: Optional[str], logger) -> Tuple[int, str]:
+    """
+    Run a command, optionally inside a conda/mamba env via 'conda run -n <env>'.
+    Uses .runner.run if available; else a minimal subprocess fallback.
+    """
+    if _run is not None:
+        return _run(cmd, cwd=None, log=logger, env_name=env_name)
+
+    # minimal fallback (mirrors your _compose_tool_cmd)
+    def _compose(cmd_: List[str], env: Optional[str]) -> List[str]:
+        if not env:
+            return cmd_
+        for tool in ("conda", "micromamba", "mamba"):
+            if shutil.which(tool):
+                if tool == "conda":
+                    return [tool, "run", "--no-capture-output", "-n", env] + cmd_
+                return [tool, "run", "-n", env] + cmd_
+        return cmd_
+    import shutil
+    full = _compose(cmd, env_name)
+    try:
+        p = subprocess.run(full, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        return p.returncode, p.stdout
+    except Exception as e:
+        return 127, f"[runner] Failed to execute: {e}"
+
+
+# ---------------------------
+# Version normalization
+# ---------------------------
+
+_VERSION_RE = re.compile(r"(?:^|[^A-Za-z0-9_])(?P<v>v?\d+(?:\.\d+){0,3})(?:[^A-Za-z0-9_.]|$)")
+
+def normalize_version_string(raw: str) -> str:
+    """
+    Extracts the first version-ish token and returns it prefixed with 'v'.
+    Examples:
+      'SeqSero2_package.py 1.2.1'   -> 'v1.2.1'
+      'Kleborate v3.2.4'            -> 'v3.2.4'
+      'skani 0.3.0'                 -> 'v0.3.0'
+      'v1.2.0'                      -> 'v1.2.0'
+    """
+    if not raw:
+        return "v?"
+    m = _VERSION_RE.search(raw.strip())
+    if not m:
+        return "v?"
+    token = m.group("v")
+    return token if token.startswith("v") else f"v{token}"
+
+
+def get_tool_version(
+    exe: str,
+    logger,
+    env_name: Optional[str] = None,
+    flags: Optional[List[str]] = None,
+    alt_flags: Optional[List[str]] = None,
+    manual: Optional[str] = None,
+) -> str:
+    """
+    Tries flags then alt_flags; on success normalizes to 'vX.Y.Z'.
+    On failure returns 'manual' if provided, else 'v?'.
+    """
+    flags = flags or ["--version"]
+    alt_flags = alt_flags or []
+    tried: List[List[str]] = []
+    for fl in (flags, alt_flags):
+        if not fl:
+            continue
+        tried.append(fl)
+        rc, out = _run_cmd([exe] + fl, env_name, logger)
+        if rc == 0 and out and out.strip():
+            return normalize_version_string(out.splitlines()[0])
+    if manual:
+        return manual if manual.startswith("v") else f"v{manual}"
+    logger.debug(f"[version] Failed to detect version for {exe} with flags {tried}; using v?")
+    return "v?"
+
+# ---------------------------
+# Tools used & version collection
+# ---------------------------
+
+def get_python_version() -> str:
+    import sys
+    v = sys.version_info
+    return f"v{v.major}.{v.minor}.{v.micro}"
+
+def get_biopython_version(logger=None) -> str:
+    try:
+        import Bio  # type: ignore
+        ver = getattr(Bio, "__version__", None) or "N/A"
+        return ver if ver.startswith("v") else f"v{ver}"
+    except Exception as e:
+        if logger:
+            logger.debug(f"Biopython not importable: {e}")
+        return "N/A"
+
+def detect_used_tools(
+    paths: Dict[str, Path],
+    logger,
+    *,
+    env_overrides: Optional[Dict[str, Optional[str]]] = None,
+) -> Dict[str, Dict[str, Optional[str]]]:
+    """
+    Build a 'used' mapping: {ToolName -> {exe, env} or {version}} based on outputs in `paths`.
+    - Always includes Python and Biopython (prefilled versions).
+    - Includes MLST and SerotypeFinder as manual versions if used.
+    - Detects skani for both ref-based ANI and triangle runs.
+    """
+    env_overrides = env_overrides or {}
+    used: Dict[str, Dict[str, Optional[str]]] = {}
+
+    # Always add Python & Biopython (prefilled versions)
+    # used["Python"] = {"exe": None, "env": None, "version": get_python_version()}
+    used["Biopython"] = {"exe": None, "env": None, "version": get_biopython_version(logger)}
+
+    # SeqSero2 present if serotype/…/seqsero2 outputs exist
+    s_root = paths.get("serotype_root")
+    if s_root and s_root.exists():
+        any_seqsero = any(
+            (p / "seqsero2" / "SeqSero_result.tsv").exists()
+            or (p / "seqsero2" / "results_tab.tsv").exists()
+            or (p / "seqsero2" / "seqsero2.stdout.txt").exists()
+            for p in s_root.iterdir() if p.is_dir()
+        )
+        if any_seqsero:
+            used["SeqSero2"] = {"exe": "SeqSero2_package.py", "env": env_overrides.get("seqsero2")}
+
+    # cgMLSTFinder if cgmlst TSV or per-sample summaries exist
+    cgmlst_tsv = paths.get("cgmlst_tsv")
+    cgmlst_root = paths.get("cgmlst_root")
+    if (cgmlst_tsv and cgmlst_tsv.exists()) or (
+        cgmlst_root and cgmlst_root.exists() and any(
+            (p / "salmonella_summary.txt").exists() or (p / "cgmlst.stdout.txt").exists()
+            for p in cgmlst_root.iterdir() if p.is_dir()
+        )
+    ):
+        used["cgMLSTFinder"] = {"exe": "cgMLST.py", "env": env_overrides.get("cge")}
+
+    # MLST if mlst TSV or per-sample results.txt exist (manual version pin)
+    mlst_tsv = paths.get("mlst_tsv")
+    mlst_root = paths.get("mlst_root")
+    if (mlst_tsv and mlst_tsv.exists()) or (
+        mlst_root and mlst_root.exists() and any(
+            (p / "results.txt").exists() for p in mlst_root.iterdir() if p.is_dir()
+        )
+    ):
+        used["MLST"] = {"exe": None, "env": None, "version": "v2.0.9"}
+
+    # SerotypeFinder if any serotypefinder results exist (manual version pin)
+    if s_root and s_root.exists():
+        if any((p / "serotypefinder" / "results_tab.tsv").exists()
+               for p in s_root.iterdir() if p.is_dir()):
+            used["SerotypeFinder"] = {"exe": None, "env": None, "version": "v2.0.1"}
+
+    # Kleborate if any kleborate dir exists
+    if s_root and s_root.exists():
+        if any((p / "kleborate").exists() for p in s_root.iterdir() if p.is_dir()):
+            used["Kleborate"] = {"exe": "kleborate", "env": env_overrides.get("kleborate")}
+
+    # SKA2 if distances TSV exists
+    ska_dist = paths.get("ska_distances")
+    if ska_dist and ska_dist.exists():
+        used["SKA2"] = {"exe": "ska", "env": env_overrides.get("ska")}
+
+    # skani: present if ref ANI table exists OR triangle pairs exist
+    ani_present = bool(paths.get("ani_tsv") and paths["ani_tsv"].exists())
+    tri_present = any(paths.get(k) and paths[k].exists()
+                      for k in ("skani_pairs", "skani_pairs_samples"))
+    if ani_present or tri_present:
+        used["skani"] = {"exe": "skani", "env": env_overrides.get("skani")}
+
+    return used
+
+def _norm_ver(v: Optional[str]) -> str:
+    v = (v or "").strip()
+    if not v:
+        return "N/A"
+    return v if v.startswith("v") else f"v{v}"
+
+def collect_tool_versions(used: Dict[str, Dict[str, Optional[str]]], logger) -> Dict[str, str]:
+    """
+    Convert a 'used' mapping -> {name: version}.
+    Supports entries with a prefilled 'version' OR with ('exe','env') to probe via get_tool_version.
+    Normalizes everything to start with 'v', returns 'N/A' on failure.
+    """
+    versions: Dict[str, str] = {"BactiPipe": bactipipe_version}
+
+    for name, meta in used.items():
+        # Be tolerant: someone may accidentally pass a string
+        if not isinstance(meta, dict):
+            versions[name] = _norm_ver(str(meta))
+            continue
+
+        # Prefilled version takes precedence (Python, Biopython, MLST, SerotypeFinder, etc.)
+        pref = meta.get("version")
+        if pref:
+            versions[name] = _norm_ver(pref)
+            continue
+
+        exe = meta.get("exe")
+        env = meta.get("env")
+
+        # Manual pins (if you prefer to keep them here instead of prefill in 'used')
+        if name == "MLST":
+            versions[name] = "v2.0.9"
+            continue
+        if name == "SerotypeFinder":
+            versions[name] = "v2.0.1"
+            continue
+
+        if not exe:
+            versions[name] = "N/A"
+            continue
+
+        # Probe
+        try:
+            # Your utils.get_tool_version already normalizes, but we normalize again defensively
+            v = get_tool_version(exe, logger, env_name=env)  # <- keep existing signature
+            versions[name] = _norm_ver(v)
+        except Exception:
+            versions[name] = "N/A"
+
+    return versions
+
+# ---------------------------
+# Report header + PDF
+# ---------------------------
+
+def make_report_header_block(
+    *,
+    title: str,
+    run_name: str,
+    tech_name: str,
+    accession: str = "",
+) -> str:
+    """
+    Single-block header (accession inline). Matches your request.
+    """
+    date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    hostname = socket.gethostname()
+    try:
+        ip_addr = socket.gethostbyname(hostname)
+    except Exception:
+        ip_addr = "unknown"
+
+    header = f"""
+=======================================
+Penn State Animal Diagnostic Laboratory
+BactiPipe - {title}
+Run name: {run_name}
+Accession: {accession or '-'}
+Date: {date_str}
+Analysis by: {tech_name}
+Server Host Name: {hostname}
+=======================================
+""".strip("\n")
+    return header
+
+def render_pdf_type_genomes_full(
+    *,
+    final_tsv: Path,
+    out_pdf: Path,
+    title: str,
+    header_text: str,
+    tool_versions: Dict[str, str],
+) -> None:
+    """
+    Minimal, robust renderer:
+      - No reordering of columns (uses whatever is in the TSV)
+      - Wraps only 'Specimen' column
+      - Centers numeric columns: Size (Mb), GC (%), MLST, cgMLST, SNP distance, ANI (%)
+      - Forces 'SNP distance' header to two lines (SNP<br/>distance)
+      - Fits every table within page width (landscape Letter)
+    """
+    if not final_tsv.exists():
+        raise FileNotFoundError(f"Final TSV not found: {final_tsv}")
+    # ---------- Parse final.tsv into sections (## Title lines start sections) ----------
+    raw_lines = final_tsv.read_text().splitlines()
+    sections: List[Tuple[str, List[List[str]]]] = []
+    current_title = "Strain Relatedness Summary"
+    current_lines: List[str] = []
+
+    def _flush_current():
+        nonlocal current_title, current_lines
+        if current_lines:
+            rows: List[List[str]] = []
+            rdr = csv.reader(current_lines, delimiter="\t")
+            for r in rdr:
+                if r and any((c or "").strip() for c in r):
+                    rows.append([c.strip() for c in r])
+            if rows:
+                sections.append((current_title, rows))
+        current_lines = []
+
+    for line in raw_lines:
+        if line.startswith("## "):
+            _flush_current()
+            current_title = line[3:].strip() or "Section"
+        else:
+            if line.strip() == "" and not current_lines:
+                continue
+            current_lines.append(line)
+    _flush_current()
+    if not sections:
+        raise RuntimeError("No sectioned tables detected in final TSV.")
+
+    # ---------- Styles ----------
+    styles = getSampleStyleSheet()
+
+    title_style = ParagraphStyle(
+        "TitleCentered",
+        parent=styles["Heading1"],
+        alignment=TA_CENTER,
+        fontName="Helvetica-Bold",
+        fontSize=16,
+        spaceAfter=6,
+    )
+    hdr_title = ParagraphStyle(
+        "HeaderTitle",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=10,
+        leading=12,
+    )
+    hdr_block = ParagraphStyle(
+        "HeaderBlock",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=9,
+        leading=11,
+    )
+    hdr_sep = ParagraphStyle(
+        "HeaderSep",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=9,
+        leading=11,
+    )
+    section_h = ParagraphStyle(
+        "SectionHeading",
+        parent=styles["Heading2"],
+        fontName="Helvetica-Bold",
+        fontSize=12,
+        spaceBefore=8,
+        spaceAfter=4,
+    )
+    header_cell = ParagraphStyle(
+        "HeaderCell",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=11,
+        alignment=TA_CENTER,  # header text centered
+    )
+    cell_p = ParagraphStyle(
+        "Cell",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=9,
+        leading=11,
+        wordWrap="LTR",
+        alignment=TA_LEFT,  # body defaults to left
+    )
+    cell_center = ParagraphStyle(
+        "CellCenter",
+        parent=cell_p,
+        alignment=TA_CENTER,
+    )
+    # Header cell styles
+    header_cell_left = ParagraphStyle(
+        "HeaderCellLeft",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=11,
+        alignment=TA_LEFT,
+    )
+    header_cell_center = ParagraphStyle(
+        "HeaderCellCenter",
+        parent=styles["Normal"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=11,
+        alignment=TA_CENTER,
+    )
+
+    # ---------- Footer (right-aligned) ----------
+    def _on_page(canvas, doc):
+        canvas.setFont("Helvetica", 9)
+        footer = f"BactiPipe - Relatedness Report | Page {doc.page}"
+        x = doc.pagesize[0] - doc.rightMargin
+        canvas.drawRightString(x, 0.45 * inch, footer)
+
+    # ---------- Header band helpers ----------
+    def _fit_sep(panel_width: float, font="Helvetica", size=9, scale=0.50,
+                 min_chars=4, max_chars=60) -> str:
+        usable = max(1.0, panel_width - 10)
+        per_char = max(1.0, stringWidth("=", font, size))
+        n = int((usable / per_char) * scale)
+        n = max(min_chars, min(max_chars, n))
+        return "=" * n
+
+    # ---------- Column width calculator (kept compact) ----------
+    def _cell_plain_text(x) -> str:
+        if isinstance(x, Paragraph):
+            return x.getPlainText()
+        return "" if x is None else str(x)
+
+    def _column_widths(data: List[List[object]], max_width: float) -> List[float]:
+        if not data or not data[0]:
+            return []
+        ncols = len(data[0])
+        widths = [0.0] * ncols
+        # Estimate widths from up to first 200 body rows + header
+        sample_rows = data[:min(len(data), 200)]
+        for row in ([data[0]] + sample_rows):
+            for j, cell in enumerate(row):
+                s = _cell_plain_text(cell)
+                w = stringWidth(s, "Helvetica", 9) + 12  # padding
+                widths[j] = max(widths[j], w)
+
+        # Enforce semantic minimums
+        header_txts = [re.sub(r"<.*?>", "", _cell_plain_text(h)).strip() for h in data[0]]
+        lower = [h.lower() for h in header_txts]
+
+        def ensure_min(col_name: str, min_inch: float):
+            try:
+                i = lower.index(col_name.lower())
+                widths[i] = max(widths[i], min_inch * inch)
+            except ValueError:
+                pass
+
+        # Make Specimen generous; numeric cols moderate
+        ensure_min("Sample ID", 1.30)
+        ensure_min("Isolate ID", 1.30)
+        ensure_min("Specimen", 2.0)
+        ensure_min("Serotype", 1.25)
+        ensure_min("SNP distance", 1.20)
+        ensure_min("ANI (%)", 1.00)
+        ensure_min("Size (Mb)", 1.00)
+        ensure_min("GC (%)", 1.00)
+        ensure_min("MLST", 0.8)
+        ensure_min("cgMLST", 0.9)
+
+        total = sum(widths) or 1.0
+        if total <= max_width:
+            return widths
+
+        # Scale down proportionally to fit within max_width
+        scale = max_width / total
+        widths = [w * scale for w in widths]
+
+        # If tiny overflow due to rounding, shave proportionally (respect a minimal floor)
+        floor = 0.60 * inch
+        total = sum(widths)
+        if total > max_width:
+            over = total - max_width
+            flex = [max(0, w - floor) for w in widths]
+            flex_total = sum(flex) or 1.0
+            widths = [max(floor, w - over * (max(0, w - floor) / flex_total)) for w in widths]
+
+        # As an extra guard: cap any single column to 45% of the table width
+        cap = max_width * 0.45
+        clipped = False
+        for i, w in enumerate(widths):
+            if w > cap:
+                widths[i] = cap
+                clipped = True
+        if clipped:
+            # re-distribute remainder lightly (optional; can be omitted to keep it simple)
+            pass
+
+        return widths
+
+    # ---------- Build the document ----------
+    out_pdf.parent.mkdir(parents=True, exist_ok=True)
+    doc = SimpleDocTemplate(
+        str(out_pdf),
+        pagesize=landscape(letter),
+        leftMargin=0.6 * inch,
+        rightMargin=0.6 * inch,
+        topMargin=0.6 * inch,
+        bottomMargin=0.6 * inch,
+    )
+    story: List = []
+
+    # Title
+    story.append(Paragraph(title, title_style))
+    story.append(Spacer(1, 6))
+
+    # Two-block header (left: Run Metadata; right: Tool versions)
+    col_widths_hdr = [doc.width * 0.56, doc.width * 0.44]
+
+    # LEFT
+    left_flow: List[Paragraph] = [Paragraph("Run Metadata", hdr_title)]
+    for ln in (header_text or "").strip("\n").splitlines():
+        if re.fullmatch(r"=+", ln.strip()):
+            left_flow.append(Paragraph(ln.strip(), hdr_sep))
+        else:
+            left_flow.append(Paragraph(str(ln), hdr_block))
+
+    # RIGHT
+    right_sep = _fit_sep(col_widths_hdr[1])
+    right_flow: List[Paragraph] = [Paragraph("Software Version Numbers", hdr_title),
+                                   Paragraph(right_sep, hdr_sep)]
+    # Use order given by tool_versions (dict insertion order)
+    for name, ver in tool_versions.items():
+        right_flow.append(Paragraph(f"{name}: {ver}", hdr_block))
+    right_flow.append(Paragraph(right_sep, hdr_sep))
+
+    header_tbl = Table([[left_flow, right_flow]], colWidths=col_widths_hdr, hAlign="LEFT")
+    header_tbl.setStyle(TableStyle([
+        ("VALIGN", (0,0), (-1,-1), "TOP"),
+        ("ALIGN", (0,0), (-1,-1), "LEFT"),
+        ("LEFTPADDING", (0,0), (-1,-1), 0),
+        ("RIGHTPADDING", (0,0), (-1,-1), 0),
+        ("TOPPADDING", (0,0), (-1,-1), 0),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 0),
+    ]))
+    story.append(header_tbl)
+    story.append(Spacer(1, 8))
+
+    # ---------- Render each section ----------
+    for idx, (sec_title, rows) in enumerate(sections):
+        heading = "Strain Relatedness Summary" if idx == 0 else (sec_title or "Section")
+        story.append(Paragraph(heading, section_h))
+
+        if not rows or not rows[0]:
+            story.append(Paragraph("<i>No data</i>", hdr_block))
+            story.append(Spacer(1, 8))
+            continue
+
+        # === 1️⃣ Define column positions here ===
+        # === 1️⃣ Define column positions here (alias-aware) ===
+        # Extract raw header text (Paragraph or str) and a lowercased copy for matching
+        raw_hdr = []
+        for h in rows[0]:
+            if hasattr(h, "getPlainText"):
+                raw_hdr.append(h.getPlainText())
+            else:
+                raw_hdr.append("" if h is None else str(h))
+        hdr_norm = [s.strip().lower() for s in raw_hdr]
+
+        def _pos_exact(name: str) -> int:
+            """Exact (case-insensitive) lookup against the original header row."""
+            key = name.strip().lower()
+            try:
+                return hdr_norm.index(key)
+            except ValueError:
+                return -1
+
+        # Tiny alias resolver: try a few label variants without touching the TSV
+        def _pos_any(*labels: str) -> int:
+            for lab in labels:
+                i = _pos_exact(lab)
+                if i >= 0:
+                    return i
+            return -1
+
+        # Column indices (use aliases where headers may vary)
+        specimen_idx = _pos_any("specimen")
+
+        size_idx     = _pos_any("size (mb)", "size", "size mb", "genome size", "genome size (mb)")
+        gc_idx       = _pos_any("gc (%)", "gc", "gc percent")
+        mlst_idx     = _pos_any("mlst", "st")
+        cgmlst_idx   = _pos_any("cgmlst", "cgst", "cg-mlst", "cg mlst")
+        snp_idx      = _pos_any("snp distance", "snp_dist", "snp distance (ska)", "ska snps vs reference")
+        ani_idx      = _pos_any("ani (%)", "ani", "ani percent")
+
+        numeric_cols = {i for i in (size_idx, gc_idx, mlst_idx, cgmlst_idx, snp_idx, ani_idx) if i >= 0}
+
+
+        # === 2️⃣ Then build body_rows (uses specimen_idx & numeric_cols) ===
+        wrap_cols = {specimen_idx} if specimen_idx >= 0 else set()
+        body_rows: List[List[object]] = []
+        for row in rows[1:]:
+            formatted_row = []
+            for j, val in enumerate(row):
+                s = "" if val is None else str(val)
+                if j in wrap_cols:
+                    formatted_row.append(Paragraph(s, cell_p))
+                elif j in numeric_cols:
+                    formatted_row.append(Paragraph(f"<para align='center'>{s}</para>", cell_p))
+                else:
+                    formatted_row.append(s)
+            body_rows.append(formatted_row)
+
+        # ----- Canonicalize header *display* labels (PDF only) -----
+        canonical_map = {
+            "sample": "Sample ID",
+            "sample id": "Sample ID",
+            "isolate": "Isolate ID",
+            "isolate id": "Isolate ID",
+            "specimen": "Specimen",
+            "size (mb)": "Size (Mb)",
+            "size": "Size (Mb)",
+            "gc (%)": "GC (%)",
+            "gc": "GC (%)",
+            "serotype": "Serotype",
+            "mlst": "MLST",
+            "st": "MLST",
+            "cgst": "cgMLST",
+            "cgmlst": "cgMLST",
+            "snp distance": "SNP<br/>distance",   # two-line header (centered if numeric col)
+            "ani (%)": "ANI (%)",
+            "ani": "ANI (%)",
+        }
+
+        # Raw header texts (strip any Paragraph)
+        raw_headers = []
+        for h in rows[0]:
+            raw_headers.append(h.getPlainText() if isinstance(h, Paragraph) else ("" if h is None else str(h)))
+
+        # Build header cells with per-column alignment
+        header_cells = []
+        for j, h in enumerate(raw_headers):
+            key = h.strip().lower()
+            display = canonical_map.get(key, h)
+
+            # Center only for numeric columns; else left align
+            hdr_style = header_cell_center if j in numeric_cols else header_cell_left
+            header_cells.append(Paragraph(display, hdr_style))
+
+        # Combine header + body
+        table_data: List[List[object]] = [header_cells] + body_rows
+
+        # Column widths: compute and fit
+        col_widths_tbl = _column_widths(table_data, doc.width)
+
+        tbl = Table(table_data, colWidths=col_widths_tbl, repeatRows=1, hAlign="LEFT")
+        tbl.setStyle(TableStyle([
+            # Body text
+            ("FONT", (0, 1), (-1, -1), "Helvetica", 10),
+
+            # Header row (more readable font for small c/g)
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 10),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+
+            # Background and grid
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.grey),
+
+            # Alignment and padding
+            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        story.append(tbl)
+        story.append(Spacer(1, 10))
+
+    doc.build(story, onFirstPage=_on_page, onLaterPages=_on_page)
+
+
+
+def _read_gc_map_from_assembly(assembly_summary_tsv: Path) -> Dict[str, str]:
+    """
+    Reads the per-sample GC from the assembly summary if present.
+    Returns {sample -> gc_string}. If no GC column, returns {}.
+    """
+    m: Dict[str, str] = {}
+    if not assembly_summary_tsv or not assembly_summary_tsv.exists():
+        return m
+    # Support either headered or simple columns
+    rows = [r for r in csv.reader(assembly_summary_tsv.open("r"), delimiter="\t")]
+    if not rows:
+        return m
+    header = [h.strip().lower() for h in rows[0]]
+    if "gc" in header:
+        i_sample = header.index("sample")
+        i_gc     = header.index("gc")
+        for r in rows[1:]:
+            if len(r) > max(i_sample, i_gc):
+                s = r[i_sample].strip()
+                g = r[i_gc].strip()
+                if s:
+                    m[s] = g or "NA"
+    else:
+        # no GC column -> nothing to load
+        return {}
+    return m
+
+def compute_sample_gc_percent(fasta: Path) -> str:
+    """
+    Streaming GC% across all contigs. Returns formatted string like '52.204'.
+    """
+    if not fasta or not fasta.exists():
+        return ""
+    total_len = 0
+    gc_count  = 0
+    with fasta.open() as fh:
+        for line in fh:
+            if not line or line.startswith(">"):
+                continue
+            s = line.strip().upper()
+            if not s:
+                continue
+            total_len += len(s)
+            # count G/C quickly
+            gc_count += s.count("G") + s.count("C")
+    if total_len == 0:
+        return ""
+    pct = 100.0 * gc_count / total_len
+    return f"{pct:.2f}"
+
+# --- matrix builders----------------------------
+
+def _read_tsv_to_map(path: Path, key_col: int = 0, val_col: int = 1) -> Dict[str, str]:
+    m: Dict[str, str] = {}
+    if not path or not path.exists():
+        return m
+    for row in csv.reader(path.open("r"), delimiter="\t"):
+        if not row:
+            continue
+        if row[0].startswith("#"):
+            continue
+        if len(row) <= max(key_col, val_col):
+            continue
+        k = row[key_col].strip()
+        v = row[val_col].strip()
+        if k and k.lower() != "sample":
+            m[k] = v
+    return m
+
+def triangular_matrix_from_pairs(
+    pairs_tsv: Path,
+    sample_order: List[str],
+    *,
+    sample1_keys: Iterable[str] = ("Sample1", "sample1", "Ref", "ref", "File1"),
+    sample2_keys: Iterable[str] = ("Sample2", "sample2", "Query", "query", "File2"),
+    value_keys:    Iterable[str] = ("ANI", "ani", "Distance", "distance"),
+    diagonal_value: str = "0",
+    placeholder:    str = "-",
+    value_format: Optional[str] = None,   # e.g. "{:.2f}" or "{:,}"
+) -> List[List[str]]:
+    """
+    Build a strictly LOWER-TRIANGULAR matrix:
+      - Diagonal = diagonal_value (e.g., "0")
+      - Lower triangle = values from pairs_tsv
+      - Upper triangle = placeholder (e.g., "-")
+    Pairs are treated as unordered (A,B) == (B,A); we prefer numeric if both exist.
+    """
+    if not pairs_tsv or not pairs_tsv.exists():
+        return []
+
+    rows = [r for r in csv.reader(pairs_tsv.open("r"), delimiter="\t") if any(c.strip() for c in r)]
+    if not rows:
+        return []
+
+    header = [h.strip() for h in rows[0]]
+    hmap = {h.lower(): i for i, h in enumerate(header)}
+
+    def _first_index(keys: Iterable[str]) -> Optional[int]:
+        for k in keys:
+            idx = hmap.get(k.lower())
+            if idx is not None:
+                return idx
+        return None
+
+    i_s1 = _first_index(sample1_keys)
+    i_s2 = _first_index(sample2_keys)
+    i_v  = _first_index(value_keys)
+    if i_s1 is None or i_s2 is None or i_v is None:
+        return []
+
+    # Map unordered pair -> value
+    def _coerce_num(s: str) -> Optional[float]:
+        try:
+            return float(s)
+        except Exception:
+            return None
+
+    d: Dict[frozenset, str] = {}
+    for r in rows[1:]:
+        if len(r) <= max(i_s1, i_s2, i_v):
+            continue
+        a, b, v = r[i_s1].strip(), r[i_s2].strip(), r[i_v].strip()
+        if not a or not b:
+            continue
+        key = frozenset((a, b))
+        # Keep the better (numeric) value if we see the pair twice
+        if key in d:
+            old_num = _coerce_num(d[key])
+            new_num = _coerce_num(v)
+            if old_num is None and new_num is not None:
+                d[key] = v
+        else:
+            d[key] = v
+
+    # Now build matrix
+    out: List[List[str]] = []
+    out.append(["sample"] + sample_order)
+    for i, si in enumerate(sample_order):
+        row = [si]
+        for j, sj in enumerate(sample_order):
+            if i == j:
+                row.append(diagonal_value)
+            elif i > j:
+                key = frozenset((si, sj))
+                val = d.get(key, placeholder)
+                if value_format and val not in {placeholder, ""}:
+                    try:
+                        val = value_format.format(float(val))
+                    except Exception:
+                        pass
+                row.append(val)
+            else:
+                row.append(placeholder)
+        out.append(row)
+    return out
+
+# --- main writer --------------------------------------
+
+def write_final_summary(
+    *,
+    accession: str,
+    manifest: List[SampleRecord],
+    paths: Dict[str, Path],
+    logger,
+    reference_provided: Optional[bool] = None,
+    has_reference: Optional[bool] = None,   # alias
+) -> Path:
+    """
+    Compose the consolidated final TSV at:
+      paths['outdir'] / f"{accession}_final.tsv"
+
+    Summary columns (with reference):
+      Sample | Isolate | Specimen | Size (Mb) | GC (%) | Serotype | ST | cgST | SNP distance | ANI (%)
+
+    When NO reference:
+      Drop ANI and SNP distance from the summary table, and append LOWER-triangular:
+        - '## ANI matrix (skani)'
+        - '## SKA SNPs matrix'
+    """
+    if has_reference is None:
+        has_reference = bool(reference_provided)
+
+    outdir = paths["outdir"]
+    outdir.mkdir(parents=True, exist_ok=True)
+    final_path = outdir / f"{accession}_final.tsv"
+
+    # --- local helpers ---
+    def _read_size_map_from_assembly(asm_tsv: Optional[Path]) -> Dict[str, str]:
+        """Return {sample: 'X.XXX'} from 'size_mb' or compute from 'sum_len'."""
+        out: Dict[str, str] = {}
+        if not asm_tsv or not asm_tsv.exists():
+            return out
+        try:
+            with asm_tsv.open("r") as fh:
+                reader = csv.reader(fh, delimiter="\t")
+                header = next(reader, None)
+                if not header:
+                    return out
+                h = [c.strip().lower() for c in header]
+                i_s = h.index("sample") if "sample" in h else None
+                i_mb = h.index("size_mb") if "size_mb" in h else None
+                i_bp = h.index("sum_len") if "sum_len" in h else None
+                for row in reader:
+                    if not row or i_s is None or i_s >= len(row):
+                        continue
+                    s = row[i_s].strip()
+                    if i_mb is not None and i_mb < len(row) and row[i_mb].strip():
+                        out[s] = row[i_mb].strip()
+                    elif i_bp is not None and i_bp < len(row):
+                        try:
+                            bp = float(row[i_bp])
+                            out[s] = f"{bp/1_000_000.0:.2f}"
+                        except Exception:
+                            pass
+        except Exception as e:
+            logger.warning(f"Failed reading assembly summary for size_mb: {e}")
+        return out
+
+    def _fmt_int_commas_or_dash(val: Optional[str]) -> str:
+        """SNPs: integer with commas; '-' passthrough; else 'NA'."""
+        if val is None:
+            return "NA"
+        v = str(val).strip()
+        if v in {"", "NA", "na", "NaN"}:
+            return "NA"
+        if v == "-":
+            return "-"
+        try:
+            f = float(v.replace(",", ""))
+            return f"{int(round(f)):,}"
+        except Exception:
+            return "NA"
+
+    def _fmt_pct_or_dash(val: Optional[str], nd=2) -> str:
+        """Percent: '99.863'→'99.86'; '-' passthrough; else 'NA'."""
+        if val is None:
+            return "NA"
+        v = str(val).strip()
+        if v == "-":
+            return "-"
+        try:
+            f = float(v)
+            return f"{f:.{nd}f}"
+        except Exception:
+            return "NA"
+
+    # --- maps from upstream steps ---
+    sero_map = _read_tsv_to_map(paths.get("serotypes_tsv")) if paths.get("serotypes_tsv") else {}
+    st_map   = _read_tsv_to_map(paths.get("mlst_tsv"))      if paths.get("mlst_tsv")      else {}
+    cgst_map = _read_tsv_to_map(paths.get("cgmlst_tsv"))    if paths.get("cgmlst_tsv")    else {}
+    ani_map  = _read_tsv_to_map(paths.get("ani_tsv")) if (has_reference and paths.get("ani_tsv") and paths["ani_tsv"].exists()) else {}
+
+    # SKA vs-ref (sample -> snps)
+    ska_vs_ref_map: Dict[str, str] = {}
+    if has_reference and paths.get("ska_vs_ref") and paths["ska_vs_ref"].exists():
+        with paths["ska_vs_ref"].open("r") as fh:
+            for row in csv.reader(fh, delimiter="\t"):
+                if not row or row[0].lower() == "sample":
+                    continue
+                if len(row) >= 2:
+                    ska_vs_ref_map[row[0].strip()] = row[1].strip()
+
+    # GC (%) and Size (Mb) from assembly summary
+    gc_map   = _read_gc_map_from_assembly(paths.get("assembly_summary_tsv")) if paths.get("assembly_summary_tsv") else {}
+    size_map = _read_size_map_from_assembly(paths.get("assembly_summary_tsv"))
+
+    # --- write final TSV ---
+    with final_path.open("w", newline="") as out:
+        w = csv.writer(out, delimiter="\t")
+
+        # Title row
+        w.writerow(["## Strain Relatedness Summary"])
+
+        if has_reference:
+            header = ["Sample", "Isolate", "Specimen", "Size (Mb)", "GC (%)", "Serotype", "ST", "cgST", "SNP distance", "ANI (%)"]
+        else:
+            header = ["Sample", "Isolate", "Specimen", "Size (Mb)", "GC (%)", "Serotype", "ST", "cgST"]
+        w.writerow(header)
+
+        ref_sample = manifest[0].sample if (has_reference and manifest) else None
+
+        for rec in manifest:
+            if not rec.exists:
+                continue
+            s   = rec.sample
+            iso = rec.isolate
+            spe = rec.specimen
+
+            size_mb = size_map.get(s, "NA")
+            gc_pct  = gc_map.get(s, "NA")
+            sero    = sero_map.get(s, "NA")
+            st      = st_map.get(s, "NA")
+            cgst    = cgst_map.get(s, "NA")
+
+            row = [s, iso, spe, size_mb, gc_pct, sero, st, cgst]
+
+            if has_reference:
+                is_ref = (s == ref_sample)
+                ani_raw = "-" if is_ref else ani_map.get(s, "-")
+                snp_raw = "-" if is_ref else ska_vs_ref_map.get(s, "-")
+                ani_fmt = _fmt_pct_or_dash(ani_raw, nd=2)
+                snp_fmt = _fmt_int_commas_or_dash(snp_raw)
+                row += [snp_fmt, ani_fmt]
+
+            w.writerow(row)
+
+        w.writerow([])  # spacer
+
+        # Matrices only when NO reference
+        if not has_reference:
+            sample_order = [r.sample for r in manifest if r.exists]
+
+            # ANI triangular (skani)
+            ani_pairs = paths.get("skani_pairs_samples") or paths.get("skani_pairs")
+            ani_mat = triangular_matrix_from_pairs(
+                ani_pairs, sample_order,
+                sample1_keys=("Sample1","sample1","Ref","ref"),
+                sample2_keys=("Sample2","sample2","Query","query"),
+                value_keys=("ANI","ani"),
+                diagonal_value="0",
+                placeholder="-",
+                value_format="{:.2f}",
+            )
+            if ani_mat:
+                w.writerow(["## ANI matrix (skani)"])
+                for r in ani_mat:
+                    w.writerow(r)
+                w.writerow([])
+
+            # SKA SNPs triangular (Distance), with thousands-separators
+            ska_mat = triangular_matrix_from_pairs(
+                paths.get("ska_distances"), sample_order,
+                sample1_keys=("Sample1","sample1","Ref","ref"),
+                sample2_keys=("Sample2","sample2","Query","query"),
+                value_keys=("Distance","distance"),
+                diagonal_value="0",
+                placeholder="-",
+                value_format="{:,}",
+            )
+            if ska_mat:
+                w.writerow(["## SKA SNPs matrix"])
+                for r in ska_mat:
+                    w.writerow(r)
+
+    logger.info(f"Wrote final summary: {final_path}")
+    return final_path
+
+
+def run_skani_triangle_and_write(
+    samples: List[Tuple[str, Path]],   # [(sample_name, fasta_path)]
+    skani_root: Path,
+    out_prefix: str,
+    logger,
+    env_name: Optional[str] = None,
+) -> Dict[str, Path]:
+    """
+    Calls:  skani triangle -o <triangle.tsv> <FASTA...>
+    Parses its upper-triangle output into:
+      - <prefix>.triangle.tsv        (raw triangle file from skani)
+      - <prefix>.pairs.tsv           (by file paths)
+      - <prefix>.pairs_samples.tsv   (by sample names)
+    Returns a dict with those paths (only the ones that exist).
+    """
+    skani_root.mkdir(parents=True, exist_ok=True)
+    # Use absolute paths so triangle output paths match exactly
+    fasta_paths = [str(p.resolve()) for _, p in samples]
+    tri_path   = skani_root / f"{out_prefix}.triangle.tsv"
+    stdout_path = skani_root / f"{out_prefix}.triangle.stdout.txt"
+
+    cmd = ["skani", "triangle", "-o", str(tri_path)] + fasta_paths
+    rc, out = _run(cmd, cwd=None, log=logger, env_name=env_name)
+    stdout_path.write_text(out)
+
+    if rc != 0 or not tri_path.exists():
+        logger.error("skani triangle FAILED (no triangle file). See %s", stdout_path)
+        return {}
+
+    # Parse triangle format
+    lines = [ln.rstrip("\n") for ln in tri_path.open("r") if ln.strip()]
+    try:
+        n = int(lines[0].split()[0])
+    except Exception:
+        logger.error("skani triangle parse error: first line does not contain N. See %s", tri_path)
+        return {"triangle": tri_path}
+
+    # Map triangle file paths -> sample names
+    name_by_file: Dict[str, str] = {str(p.resolve()): s for s, p in samples}
+
+    files_in_order: List[str] = []
+    pairs_file = skani_root / f"{out_prefix}.pairs.tsv"
+    pairs_samples_file = skani_root / f"{out_prefix}.pairs_samples.tsv"
+
+    with pairs_file.open("w", newline="") as pf, pairs_samples_file.open("w", newline="") as psf:
+        pw = csv.writer(pf, delimiter="\t")
+        sw = csv.writer(psf, delimiter="\t")
+        pw.writerow(["File1", "File2", "ANI"])
+        sw.writerow(["Sample1", "Sample2", "ANI"])
+
+        rows = lines[1:1+n]
+        for i, row in enumerate(rows):
+            cols = row.split("\t")
+            fi = cols[0].strip()
+            files_in_order.append(fi)
+            vals = [c.strip() for c in cols[1:] if c.strip() != ""]
+            # vals are ANI between current file (i) and previous files j < i
+            for j, v in enumerate(vals):
+                f1 = files_in_order[j]
+                f2 = fi
+                try:
+                    ani = f"{float(v):.2f}"
+                except Exception:
+                    ani = "NA"
+                pw.writerow([f1, f2, ani])
+                s1 = name_by_file.get(f1, Path(f1).stem)
+                s2 = name_by_file.get(f2, Path(f2).stem)
+                sw.writerow([s1, s2, ani])
+
+    return {
+        "triangle": tri_path,
+        "pairs": pairs_file,
+        "pairs_samples": pairs_samples_file,
+    }
