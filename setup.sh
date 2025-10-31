@@ -90,6 +90,7 @@ fi
 
 # Install basespace-cli
 echo "🔧 Installing basespace-cli..."
+mkdir -p $HOME/bin
 if [ "$PLATFORM" == "Linux" ]; then
     wget "https://launch.basespace.illumina.com/CLI/latest/amd64-linux/bs" -O $HOME/bin/bs
 elif [ "$PLATFORM" == "MacOSX" ]; then
