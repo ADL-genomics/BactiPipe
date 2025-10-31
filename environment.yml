@@ -10,7 +10,6 @@ dependencies:
   - spades
   - unicycler
   - flye
-  - skesa
   - kmerfinder
   - filtlong
   - matplotlib
@@ -24,8 +23,6 @@ dependencies:
   - pip
   - boto3
   - awscli
-  - skani
-  - ska2
   - hcc::basespace-cli
   - pip:
       - -e .
