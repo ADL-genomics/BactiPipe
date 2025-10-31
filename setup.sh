@@ -73,7 +73,7 @@ echo ""
 ENV_NAME="bactipipe"
 
 echo "📦 Creating conda environment: $ENV_NAME"
-conda env create -f environment.yml
+mamba env create -f environment.yml
 
 echo "✅ Environment created. Activating..."
 source "$(conda info --base)/etc/profile.d/conda.sh"

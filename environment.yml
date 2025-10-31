@@ -3,12 +3,14 @@ channels:
   - bioconda
   - conda-forge
   - defaults
+  - hcc
 dependencies:
   - python=3.11
   - fastp
   - spades
   - unicycler
   - flye
+  - skesa
   - kmerfinder
   - filtlong
   - matplotlib
@@ -20,6 +22,11 @@ dependencies:
   - checkm-genome
   - seqkit
   - pip
+  - boto3
+  - awscli
+  - skani
+  - ska2
+  - hcc::basespace-cli
   - pip:
       - -e .
       - plotly
