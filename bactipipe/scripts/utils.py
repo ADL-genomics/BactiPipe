@@ -11,7 +11,7 @@ import pandas as pd
 from tqdm import tqdm
 from datetime import datetime
 from colorama import Fore, Style, init
-from typing import Iterable, Callable, Optional, Dict, List, Tuple
+from typing import Iterable, Callable, Optional, Dict, List, Tuple, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import io, gzip, threading, math
 from Bio import SeqIO
@@ -24,10 +24,7 @@ from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib import colors
 from reportlab.lib.units import inch, cm
 from reportlab.pdfbase.pdfmetrics import stringWidth
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Table, TableStyle,
-    Spacer #, Image
-)
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
