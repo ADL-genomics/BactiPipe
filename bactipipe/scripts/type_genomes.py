@@ -361,7 +361,7 @@ def run_cgmlst(
         logger.warning(f"cgMLST failed for {genome.name}")
         return "NA"
 
-    summ = outdir / "salmonella_summary.txt"
+    summ = outdir / f"{scheme}_summary.txt"
     if not summ.exists():
         logger.warning(f"cgMLST summary not found for {genome.name}")
         return "NA"
@@ -1116,7 +1116,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     Path(run_cfg["cgmlst_db_dir"]),
                     paths["tmpdir"],
                     logger,
-                    scheme=CAPS.get(args.organism.lower(), {}).get("cgmlst_scheme", "salmonella"),
+                    scheme=CAPS.get(args.organism.lower(), {}).get("cgmlst_scheme"),
                     env_name=run_cfg["envs"].get("cgmlst"),
                 )
             with paths["cgmlst_tsv"].open("a", newline="") as fh:
@@ -1259,8 +1259,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         )
         versions = U.collect_tool_versions(used, logger)
 
-        final_tsv = outdir / f"{accession}_final.tsv"
-        out_pdf   = outdir / f"{accession}_final.pdf"
+        final_tsv = outdir / f"{accession}_relate.tsv"
+        out_pdf   = outdir / f"{accession}_relate.pdf"
 
         U.render_pdf_type_genomes_full(
             final_tsv=final_tsv,
@@ -1268,6 +1268,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             title=args.title,
             header_text=header_block,
             tool_versions=versions,
+            run_name=run_name,
+            accession=accession,
         )
 
     logger.info("Pipeline complete.")

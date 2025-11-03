@@ -1137,6 +1137,8 @@ def render_pdf_type_genomes_full(
     title: str,
     header_text: str,
     tool_versions: Dict[str, str],
+    run_name: str,
+    accession: str,
 ) -> None:
     """
     Minimal, robust renderer:
@@ -1261,7 +1263,7 @@ def render_pdf_type_genomes_full(
     # ---------- Footer (right-aligned) ----------
     def _on_page(canvas, doc):
         canvas.setFont("Helvetica", 9)
-        footer = f"BactiPipe - Relatedness Report | Page {doc.page}"
+        footer = f"BactiPipe - Relatedness | {run_name}/{accession}  | Page {doc.page}"
         x = doc.pagesize[0] - doc.rightMargin
         canvas.drawRightString(x, 0.45 * inch, footer)
 
@@ -1697,7 +1699,7 @@ def write_final_summary(
 ) -> Path:
     """
     Compose the consolidated final TSV at:
-      paths['outdir'] / f"{accession}_final.tsv"
+      paths['outdir'] / f"{accession}_relate.tsv"
 
     Summary columns (with reference):
       Sample | Isolate | Specimen | Size (Mb) | GC (%) | Serotype | ST | cgST | SNP distance | ANI (%)
@@ -1712,7 +1714,7 @@ def write_final_summary(
 
     outdir = paths["outdir"]
     outdir.mkdir(parents=True, exist_ok=True)
-    final_path = outdir / f"{accession}_final.tsv"
+    final_path = outdir / f"{accession}_relate.tsv"
 
     # --- local helpers ---
     def _read_size_map_from_assembly(asm_tsv: Optional[Path]) -> Dict[str, str]:

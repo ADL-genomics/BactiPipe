@@ -33,7 +33,7 @@ CAPS = {
         "cgmlst_scheme": "clostridium",
         "mlst_db_subdir": "mlst_db",
         "cgmlst_db_subdir":"cgmlstfinder_db",
-        "serotyper": "kleborate",
+        "serotyper": None,
     },
 }
 
