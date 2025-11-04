@@ -824,10 +824,10 @@ def _build_argparser() -> argparse.ArgumentParser:
 
     # Hidden env flags (exception tools only). Defaults can come from env vars; users can still pass them explicitly.
     opt.add_argument("--seqsero2-env",
-                   default=os.environ.get("BACTIPIPE_ENV_SEQSERO2"),
+                   default=os.environ.get("BACTIPIPE_ENV_SEQSERO2") or "seqsero",
                    help=argparse.SUPPRESS)
     opt.add_argument("--kleborate-env",
-                   default=os.environ.get("BACTIPIPE_ENV_KLEBORATE"),
+                   default=os.environ.get("BACTIPIPE_ENV_KLEBORATE") or "bactipipe",
                    help=argparse.SUPPRESS)
     return p
 
@@ -844,7 +844,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # --- validate required args only for real runs ---
     missing = []
-    if not args.name:      missing.append("--name")
+    if not args.tech_name:      missing.append("--name")
     if not args.assemblies_dir:  missing.append("--assemblies-dir")
     if not args.sample_sheet: missing.append("--sample-sheet")
     if not args.organism:    missing.append("--organism")
