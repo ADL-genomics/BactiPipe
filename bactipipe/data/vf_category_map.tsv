@@ -1,0 +1,137 @@
+gene	functional_category	notes
+aafA	Adhesion/aggregation/colonization	AAF/II major fimbrial subunit
+aafB	Adhesion/aggregation/colonization	AAF/II minor adhesin.
+aafC	Adhesion/aggregation/colonization	"Usher, AAF/II assembly unit"
+aafD	Adhesion/aggregation/colonization	"Chaperone, AAF/II assembly unit"
+aaiC	Adhesion/aggregation/colonization	Type VI secretion protein
+aap	Adhesion/aggregation/colonization	"Dispersin, antiaggregation protein"
+aar	Adhesion/aggregation/colonization	AggR-activated regulator
+aatA	Adhesion/aggregation/colonization	Dispersin transporter protein
+afaD	Adhesion/aggregation/colonization	Afimbrial adhesin D
+afaE	Adhesion/aggregation/colonization	Afimbrial adhesin E
+agg3A	Adhesion/aggregation/colonization	AAF/III major fimbrial subunit
+agg3B	Adhesion/aggregation/colonization	AAF/III minor adhesin.
+agg3C	Adhesion/aggregation/colonization	"Usher, AAF/III assembly unit"
+agg3D	Adhesion/aggregation/colonization	"Chaperone, AAF/III assembly unit"
+agg4A	Adhesion/aggregation/colonization	AAF/IV major fimbrial subunit
+agg4B	Adhesion/aggregation/colonization	AAF/IV minor adhesin.
+agg4C	Adhesion/aggregation/colonization	"Usher, AAF/IV assembly unit"
+agg4D	Adhesion/aggregation/colonization	"Chaperone, AAF/IV assembly unit"
+aggA	Adhesion/aggregation/colonization	AAF/I major fimbrial subunit
+aggB	Adhesion/aggregation/colonization	AAF/I minor adhesin.
+aggC	Adhesion/aggregation/colonization	"Usher, AAF/I assembly unit"
+aggD	Adhesion/aggregation/colonization	"Chaperone, AAF/I assembly unit"
+aggR	Adhesion/aggregation/colonization	AraC transcriptional activator
+air	Adhesion/aggregation/colonization	Enteroaggregative immunoglobulin repeat protein.
+bfpA	Adhesion/aggregation/colonization	Major subunit of bundle-forming pili.
+capU	Adhesion/aggregation/colonization	Hexosyltransferase homolog
+cfa_c	Adhesion/aggregation/colonization	Colonisation factor antigen I
+clbB	Adhesion/aggregation/colonization	Hybrid non-ribosomal peptide synthase
+cofA	Adhesion/aggregation/colonization	Longus type IV pilus subunit
+f17-A	Adhesion/aggregation/colonization	Subunit A of F17 fimbrial protein
+f17-G	Adhesion/aggregation/colonization	Adhesin subunit of F17 fimbriae
+fanA	Adhesion/aggregation/colonization	Involved in biogenesis of K99/F5 fimbriae
+fasA	Adhesion/aggregation/colonization	Fimbriae 987P/F6 subunit
+fedA	Adhesion/aggregation/colonization	Fimbrial protein F107 subunit A
+fedF	Adhesion/aggregation/colonization	Fimbrial adhesin AC precursor
+fim41a	Adhesion/aggregation/colonization	Mature Fim41a/F41 protein
+focC	Adhesion/aggregation/colonization	S fimbrial/F1C minor subunit
+focG	Adhesion/aggregation/colonization	F1C adhesin.
+focI	Adhesion/aggregation/colonization	S fimbrial/F1C minor subunit
+hra	Adhesion/aggregation/colonization	Heat-resistant agglutinin
+iha	Adhesion/aggregation/colonization	Adherence protein
+K88ab	Adhesion/aggregation/colonization	K88/F4 protein subunit
+lngA	Adhesion/aggregation/colonization	Longus type IV pilus
+lpfA	Adhesion/aggregation/colonization	Long polar fimbriae
+nfaE	Adhesion/aggregation/colonization	Diffuse adherence fibrillar adhesin gene
+papA	Adhesion/aggregation/colonization	Major pilin subunit of P firmbriae
+papC	Adhesion/aggregation/colonization	Outer membrane usher P fimbriae
+perA	Adhesion/aggregation/colonization	EPEC adherence factor
+saa	Adhesion/aggregation/colonization	Auto agglutinating adhesin
+sfaD	Adhesion/aggregation/colonization	S fimbrial/F1C minor subunit
+sfaE	Adhesion/aggregation/colonization	S fimbrial/F1C minor subunit
+sfaS	Adhesion/aggregation/colonization	S-fimbriae minor subunit
+tccP	Adhesion/aggregation/colonization	Tir-cytoskeleton coupling protein
+tcpC	Adhesion/aggregation/colonization	Tir domain-containing protein
+tsh	Adhesion/aggregation/colonization	Temperature-sensitive hemagglutinin (tsh) autotransporter
+yfcV	Adhesion/aggregation/colonization	Fimbrial-like protein YfcV
+eatA	Autotransporter system	serine protease autotransporters of Enterobacteriaceae (SPATE)
+efa1	Autotransporter system	EHEC factor for adherence
+epeA	Autotransporter system	serine protease autotransporters of Enterobacteriaceae (SPATE)
+pic	Autotransporter system	Serine protease pic autotransporter
+rpeA	Autotransporter system	serine protease autotransporters of Enterobacteriaceae (SPATE)
+sat	Autotransporter system	serine protease autotransporters of Enterobacteriaceae (SPATE)
+sepA	Autotransporter system	serine protease autotransporters of Enterobacteriaceae (SPATE)
+sigA	Autotransporter system	serine protease autotransporters of Enterobacteriaceae (SPATE)
+cba	Colicin/Bacteriocins/Microcins	Colicin B
+cea	Colicin/Bacteriocins/Microcins	Colicin E1
+celb	Colicin/Bacteriocins/Microcins	Endonuclease colicin E2
+cia	Colicin/Bacteriocins/Microcins	Colicin ia
+cib	Colicin/Bacteriocins/Microcins	Colicin ib
+cma	Colicin/Bacteriocins/Microcins	Colicin M
+cvaC	Colicin/Bacteriocins/Microcins	Microcin C.
+mcbA	Colicin/Bacteriocins/Microcins	Bacteriocin microcin B17
+mchA	Colicin/Bacteriocins/Microcins	Microcin activation protein
+mchB	Colicin/Bacteriocins/Microcins	Microcin H47 part of colicin H
+mchC	Colicin/Bacteriocins/Microcins	MchC protein
+mchF	Colicin/Bacteriocins/Microcins	Microcin export transporter peptidase/ATP-binding subunit MchF
+mcmA	Colicin/Bacteriocins/Microcins	Microcin McmA
+eae	Invasion	Intimin
+eilA	Invasion	Salmonella HilA homolog
+ibeA	Invasion	Invasin of brain endothelial cells
+ipaD	Invasion	Invasion protein Shigella flexneri
+ipaH9.8	Invasion	Invasion plasmid antigen
+tir	Invasion	Tir-cytoskeleton coupling protein
+chuA	Iron uptake and utilization	Outer membrane hemin receptor
+fyuA	Iron uptake and utilization	Yersiniabactin receptor/ Siderophore receptor
+ireA	Iron uptake and utilization	Siderophore receptor
+iroN	Iron uptake and utilization	Enterobactin siderophore receptor protein; Salmobactin (IroN)
+irp2	Iron uptake and utilization	High-molecular-weight protein 2 
+iucC	Iron uptake and utilization	Aerobactin synthetase
+iutA	Iron uptake and utilization	Ferric aerobactin receptor
+sitA	Iron uptake and utilization	Iron transport protein
+gad	Protectins/Resistance to body defenses	Glutamate decarboxylase
+iss	Protectins/Resistance to body defenses	Increased serum survival lipoprotein
+katP	Protectins/Resistance to body defenses	Plasmid-encoded catalase peroxidase.
+kpsE	Protectins/Resistance to body defenses	Capsule polysaccharide export inner-membrane protein KpsE
+kpsM	Protectins/Resistance to body defenses	Polysialic acid transport protein
+kpsMII	Protectins/Resistance to body defenses	Polysialic acid transport protein; Group 2 capsule.
+kpsMII_K1	Protectins/Resistance to body defenses	Polysialic acid transport protein; Group 2 capsule
+kpsMIII	Protectins/Resistance to body defenses	ABC-type polysaccharide; Group 3 capsule
+neuC	Protectins/Resistance to body defenses	Polysialic acid capsule biosynthesis protein
+ompT	Protectins/Resistance to body defenses	Outer membrane protease
+terC	Protectins/Resistance to body defenses	Tellurium ion resistance protein
+traT	Protectins/Resistance to body defenses	Outer membrane protein complement resistance
+usp	Protectins/Resistance to body defenses	Uropathogenic specific protein
+cif	Secretion system	CFTR inhibitory factor (Cif)
+espA	Secretion system	Type III Secreted Proteins.
+espAB	Secretion system	Type III Secreted Proteins.
+espB	Secretion system	Type III Secreted Proteins.
+espC	Secretion system	Type III Secreted Proteins.
+espF	Secretion system	Type III Secreted Proteins.
+espI	Secretion system	Type III Secreted Proteins.
+espJ	Secretion system	Type III Secreted Proteins
+espP	Secretion system	Type III Secreted Proteins.
+etpD	Secretion system	Type II secretion protein.
+etsC	Secretion system	Putative type I secretion outer membrane protein.
+nleA	Secretion system	Non-LEE encoded effector A
+nleB	Secretion system	Non-LEE encoded effector B
+nleC	Secretion system	Non-LEE encoded effector C
+stx1A	Shiaga Toxin	"Shiga toxin 1, subunit A"
+stx1B	Shiaga Toxin	"Shiga toxin 1, subunit B"
+stx2A	Shiaga Toxin	"Shiga toxin 2, subunit A"
+stx2B	Shiaga Toxin	"Shiga toxin 2, subunit B"
+astA	Toxin	Heat-stable enterotoxin 1
+cdtB	Toxin	Subunit B of the cytolethal distending toxin (CDT)
+cnf1	Toxin	Cytotoxic necrotizing factor
+ehxA	Toxin	Enterohaemolysin
+hlyE	Toxin	Avian E.coli haemolysin
+hlyF	Toxin	Hemolysin F
+ltcA	Toxin	Heat-labile enterotoxin A subunit
+pet	Toxin	Autotransporter enterotoxin
+senB	Toxin	Plasmid-encoded enterotoxin
+sta1	Toxin	Heat-stabile enterotoxin ST-Ia
+stb	Toxin	Heat-stable enterotoxin ST-II
+subA	Toxin	Subtilase toxin subunit
+toxB	Toxin	Toxin B
+vat	Toxin	Vacuolating Autotransporter Toxin

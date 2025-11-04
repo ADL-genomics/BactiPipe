@@ -1,0 +1,14 @@
+mutation	phenotype
+gyrA	Resistance to Nalidixic acid, Ciprofloxacin
+gyrB	Resistance to Nalidixic acid, Ciprofloxacin
+parC	Resistance to Nalidixic acid, Ciprofloxacin
+parE	Resistance to Nalidixic acid, Ciprofloxacin
+pmrA	Resistance to Colistin
+pmrB	Resistance to Colistin
+folP	Resistance to Sulfamethoxazole
+rpoB	Resistance to Rifampicin
+23S	Resistance to Erythromycin, Azithromycin, Telithromycin, Linezolid
+16S_rrsB	Resistance to Tetracycline,  Doxycycline, Streptomycin, Gentamicin, Kanamycin, Tobramycin, Neomycin, Spectinomycin
+16S_rrsC	Resistance to Kasugamycin
+16S_rrsH	Resistance to Spectinomycin
+ampC_promoter_size_53bp	Resistance to ampicillin, amoxicillin, cefixime, cefotaxime, cefoxitin, ceftazidime, piperacillin
