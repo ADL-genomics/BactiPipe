@@ -7,11 +7,11 @@ from bactipipe.scripts.downloader import setup_databases, update_databases
 from bactipipe.scripts import updater, config
 
 def main():
-    if config.should_check_for_updates():
-        updater.check_outdated_pip()
-        updater.check_outdated_conda()
-        updater.check_database_versions()
-        config.update_last_checked() 
+    # if config.should_check_for_updates():
+    #     updater.check_outdated_pip()
+    #     updater.check_outdated_conda()
+    #     updater.check_database_versions()
+    #     config.update_last_checked() 
     
     usage = '''\nUsage: bactipipe.py <command> [options]
     \nPackage/Database management commands:
