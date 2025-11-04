@@ -788,63 +788,74 @@ def _build_argparser() -> argparse.ArgumentParser:
             """
         ),
     )
+    req = p.add_argument_group("Required arguments")
+    opt = p.add_argument_group("Optional arguments")
 
-    p.add_argument("-n", "--name", dest="tech_name", required=True,
+    req.add_argument("-n", "--name", dest="tech_name",
                 help="Analyst / technician name shown in the report header.")
 
-    p.add_argument("--run-name", help="Run name identifier (e.g., 250701_13_SEQ10_LMO)")
+    req.add_argument("--run-name", help="Run name identifier (e.g., 250701_13_SEQ10_LMO)")
 
-    p.add_argument("-a", "--accession", dest="accession", required=True,
+    req.add_argument("-a", "--accession", dest="accession",
                 help="Accession / Case ID / output reports prefix.")
 
-    p.add_argument("--organism", default="salmonella", help="Organism label (drives serotyping; MLST/cgMLST currently wired for Salmonella).")
-    p.add_argument("--assemblies-dir", type=Path, 
+    req.add_argument("--organism", help="Organism label name). Check spelling with --list-organisms.")
+    req.add_argument("--assemblies-dir", type=Path, 
     help="<sample>.fasta directory.")
-    p.add_argument("--sample-sheet", type=Path, help="4-column TSV. Default: try common Dropbox locations.")
-    p.add_argument("--outdir", type=Path, help="Output directory. Default: ./bactipipe_relate_output/Typing_<run-name>/<accession>")
-    p.add_argument("--tmpdir", type=Path, help="Temporary work directory. Default: <outdir>/tmp")
-    p.add_argument("--reference", type=Path, help="Optional reference genome (treated as first sample).")
-    p.add_argument("--reference-id", help="Optional sample ID for the reference. If omitted, uses the first FASTA header ID.")
-    p.add_argument("--ani-tool", choices=["auto", "skani", "fastani"], default="auto",
+    req.add_argument("--sample-sheet", type=Path, help="4-column TSV. Default: try common Dropbox locations.")
+    opt.add_argument("--outdir", type=Path, help="Output directory. Default: ./bactipipe_relate_output/Typing_<run-name>/<accession>")
+    opt.add_argument("--tmpdir", type=Path, help="Temporary work directory. Default: <outdir>/tmp")
+    opt.add_argument("--reference", type=Path, help="Optional reference genome (treated as first sample).")
+    opt.add_argument("--reference-id", help="Optional sample ID for the reference. If omitted, uses the first FASTA header ID.")
+    opt.add_argument("--ani-tool", choices=["auto", "skani", "fastani"], default="auto",
                    help="ANI vs reference tool (auto prefers skani, else fastANI).")
-    p.add_argument("--db-dir", type=Path, help="DB root directory. Defaults to $BACTIPIPE_DB_DIR")
-    p.add_argument("--threads", type=int, default=4, help="Threads for serotyping (SeqSero2).")
-    p.add_argument("--list-organisms", action="store_true", help="List supported organisms/schemes and exit")
-    p.add_argument("--no-ska", action="store_true", help="Disable SKA split-kmer relatedness (enabled by default).")
-    p.add_argument("-v", "--verbose", action="store_true", help="More console detail (DEBUG).")
-    p.add_argument(
+    opt.add_argument("--db-dir", type=Path, help="DB root directory. Defaults to $BACTIPIPE_DB_DIR")
+    opt.add_argument("--threads", type=int, default=4, help="Threads for serotyping (SeqSero2).")
+    opt.add_argument("--list-organisms", action="store_true", help="List supported organisms/schemes and exit")
+    opt.add_argument("--no-ska", action="store_true", help="Disable SKA split-kmer relatedness (enabled by default).")
+    opt.add_argument("-v", "--verbose", action="store_true", help="More console detail (DEBUG).")
+    opt.add_argument(
     "--resume",
     action="store_true",
     help="Skip heavy steps (serotype/MLST/cgMLST/ANI/SKA) when final outputs already exist; parse and reuse them.",
     )
-
-    p.add_argument("--title", default="Strain Relatedness Analysis",
+    opt.add_argument("--title", default="Strain Relatedness Analysis",
                 help="Report title (used in PDF header).")
 
     # Hidden env flags (exception tools only). Defaults can come from env vars; users can still pass them explicitly.
-    p.add_argument("--seqsero2-env",
+    opt.add_argument("--seqsero2-env",
                    default=os.environ.get("BACTIPIPE_ENV_SEQSERO2"),
                    help=argparse.SUPPRESS)
-    p.add_argument("--kleborate-env",
+    opt.add_argument("--kleborate-env",
                    default=os.environ.get("BACTIPIPE_ENV_KLEBORATE"),
                    help=argparse.SUPPRESS)
     return p
-
 
 def main(argv: Optional[List[str]] = None) -> int:
     ap = _build_argparser()
     args = ap.parse_args(argv)
 
+    # --- short-circuit: just list organisms and exit ---
     if args.list_organisms:
         headers = ["organism", "uses_mlst", "mlst_scheme", "uses_cgmlst", "cgmlst_scheme", "serotyper"]
         rows = supported_rows()  # you already normalized Nones inside this
         _print_aligned_table(headers, rows, pad=2)
         return 0
-    
-    if not args.run_name:
-        ap.error("--run-name is required.")
-    if not args.accession:
-        ap.error("--accession is required.")
+
+    # --- validate required args only for real runs ---
+    missing = []
+    if not args.name:      missing.append("--name")
+    if not args.assemblies_dir:  missing.append("--assemblies-dir")
+    if not args.sample_sheet: missing.append("--sample-sheet")
+    if not args.organism:    missing.append("--organism")
+    if not args.run_name:     missing.append("--run-name")
+    if not args.accession:    missing.append("--accession")
+
+
+    if missing:
+        sys.stderr.write("ERROR: missing required arguments: " + ", ".join(missing) + "\n")
+        sys.exit(2)
+
 
     # Resolve defaults
     run_name: str = args.run_name
