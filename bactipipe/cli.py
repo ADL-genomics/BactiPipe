@@ -5,6 +5,8 @@ import subprocess
 import os
 from bactipipe.scripts.downloader import setup_databases, update_databases
 from bactipipe.scripts import updater, config
+from bactipipe.__version__ import __version__
+
 
 def main():
     # if config.should_check_for_updates():
@@ -24,12 +26,18 @@ def main():
       relate           :  Type assembled genomes and compute relatedness.
       detect           :  Detect virulence and antimicrobial resistance genes in assemblies.
 
-    \nUse 'bactipipe <command> -h' to see help for the selected pipeline. [Only for pipeline commands.]\n'''
+    \nbactipipe -v / --version:  Show the current version of BactiPipe.\n
+    \nUse 'bactipipe <command> -h' to see help for the specific pipelines.\n'''
 
     if len(sys.argv) < 2 or sys.argv[1] in ["-h", "--help"]:
         print(usage)
         sys.exit(1)
-    
+
+    if len(sys.argv) > 1 and sys.argv[1] in ("-v", "--version"):
+        print(f"bactipipe {__version__}")
+        sys.exit(0)
+
+
     command = sys.argv[1].lower()
     
     tool_manage_commands = ["check-updates", "update-packages", "update-databases"]

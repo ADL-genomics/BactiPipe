@@ -1,10 +1,13 @@
 from setuptools import setup, find_packages
+version = {}
+with open("bactipipe/__version__.py") as f:
+    exec(f.read(), version)
 
 setup(
     name="bactipipe",
-    version="0.1.0",
+    version=version["__version__"],
     packages=find_packages(),  # Finds all packages under bactipipe/
-    description="QA/QC pipeline for bacterial WGS data",
+    description="Bacterial WGS data analysis pipeline",
     author="Maurice Byukusenge",
     author_email="bmaurice@psu.edu",
     install_requires=[
