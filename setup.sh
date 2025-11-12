@@ -86,8 +86,8 @@ post_install_checks() {
   msg "Checking representative tools…"
   set +e
   conda run -n bactipipe fastp --help >/dev/null 2>&1 && ok "fastp ok" || err "fastp missing"
-  conda run -n bactipipe flye --version 2>/dev/null && ok "flye ok" || err "flye missing"
-  conda run -n genepid abricate --version 2>/dev/null && ok "abricate ok" || err "abricate missing"
+  conda run -n bactipipe flye --help 2>/dev/null && ok "flye ok" || err "flye missing"
+  conda run -n genepid abricate --help 2>/dev/null && ok "abricate ok" || err "abricate missing"
   conda run -n viramr amrfinder -h >/dev/null 2>&1 && ok "amrfinderplus ok" || err "amrfinderplus missing"
   conda run -n genepid cgMLST.py -h >/dev/null 2>&1 && ok "cgMLST.py ok" || err "cgMLST.py not callable"
 
