@@ -16,7 +16,7 @@ from bactipipe.scripts import (
 )
 
 VIRAMR_ENV = os.getenv("VIRAMR_ENV", "viramr")
-ABRICATE_ENV = os.getenv("ABRICATE_ENV", "abricate")
+ABRICATE_ENV = os.getenv("ABRICATE_ENV", "genepid")
 
 SUPPORTED_VF_ORGS = {
     "Escherichia",
@@ -141,6 +141,10 @@ def parse_args():
     mode.add_argument("--amr-only", action="store_true", help="Run AMR only")
     mode.add_argument("--virulence-only", action="store_true", help="Run Virulence only")
 
+    opt.add_argument("--extended-virulence", action="store_true",
+                 help="For Escherichia: use full virulence database; "
+                      "default is diagnostic, PCR-style for Pathotype-specific virulence factors.")
+
     # Tool selectors (AMR) — AMRFinder runs by default; ABRicate toggles add-on if flagged
     opt.add_argument("--amrfinder", action="store_true",
                      help="(Optional) Explicitly enable AMRFinderPlus (on by default unless --virulence-only).")
@@ -227,11 +231,14 @@ def _run_one(args_pack):
             out_root=out_root,
             min_id=cfg["min_id"],
             min_cov=cfg["min_cov"],
-            enable_vfinder=cfg["virulencefinder"],  # DTU Python tool
-            enable_vfdb=cfg["vfdb"],                # ABRicate VFDB
+            enable_vfinder=cfg["virulencefinder"],
+            enable_vfdb=cfg["vfdb"],
+            enable_ecoli_vf=cfg["ecoli_vf"],
             threads=cfg["threads"],
             logger_fn=logfn,
             db_root=cfg["db_root"],
+            organism=cfg["organism"],
+            extended_vf=cfg["extended_vf"], 
         )
 
     merged = traits_reconcile.merge_for_sample(isolate_id, amr_rows, vf_rows)
@@ -290,20 +297,57 @@ def main():
         else:
             vf_vfdb = True
 
+    # Respect mode flags
+    run_amr = not args.virulence_only
+    run_vf  = not args.amr_only
+
+    # Escherichia => run VirulenceFinder + VFDB + ecoli_vf
+    use_ecoli_vf = False
+    if run_vf and args.organism == "Escherichia":
+        vf_vfinder = True
+        vf_vfdb = True
+        use_ecoli_vf = True
+
+    # If virulence disabled by mode, force off all virulence tools
+    if not run_vf:
+        vf_vfinder = False
+        vf_vfdb = False
+        use_ecoli_vf = False
+
+    # AMR tool flags (unchanged semantics, but compute once)
+    use_amrfinder = bool(args.amrfinder) and run_amr
+    use_resfinder = bool(args.abricate_resfinder) and run_amr
+    use_card      = bool(args.abricate_card) and run_amr
+
+    print("=== Settings ===")
+    print(f"AMR detection: {'ON' if run_amr else 'OFF'}")
+    if run_amr:
+        print(f"  AMRFinderPlus: {'ON' if use_amrfinder else 'OFF'}")
+        print(f"  ABRicate/ResFinder: {'ON' if use_resfinder else 'OFF'}")
+        print(f"  ABRicate/CARD: {'ON' if use_card else 'OFF'}")
+    print(f"Virulence detection: {'ON' if run_vf else 'OFF'}")
+    if run_vf:
+        print(f"  VirulenceFinder: {'ON' if vf_vfinder else 'OFF'}")
+        print(f"  ABRicate/VFDB: {'ON' if vf_vfdb else 'OFF'}")
+        print(f"  ABRicate/ecoli_vf: {'ON' if use_ecoli_vf else 'OFF'}")
+    print("================================")
+
     # --- versions / db tracking ---
     versions = traits_db.ensure_and_collect_versions(
-        want_amr=not args.virulence_only,
-        want_vf=not args.amr_only,
-        want_resfinder=amr_resfinder,
-        want_card=amr_card,
-        want_vfinder=vf_vfinder,
-        want_vfdb=vf_vfdb,
-        db_root=args.db_dir,
+        want_amr = run_amr,
+        want_vf  = run_vf,
+        want_resfinder = bool(args.abricate_resfinder) and run_amr,
+        want_card      = bool(args.abricate_card) and run_amr,
+        want_vfinder   = vf_vfinder,
+        want_vfdb      = vf_vfdb,
+        want_ecoli_vf  = use_ecoli_vf,
+        db_root = args.db_dir,
     )
     versions["thresholds"] = {
         "min_identity": float(args.min_identity),
         "min_coverage": float(args.min_coverage),
     }
+
     with open(os.path.join(args.outdir, "versions.json"), "w") as f:
         json.dump(versions, f, indent=2)
 
@@ -324,7 +368,8 @@ def main():
 
         virulencefinder=bool(vf_vfinder),
         vfdb=bool(vf_vfdb),
-
+        ecoli_vf=bool(use_ecoli_vf),
+        extended_vf=bool(args.extended_virulence),
         organism=args.organism,
         analyst=args.analyst,
         run_name=args.run_name,

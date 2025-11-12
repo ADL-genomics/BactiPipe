@@ -8,7 +8,7 @@ def env_cmd(tool: str) -> list:
       ABRICATE_ENV (default: abricate)   -> abricate
     """
     viramr_env = os.environ.get("VIRAMR_ENV", "viramr")
-    abricate_env = os.environ.get("ABRICATE_ENV", "abricate")
+    abricate_env = os.environ.get("ABRICATE_ENV", "genepid")
 
     t = tool.lower()
     if t.startswith("amrfinder"):

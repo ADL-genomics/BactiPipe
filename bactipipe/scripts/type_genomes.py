@@ -824,7 +824,7 @@ def _build_argparser() -> argparse.ArgumentParser:
 
     # Hidden env flags (exception tools only). Defaults can come from env vars; users can still pass them explicitly.
     opt.add_argument("--seqsero2-env",
-                   default=os.environ.get("BACTIPIPE_ENV_SEQSERO2") or "seqsero",
+                   default=os.environ.get("BACTIPIPE_ENV_SEQSERO2") or "genepid",
                    help=argparse.SUPPRESS)
     opt.add_argument("--kleborate-env",
                    default=os.environ.get("BACTIPIPE_ENV_KLEBORATE") or "bactipipe",
@@ -850,7 +850,6 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not args.organism:    missing.append("--organism")
     if not args.run_name:     missing.append("--run-name")
     if not args.accession:    missing.append("--accession")
-
 
     if missing:
         sys.stderr.write("ERROR: missing required arguments: " + ", ".join(missing) + "\n")

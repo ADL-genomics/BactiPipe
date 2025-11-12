@@ -107,7 +107,7 @@ class ProcQuality:
             time_print(f'QC assessment for sample : {self.sample}', "Header")
             logger(log, f'QC assessment for sample : {self.sample}', "Header")
 
-        # Updated info messages (no pyfastx / no index)
+        # Updated info messages
         info = ('Reading quality data from FASTQ by streaming (xopen or gzip), '
                 f'NumPy version: {np.__version__}')
         logger(log, info)

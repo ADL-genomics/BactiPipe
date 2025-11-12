@@ -1,250 +1,489 @@
-# bactipipe/scripts/traits_vf.py
-import os
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+traits_vf.py
+Virulence detection from assembled genomes.
+
+Sources:
+  - VirulenceFinder (DTU python tool; requires virulencefinder_db)
+  - ABRicate VFDB
+  - ABRicate ecoli_vf
+
+Rules:
+  - For organism == "Escherichia": run all three sources.
+  - Otherwise: run only the sources enabled by flags from run_traits.
+
+Mapping:
+  The virulence map file has 4 columns:
+    gene    display_name    functional_category    notes
+  Only genes present in the map are kept. Others are dropped.
+  For Escherichia:
+    - default map: dx_vf_category_map.tsv
+    - if extended_vf=True: all_vf_category_map.tsv
+  For all other organisms:
+    - map: all_vf_category_map.tsv
+"""
+
+from __future__ import annotations
+
 import csv
+import os
+import shutil
 import subprocess
-from typing import List, Dict, Callable, Optional
-from importlib.resources import files as resource_files
+from pathlib import Path
+from typing import Dict, List, Tuple
 
-from bactipipe.scripts.core import env_cmd, set_tmp_env
-from bactipipe.scripts import traits_db
+# Optional centralized env launcher (recommended)
+try:
+    from bactipipe.scripts.core import env_cmd  # returns list prefix to run tool in the right env
+except Exception:
+    env_cmd = None
 
-# Unified output schema for per-sample VF TSV
-_SCHEMA = [
-    "sample","gene","allele","category","identity","coverage","length",
-    "contig","start","end","strand","source","database","accession","tool"
-]
-
-# ----------------------------
-# Utilities
-# ----------------------------
-def _log(logfn: Optional[Callable], msg: str):
-    try:
-        logfn(msg, "Norm")
-    except Exception:
-        pass
-
-def _run(cmd: List[str], *, env: Optional[dict] = None) -> str:
-    p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=env)
-    if p.returncode != 0:
-        raise RuntimeError(f"Command failed ({p.returncode}): {' '.join(cmd)}\n{p.stderr}")
-    return p.stdout
-
-def _num(x) -> float:
-    try:
-        return float(str(x).replace("%", "").strip())
-    except Exception:
-        return 0.0
-
-# ----------------------------
-# Parsers
-# ----------------------------
-def _vf_map() -> Dict[str,str]:
-    path = resource_files("bactipipe.data").joinpath("vf_category_map.tsv")
-    mp: Dict[str,str] = {}
-    with open(path) as f:
-        r = csv.DictReader(f, delimiter="\t")
-        for row in r:
-            g = (row.get("gene") or "").strip()
-            if g:
-                cat = (row.get("functional_category") or "Misc").strip() or "Misc"
-                mp[g] = cat
-                mp[g.lower()] = cat    # case-insensitive key
-    return mp
-
-def _vf_category(gene: str, mp: Dict[str,str]) -> str:
-    if not gene:
-        return "Misc"
-    g = gene.strip()
-    # exact, lower, then base token before '-', '/', or space
-    return (mp.get(g)
-            or mp.get(g.lower())
-            or mp.get(g.split("-",1)[0])
-            or mp.get(g.lower().split("-",1)[0])
-            or mp.get(g.split("/",1)[0])
-            or mp.get(g.lower().split("/",1)[0])
-            or mp.get(g.split(" ",1)[0])
-            or mp.get(g.lower().split(" ",1)[0])
-            or "Misc")
-
-def _parse_vfinder_results(out_dir: str, sample: str, catmap: Dict[str,str]) -> List[Dict[str,str]]:
-    """
-    Parse VirulenceFinder extended output (results_tab.tsv produced with -x).
-    Expected headers (from your example):
-      Database, Virulence factor, Identity, Query / Template length,
-      Contig, Position in contig, Protein function, Accession number
-    """
-    tsv = os.path.join(out_dir, "results_tab.tsv")
-    if not os.path.exists(tsv):
-        return []
-
-    def _parse_qt(s: str) -> tuple:
-        # "623 / 621" -> (623, 621)
-        try:
-            q, t = [x.strip() for x in s.split("/", 1)]
-            return (float(q), float(t)) if (q and t) else (0.0, 0.0)
-        except Exception:
-            return (0.0, 0.0)
-
-    def _parse_pos(s: str) -> tuple:
-        # "1989087..1989665" -> ("1989087","1989665")
-        try:
-            a, b = [x.strip() for x in s.split("..", 1)]
-            return (a, b)
-        except Exception:
-            return ("", "")
-
-    rows: List[Dict[str,str]] = []
-    with open(tsv) as f:
-        r = csv.DictReader(f, delimiter="\t")
-        for rec in r:
-            gene = (rec.get("Virulence factor") or "").strip()
-            if not gene:
-                continue
-
-            ident = (rec.get("Identity") or "").strip()
-            qlen, tlen = _parse_qt(rec.get("Query / Template length") or "")
-            cov = f"{(qlen / tlen * 100.0):.2f}" if tlen > 0 else ""
-
-            contig = (rec.get("Contig") or "").strip()
-            start, end = _parse_pos(rec.get("Position in contig") or "")
-            acc = (rec.get("Accession number") or "").strip()
-            length = str(int(qlen)) if qlen > 0 else ""
-
-            rows.append(dict(
-                sample=sample,
-                gene=gene,
-                allele="",  # VF doesn’t report allele here
-                category=_vf_category(gene, catmap),
-                identity=str(ident),
-                coverage=str(cov),
-                length=length,
-                contig=contig,
-                start=start,
-                end=end,
-                strand="",  # not provided
-                source="VirulenceFinder",
-                database="virulencefinder_db",
-                accession=acc,
-                tool="VirulenceFinder",
-            ))
-    return rows
+# Logger type hint: callable(msg: str, level?: str)
+LogFn = callable
 
 
-def _parse_abricate_vfdb(tsv_path: str, sample: str, catmap: Dict[str,str]) -> List[Dict[str,str]]:
-    """Parse ABRicate VFDB TSV."""
-    out: List[Dict[str,str]] = []
-    if not os.path.exists(tsv_path):
-        return out
-    with open(tsv_path) as f:
-        rdr = csv.DictReader(f, delimiter="\t")
-        for rec in rdr:
-            gene = rec.get("GENE") or rec.get("PRODUCT") or rec.get("SEQUENCE", "")
-            out.append(dict(
-                sample=sample,
-                gene=str(gene),
-                allele=rec.get("PRODUCT",""),
-                category=catmap.get(gene, "Misc"),
-                identity=rec.get("%IDENTITY",""),
-                coverage=rec.get("%COVERAGE",""),
-                length=rec.get("LENGTH",""),
-                contig=rec.get("SEQID",""),
-                start=rec.get("START",""),
-                end=rec.get("END",""),
-                strand=rec.get("STRAND",""),
-                source="ABRicate:vfdb",
-                database="vfdb",
-                accession=rec.get("ACCESSION",""),
-                tool="ABRicate",
-            ))
-    return out
+# ----------------------------- public entry ----------------------------- #
 
-
-# ----------------------------
-# Main entry
-# ----------------------------
 def run_vf_for_sample(
+    *,
     sample: str,
     fasta: str,
     out_root: str,
-    *,
     min_id: float,
     min_cov: float,
     enable_vfinder: bool,
     enable_vfdb: bool,
+    enable_ecoli_vf: bool,
     threads: int,
-    logger_fn: Optional[Callable] = None,
-    db_root: Optional[str] = None,   # <-- NEW: accept DB root passed from run_traits
-) -> List[Dict[str,str]]:
+    logger_fn,
+    db_root: str,
+    organism: str = "",
+    extended_vf: bool = False,
+) -> List[Dict]:
     """
-    Execute virulence detection for one sample.
-    - DTU VirulenceFinder (Python tool) if enable_vfinder=True
-    - ABRicate/VFDB if enable_vfdb=True
-    Preference: keep VirulenceFinder hits when overlapping with VFDB.
+    Run virulence detection for a single sample and return normalized rows.
+
+    Each returned row has:
+      {
+        "gene":         <display_name>,           # from map
+        "base_gene":    <raw symbol as called>,   # original symbol (e.g., espB)
+        "category":     <functional_category>,
+        "note":         <notes>,
+        "source":       "VirulenceFinder" | "VFDB" | "ecoli_vf" | "VirulenceFinder,VFDB" (after de-dupe)
+      }
     """
-    catmap = _vf_map()
-    rows: List[Dict[str,str]] = []
 
-    raw_root = os.path.join(out_root, "raw")
-    os.makedirs(raw_root, exist_ok=True)
+    # --- Determine which sources to run (Escherichia rule)
+    if organism == "Escherichia":
+        enable_vfinder = True
+        enable_vfdb = True
+        enable_ecoli_vf = True
 
-    # Per-sample temp directory so all tools write into out_root/.tmp/...
-    tmp_dir = os.path.join(out_root, ".tmp", "vf", sample)
-    os.makedirs(tmp_dir, exist_ok=True)
-    env = set_tmp_env(tmp_dir)
+    vdb = os.path.join(db_root or "", "virulencefinder_db") if db_root else ""
+    logger_fn(
+        f"[{sample}] VF plan | organism={organism or '-'} | "
+        f"VirulenceFinder={enable_vfinder} (db={vdb or 'n/a'}) | "
+        f"VFDB={enable_vfdb} | ecoli_vf={enable_ecoli_vf}"
+    )
 
-    # ---------------- VirulenceFinder (DTU) ----------------
+    # --- Load the map
+    map_path = _select_vf_map_path(organism, extended_vf)
+    vf_map = _read_vf_map(map_path)
+    logger_fn(f"[{sample}] Using virulence map: {map_path.name} ({len(vf_map)} entries)")
+
+    rows: List[Dict] = []
+
+    # --- VirulenceFinder
     if enable_vfinder:
-        vfinder_out = os.path.join(raw_root, "virulencefinder", sample)
-        os.makedirs(vfinder_out, exist_ok=True)
-        sentinel = os.path.join(vfinder_out, ".done")
-        if not os.path.exists(sentinel):
-            _log(logger_fn, f"[{sample}] Running VirulenceFinder (DTU Python tool)...")
-            # Resolve DB path from unified DB root (BACTIPIPE_DB_DIR or --db-dir)
-            vf_db = traits_db.find_virulencefinder_db(db_root)
-            cmd = env_cmd("virulencefinder") + ["-i", fasta, "-o", vfinder_out, "-x"]
-            if vf_db:
-                cmd.extend(["-p", vf_db])  # modern virulencefinder supports -p for db path
-            _run(cmd, env=env)
-            open(sentinel, "w").close()
-        rows += _parse_vfinder_results(vfinder_out, sample, catmap)
-
-    # ---------------- ABRicate/VFDB ----------------
-    if enable_vfdb:
-        vfdb_dir = os.path.join(raw_root, "abricate", "vfdb")
-        os.makedirs(vfdb_dir, exist_ok=True)
-        vfdb_tsv = os.path.join(vfdb_dir, f"{sample}.tsv")
-        if not os.path.exists(vfdb_tsv):
-            _log(logger_fn, f"[{sample}] Running abricate --db vfdb ...")
-            cmd = env_cmd("abricate") + ["--db", "vfdb", fasta]
-            tsv = _run(cmd, env=env)
-            with open(vfdb_tsv, "w") as f:
-                f.write(tsv)
-        rows += _parse_abricate_vfdb(vfdb_tsv, sample, catmap)
-
-    # ---------------- Merge & preference ----------------
-    # Prefer VirulenceFinder over VFDB when hits overlap by (gene, contig, start, end)
-    merged: List[Dict[str,str]] = []
-    seen: Dict[tuple, int] = {}
-    for r in rows:
-        key = (r.get("gene",""), r.get("contig",""), r.get("start",""), r.get("end",""))
-        if key in seen:
-            i = seen[key]
-            if merged[i]["source"] != "VirulenceFinder" and r["source"] == "VirulenceFinder":
-                merged[i] = r
+        if not db_root:
+            logger_fn(f"[{sample}] VirulenceFinder SKIP: --db-dir/BACTIPIPE_DB_DIR not set.")
+        elif not os.path.isdir(vdb):
+            logger_fn(f"[{sample}] VirulenceFinder SKIP: DB not found at: {vdb}")
         else:
-            seen[key] = len(merged)
-            merged.append(r)
+            vf_tsv = _run_virulencefinder(sample, fasta, out_root, db_root, logger_fn)
+            if vf_tsv:
+                rows.extend(_parse_vfinder_results(vf_tsv, min_id, min_cov, vf_map, logger_fn))
+            else:
+                logger_fn(f"[{sample}] VirulenceFinder: no results (results_tab.tsv missing or parse yielded 0 rows).")
+    else:
+        logger_fn(f"[{sample}] VirulenceFinder disabled by flags.")
 
-    # ---------------- Threshold filter ----------------
-    kept = [r for r in merged if _num(r.get("identity","0")) >= min_id and _num(r.get("coverage","0")) >= min_cov]
+    # --- ABRicate VFDB
+    if enable_vfdb:
+        vfdb_tsv = _run_abricate(sample, fasta, out_root, db="vfdb", threads=threads, logger_fn=logger_fn)
+        if vfdb_tsv:
+            rows.extend(_parse_abricate(vfdb_tsv, source_label="VFDB", min_id=min_id, min_cov=min_cov, vf_map=vf_map, logger_fn=logger_fn))
+        else:
+            logger_fn(f"[{sample}] ABRicate(VFDB): no results TSV.")
+    else:
+        logger_fn(f"[{sample}] ABRicate(VFDB) disabled by flags.")
 
-    # ---------------- Write sample VF TSV ----------------
-    out_tsv = os.path.join(out_root, f"{sample}.vf.tsv")
-    os.makedirs(os.path.dirname(out_tsv), exist_ok=True)
-    with open(out_tsv, "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=_SCHEMA, delimiter="\t")
-        w.writeheader()
-        for r in kept:
-            w.writerow({k: r.get(k, "") for k in _SCHEMA})
+    # --- ABRicate ecoli_vf
+    if enable_ecoli_vf:
+        ecoli_tsv = _run_abricate(sample, fasta, out_root, db="ecoli_vf", threads=threads, logger_fn=logger_fn)
+        if ecoli_tsv:
+            rows.extend(_parse_abricate(ecoli_tsv, source_label="ecoli_vf", min_id=min_id, min_cov=min_cov, vf_map=vf_map, logger_fn=logger_fn))
+        else:
+            logger_fn(f"[{sample}] ABRicate(ecoli_vf): no results TSV.")
+    else:
+        logger_fn(f"[{sample}] ABRicate(ecoli_vf) disabled by flags.")
 
-    return kept
+    # Normalize & de-duplicate across sources (prefer VirulenceFinder)
+    rows = _dedupe_rows(rows, logger_fn)
+    logger_fn(f"[{sample}] Virulence merged rows: {len(rows)}")
+    return rows
+
+
+# ------------------------- map loading & selection ------------------------- #
+
+def _select_vf_map_path(organism: str, extended_vf: bool) -> Path:
+    """
+    Pick the map file according to organism and extended flag.
+    """
+    try:
+        from importlib.resources import files as resource_files
+    except Exception:
+        from importlib_resources import files as resource_files  # type: ignore
+
+    data_pkg = resource_files("bactipipe.data")
+    if organism == "Escherichia":
+        fname = "all_vf_category_map.tsv" if extended_vf else "dx_vf_category_map.tsv"
+    else:
+        fname = "all_vf_category_map.tsv"
+    return data_pkg.joinpath(fname)
+
+
+def _read_vf_map(path: Path) -> Dict[str, Dict[str, str]]:
+    """
+    Read 4-column virulence map:
+      gene    display_name    functional_category    notes
+    Returns dict keyed by raw 'gene' -> {display_name, category, note}
+    """
+    out: Dict[str, Dict[str, str]] = {}
+    with open(path, newline="") as f:
+        r = csv.DictReader(f, delimiter="\t")
+        for rec in r:
+            g = (rec.get("gene") or "").strip()
+            disp = (rec.get("display_name") or "").strip()
+            cat = (rec.get("functional_category") or "").strip()
+            note = (rec.get("notes") or "").strip()
+            if not g or not disp or not cat:
+                continue
+            out[g] = {"display_name": disp, "category": cat, "note": note}
+    return out
+
+
+# --------------------------- tool runners (subprocess) --------------------------- #
+
+def _run_virulencefinder(
+    sample: str,
+    fasta: str,
+    out_root: str,
+    db_root: str,
+    logger_fn,
+) -> str | None:
+    """
+    Run DTU virulencefinder.py directly into the final raw directory
+    (no temp dir). Returns path to results_tab.tsv on success, else None.
+    """
+    # Validate inputs
+    if not os.path.isfile(fasta):
+        logger_fn(f"[{sample}] VirulenceFinder SKIP: FASTA not found: {fasta}")
+        return None
+    if not db_root:
+        logger_fn(f"[{sample}] VirulenceFinder SKIP: --db-dir/BACTIPIPE_DB_DIR not set.")
+        return None
+
+    vdb = os.path.join(db_root, "virulencefinder_db")
+    if not os.path.isdir(vdb):
+        logger_fn(f"[{sample}] VirulenceFinder SKIP: DB not found at: {vdb}")
+        return None
+
+    # Final output dir (created up front)
+    final_dir = os.path.join(out_root, "raw", "virulencefinder", sample)
+    os.makedirs(final_dir, exist_ok=True)
+
+    # Best-effort resolution of the executable (for logging)
+    exe_path = "virulencefinder.py"
+    try:
+        which = subprocess.run(
+            ["bash", "-lc", "command -v virulencefinder.py || which virulencefinder.py || true"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        exe_path = (which.stdout or "").strip() or "virulencefinder.py"
+    except Exception:
+        pass
+
+    # Build command (no --threads)
+    if env_cmd is not None:
+        cmd = env_cmd("virulencefinder.py") + ["-i", fasta, "-o", final_dir, "-p", vdb, "-x"]
+        launcher = "env_cmd"
+    else:
+        cmd = [exe_path, "-i", fasta, "-o", final_dir, "-d", vdb, "-x"]
+        launcher = "direct"
+
+    # Log and run
+    logger_fn(f"[{sample}] VirulenceFinder TRY ({launcher}) | exe={exe_path} | DB={vdb} | OUT={final_dir}")
+    logger_fn(f"[{sample}] VirulenceFinder CMD: {' '.join(cmd)}")
+
+    try:
+        p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    except Exception as e:
+        logger_fn(f"[{sample}] VirulenceFinder FAILED to start: {e}")
+        return None
+
+    if p.returncode != 0:
+        logger_fn(f"[{sample}] VirulenceFinder FAILED (exit {p.returncode}).\nSTDOUT:\n{p.stdout}\nSTDERR:\n{p.stderr}")
+        return None
+
+    res_tsv = os.path.join(final_dir, "results_tab.tsv")
+    if not os.path.isfile(res_tsv):
+        logger_fn(f"[{sample}] VirulenceFinder OK exit but missing results_tab.tsv.\nSTDOUT:\n{p.stdout}\nSTDERR:\n{p.stderr}")
+        return None
+
+    # Keep small run logs alongside results
+    try:
+        with open(os.path.join(final_dir, "virulencefinder.stdout.txt"), "w") as f:
+            f.write(p.stdout or "")
+        with open(os.path.join(final_dir, "virulencefinder.stderr.txt"), "w") as f:
+            f.write(p.stderr or "")
+    except Exception as e:
+        logger_fn(f"[{sample}] VirulenceFinder WARN: failed to save stdout/stderr logs: {e}")
+
+    logger_fn(f"[{sample}] VirulenceFinder OK → {res_tsv}")
+    return res_tsv
+
+
+
+def _run_abricate(
+    sample: str,
+    fasta: str,
+    out_root: str,
+    *,
+    db: str,
+    threads: int,
+    logger_fn,
+) -> str | None:
+    """
+    Run ABRicate for a specific DB (vfdb or ecoli_vf). Returns path to TSV on success.
+    """
+    if not os.path.isfile(fasta):
+        logger_fn(f"[{sample}] ABRicate({db}) SKIP: FASTA not found: {fasta}")
+        return None
+
+    tmp_dir = os.path.join(out_root, ".tmp", f"abricate_{db}", sample)
+    os.makedirs(tmp_dir, exist_ok=True)
+    out_tsv = os.path.join(tmp_dir, f"{sample}.{db}.tsv")
+
+    # Build command; ABRicate accepts --db and --threads
+    if env_cmd is not None:
+        cmd = env_cmd("abricate") + ["--db", db]
+    else:
+        cmd = ["abricate", "--db", db]
+    if threads and threads > 1:
+        cmd += ["--threads", str(threads)]
+    cmd += [fasta]
+
+    logger_fn(f"[{sample}] ABRicate TRY | db={db} | TMP={tmp_dir}")
+    logger_fn(f"[{sample}] ABRicate CMD: {' '.join(cmd)}")
+
+    try:
+        p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    except Exception as e:
+        logger_fn(f"[{sample}] ABRicate({db}) FAILED to start: {e}")
+        return None
+
+    if p.returncode != 0:
+        logger_fn(f"[{sample}] ABRicate({db}) FAILED (exit {p.returncode}).\nSTDOUT:\n{p.stdout}\nSTDERR:\n{p.stderr}")
+        return None
+
+    # ABRicate prints to STDOUT unless --csv/--tsv redirected; write capture to out_tsv
+    try:
+        with open(out_tsv, "w") as f:
+            f.write(p.stdout or "")
+    except Exception as e:
+        logger_fn(f"[{sample}] ABRicate({db}) FAILED to write TSV: {e}")
+        return None
+
+    if not os.path.isfile(out_tsv) or os.path.getsize(out_tsv) == 0:
+        logger_fn(f"[{sample}] ABRicate({db}) produced empty TSV.")
+        return None
+
+    # move final TSV to raw/abricate_<db>/<sample>.tsv
+    final_dir = os.path.join(out_root, "raw", f"abricate_{db}")
+    os.makedirs(final_dir, exist_ok=True)
+    final_tsv = os.path.join(final_dir, f"{sample}.tsv")
+    try:
+        shutil.move(out_tsv, final_tsv)
+        with open(os.path.join(final_dir, f"{sample}.stdout.txt"), "w") as f:
+            f.write(p.stdout or "")
+        with open(os.path.join(final_dir, f"{sample}.stderr.txt"), "w") as f:
+            f.write(p.stderr or "")
+    except Exception as e:
+        logger_fn(f"[{sample}] ABRicate({db}) FAILED to move outputs: {e}")
+        return None
+
+    logger_fn(f"[{sample}] ABRicate({db}) OK → {final_tsv}")
+    return final_tsv
+
+
+# ------------------------------ parsers ------------------------------ #
+
+def _parse_vfinder_results(
+    tsv_path: str,
+    min_id: float,
+    min_cov: float,
+    vf_map: Dict[str, Dict[str, str]],
+    logger_fn,
+) -> List[Dict]:
+    """
+    Parse VirulenceFinder extended results_tab.tsv
+    Columns (as seen in your example):
+      Database, Virulence factor, Identity, Query / Template length,
+      Contig, Position in contig, Protein function, Accession number
+    """
+    rows: List[Dict] = []
+    def _cov_pct(qt: str) -> float:
+        # "97 / 117" -> 97/117 * 100
+        try:
+            q, t = qt.replace(",", "").split("/")
+            q = int(str(q).strip())
+            t = int(str(t).strip())
+            if t <= 0:
+                return 0.0
+            return 100.0 * (q / t)
+        except Exception:
+            return 0.0
+
+    with open(tsv_path, newline="") as f:
+        r = csv.DictReader(f, delimiter="\t")
+        for rec in r:
+            raw_gene = (rec.get("Virulence factor") or "").strip()
+            if not raw_gene:
+                continue
+            ident = _safe_float(rec.get("Identity"))
+            cov = _cov_pct(rec.get("Query / Template length") or "")
+            if ident < min_id or cov < min_cov:
+                continue
+            map_rec = vf_map.get(raw_gene)
+            if not map_rec:
+                # drop genes not present in the map
+                continue
+            rows.append({
+                "gene": map_rec["display_name"],
+                "base_gene": raw_gene,
+                "category": map_rec["category"],
+                "note": map_rec["note"],
+                "source": "VirulenceFinder",
+                "identity": ident,
+                "coverage": cov,
+            })
+    logger_fn(f"[VF parse] {Path(tsv_path).name}: kept {len(rows)} rows after thresholds/map filter")
+    return rows
+
+
+def _parse_abricate(
+    tsv_path: str,
+    source_label: str,
+    min_id: float,
+    min_cov: float,
+    vf_map: Dict[str, Dict[str, str]],
+    logger_fn,
+) -> List[Dict]:
+    """
+    Parse ABRicate TSV output captured from STDOUT.
+    ABRicate columns typically include:
+      SEQUENCE, START, END, GENE, COVERAGE, COVERAGE_MAP, GAPS, %COVERAGE, %IDENTITY, DATABASE, ...
+    We rely on 'GENE', '%COVERAGE', '%IDENTITY', 'DATABASE'.
+    """
+    rows: List[Dict] = []
+    with open(tsv_path, newline="") as f:
+        r = csv.DictReader(f, delimiter="\t")
+        # normalize headers
+        headers = [h.strip() for h in (r.fieldnames or [])]
+        cov_key = "%COVERAGE" if "%COVERAGE" in headers else "COVERAGE"
+        id_key = "%IDENTITY" if "%IDENTITY" in headers else "IDENTITY"
+        for rec in r:
+            raw_gene = (rec.get("GENE") or "").strip()
+            if not raw_gene:
+                continue
+            ident = _safe_float(rec.get(id_key))
+            cov = _safe_float(rec.get(cov_key))
+            if ident < min_id or cov < min_cov:
+                continue
+            map_rec = vf_map.get(raw_gene)
+            if not map_rec:
+                # drop genes not present in the map
+                continue
+            rows.append({
+                "gene": map_rec["display_name"],
+                "base_gene": raw_gene,
+                "category": map_rec["category"],
+                "note": map_rec["note"],
+                "source": source_label,
+                "identity": ident,
+                "coverage": cov,
+            })
+    logger_fn(f"[ABRicate parse:{source_label}] {Path(tsv_path).name}: kept {len(rows)} rows after thresholds/map filter")
+    return rows
+
+
+# --------------------------- de-duplication --------------------------- #
+
+def _dedupe_rows(rows: List[Dict], logger_fn) -> List[Dict]:
+    """
+    De-duplicate rows by display name (gene), preferring VirulenceFinder over ABRicate sources.
+    Merge 'source' labels if the same gene was found by multiple sources.
+    """
+    if not rows:
+        return []
+
+    by_gene: Dict[str, Dict] = {}
+    for r in rows:
+        disp = (r.get("gene") or "").strip()
+        if not disp:
+            continue
+        src = r.get("source", "")
+        if disp not in by_gene:
+            # copy
+            by_gene[disp] = dict(r)
+            # ensure 'source' is a set for merging
+            by_gene[disp]["source"] = {src} if src else set()
+        else:
+            # merge source
+            cur = by_gene[disp]
+            if src:
+                if isinstance(cur["source"], set):
+                    cur["source"].add(src)
+                else:
+                    cur["source"] = {cur["source"], src}
+            # prefer VirulenceFinder's annotation if present
+            if src == "VirulenceFinder":
+                by_gene[disp] = dict(r)
+                by_gene[disp]["source"] = set(cur["source"])  # keep merged sources
+
+    # finalize
+    out: List[Dict] = []
+    for disp, rec in by_gene.items():
+        src_val = rec.get("source")
+        if isinstance(src_val, set):
+            rec["source"] = ",".join(sorted(src_val))
+        out.append(rec)
+
+    out.sort(key=lambda x: (x.get("category", ""), x.get("gene", "").lower()))
+    logger_fn(f"[de-dup] {len(rows)} → {len(out)} by display name")
+    return out
+
+
+# ------------------------------- utils ------------------------------- #
+
+def _safe_float(x) -> float:
+    try:
+        if x is None:
+            return 0.0
+        s = str(x).strip().replace("%", "")
+        return float(s)
+    except Exception:
+        return 0.0

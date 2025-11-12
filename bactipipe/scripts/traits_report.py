@@ -444,9 +444,49 @@ def _safe_table(
     elif isinstance(style, (list, tuple)):
         t.setStyle(TableStyle(list(style)))
     return t
+
 # =============================================================================
 # Run-level PDF generator
 # =============================================================================
+def _vf_rows_from_merged(all_merged: dict, sample_names: list[str]):
+    """
+    Build virulence presence/absence grouped by category directly from normalized rows in all_merged.
+
+    Each VF row in all_merged[s]["vf"] must include:
+      - gene        (display_name already)
+      - category
+      - note
+
+    Returns:
+      headers: ["Gene", "Note", *sample_names]  (we won't use headers text; we keep your existing "Gene/Description")
+      grouped: dict(category -> list of [gene, note, ✓/"" per sample in sample_names order])
+    """
+    keys = []
+    seen = set()
+    present = defaultdict(set)  # (cat,gene,note) -> set(sample_name)
+
+    for sname, merged in all_merged.items():
+        for r in (merged.get("vf") or []):
+            cat = (r.get("category") or "").strip()
+            gene = (r.get("gene") or "").strip()
+            note = (r.get("note") or "").strip()
+            if not cat or not gene:
+                continue
+            k = (cat, gene, note)
+            if k not in seen:
+                seen.add(k)
+                keys.append(k)
+            present[k].add(sname)
+
+    grouped = defaultdict(list)
+    for (cat, gene, note) in keys:
+        row = [gene, note]
+        row.extend("✓" if s in present[(cat, gene, note)] else "" for s in sample_names)
+        grouped[cat].append(row)
+
+    headers = ["Gene", "Note", *sample_names]
+    return headers, grouped
+
 def render_run_pdf(
     *,
     out_root: str,
@@ -468,8 +508,7 @@ def render_run_pdf(
     samples = _samples_in_run(all_merged)
 
     # ---------- Catalogs & presence ----------
-    vf_catalog = _load_vf_catalog()                       # category | gene | note
-    vf_present = _vf_presence(all_merged)
+    vf_headers, vf_grouped = _vf_rows_from_merged(all_merged, samples)
 
     acquired_catalog, mut_pheno_map = _load_amr_maps()    # acquired gene list & mutation phenotype map
     amr_acq_present, amr_acq_pheno, amr_mut_present, amr_mut_pheno = _collect_amr_presence(
@@ -622,12 +661,13 @@ def render_run_pdf(
     HEADER_TILT_DEGREES = 35  # preferred tilt
 
     # ------------------------------------------------------------------
-    # Virulence section (filter out empty rows; wrapped Note; category headers)
+    # Virulence section (from merged rows; wrapped Note; category headers)
     # ------------------------------------------------------------------
     if run_vf:
         story.append(Paragraph("Virulence factors (presence/absence per sample)", h2_style))
 
-        if not vf_catalog:
+        has_vf = any(vf_grouped.values())
+        if not has_vf:
             story.append(Paragraph("<i>No virulence factors detected across samples</i>", styles["Normal"]))
         else:
             # Rotated sample headers if >5
@@ -639,47 +679,44 @@ def render_run_pdf(
             cols = ["Gene", "Description"] + sample_headers
             data: List[List] = [cols]
 
-            last_cat = None
-            for row in vf_catalog:
-                cat, gene, note = row["category"], row["gene"], row["note"]
-                checks = ["✓" if gene in vf_present and s in vf_present[gene] else "" for s in samples]
-                if not any(checks):
-                    continue
-                # category subheader (spans entire table width)
-                if cat != last_cat:
-                    data.append([f"Category: {cat}"] + [""] * (len(cols) - 1))
-                    last_cat = cat
-                note_cell = Paragraph(_xml_escape(note) if note else "", note_style)
-                data.append([gene, note_cell] + checks)
+            for cat in sorted(vf_grouped.keys(), key=str.lower):
+                # Category subheader row spanning whole width
+                data.append([f"Category: {cat}"] + [""] * (len(cols) - 1))
 
-            if len(data) == 1:
-                story.append(Paragraph("<i>No virulence factors (from the catalog) were found in these samples</i>", styles["Normal"]))
-            else:
-                vf_tbl = _safe_table(
-                    data,
-                    style=[
-                        ("GRID", (0,0), (-1,-1), 0.25, colors.grey),
-                        ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
-                        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-                        ("ALIGN", (0,0), (-1,0), "CENTER"),   # header row
-                        ("ALIGN", (2,1), (-1,-1), "CENTER"),  # sample columns start at col=2
-                        ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
-                        ("FONTSIZE", (0,0), (-1,-1), 9),
-                        ("TOPPADDING", (0,0), (-1,-1), 3),
-                        ("BOTTOMPADDING", (0,0), (-1,-1), 3),
-                    ],
-                    colWidths = _vf_colwidths(doc.width, len(samples)),
-                )
-                total_cols = len(cols)
-                for r in range(1, len(data)):
-                    if isinstance(data[r][0], str) and data[r][0].startswith("Category:"):
-                        vf_tbl.setStyle(TableStyle([
-                            ("SPAN", (0, r), (total_cols-1, r)),
-                            ("BACKGROUND", (0, r), (total_cols-1, r), colors.whitesmoke),
-                            ("FONTNAME", (0, r), (total_cols-1, r), "Helvetica-Bold"),
-                            ("ALIGN", (0, r), (total_cols-1, r), "LEFT"),
-                        ]))
-                story.append(vf_tbl)
+                # Rows are [gene, note, marks...]; wrap the note into a Paragraph
+                for row in vf_grouped[cat]:
+                    gene = row[0]
+                    note = Paragraph(_xml_escape(row[1]) if row[1] else "", note_style)
+                    marks = row[2:]
+                    data.append([gene, note] + marks)
+
+            vf_tbl = _safe_table(
+                data,
+                style=[
+                    ("GRID", (0,0), (-1,-1), 0.25, colors.grey),
+                    ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+                    ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
+                    ("ALIGN", (0,0), (-1,0), "CENTER"),   # header row
+                    ("ALIGN", (2,1), (-1,-1), "CENTER"),  # sample columns start at col=2
+                    ("VALIGN", (0,0), (-1,-1), "MIDDLE"),
+                    ("FONTSIZE", (0,0), (-1,-1), 9),
+                    ("TOPPADDING", (0,0), (-1,-1), 3),
+                    ("BOTTOMPADDING", (0,0), (-1,-1), 3),
+                ],
+                colWidths=_vf_colwidths(doc.width, len(samples)),
+            )
+
+            total_cols = len(cols)
+            for r in range(1, len(data)):
+                if isinstance(data[r][0], str) and data[r][0].startswith("Category:"):
+                    vf_tbl.setStyle(TableStyle([
+                        ("SPAN", (0, r), (total_cols-1, r)),
+                        ("BACKGROUND", (0, r), (total_cols-1, r), colors.whitesmoke),
+                        ("FONTNAME", (0, r), (total_cols-1, r), "Helvetica-Bold"),
+                        ("ALIGN", (0, r), (total_cols-1, r), "LEFT"),
+                    ]))
+
+            story.append(vf_tbl)
 
         story.append(Spacer(1, 14))
 

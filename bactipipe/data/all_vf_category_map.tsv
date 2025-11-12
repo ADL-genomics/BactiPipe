@@ -1,0 +1,958 @@
+gene	display_name	functional_category	notes
+aafA	aafA	Adhesion/Colonization	Major fimbrial subunit of aggregative adherence fimbria II AafA
+aaiC	aaiC	Secretion system	Type VI secretion protein
+aalE	aalE	Adhesion/Colonization	CS23 Major structural subunit
+aap	aap	Adhesion/Colonization	"Dispersin, antiaggregation protein"
+aap/aspU	aap	Adhesion/Colonization	Dispersin transporter protein
+aatA	aatA	Adhesion/Colonization	Dispersin transporter protein
+ace	ace	Adhesion/Colonization	collagen adhesin precursor
+acm	acm		
+ACME	ACME	Adhesion/Colonization	arginine catabolic mobile element
+afaA	afaA	Adhesion/Colonization	Fimbrial major subunit AfaA
+afaA-VIII	afaA	Adhesion/Colonization	Fimbrial major subunit AfaA
+afaD	afaD	Adhesion/Colonization	Afimbrial adhesion
+afaD	afaD	Adhesion/Colonization	Afimbrial adhesion
+afaD-VII	afaD	Adhesion/Colonization	Afimbrial adhesion
+afaD-VIII	afaD	Adhesion/Colonization	Afimbrial adhesion
+afaE	afaE	Adhesion/Colonization	Afimbrial adhesin AfaE
+afaE-I	afaE	Adhesion/Colonization	Afimbrial adhesin AfaE
+afaE-II	afaE	Adhesion/Colonization	Afimbrial adhesin AfaE
+afaE-III	afaE	Adhesion/Colonization	Afimbrial adhesin AfaE
+afaE-V	afaE	Adhesion/Colonization	Afimbrial adhesin AfaE
+afaE-VII	afaE	Adhesion/Colonization	Afimbrial adhesin AfaE
+afaE-VIII	afaE	Adhesion/Colonization	Afimbrial adhesin AfaE
+afaF-III	afaF	Adhesion/Colonization	Afimbrial adhesin AfaF
+afaF-VII	afaF	Adhesion/Colonization	Afimbrial adhesin AfaF
+afaG-VII	afaG	Adhesion/Colonization	Afimbrial adhesin AfaG
+afpA	afpA	Adhesion/Colonization	"Major structural subunit of bundle-forming pilus, AFP fimbrial cluster"
+afpA2	afpA2	Adhesion/Colonization	"major structural subunit of bundle-forming pilus, AFP fimbrial cluster"
+afpB	afpB	Adhesion/Colonization	"membrane protein, AFP fimbrial cluster"
+afpC	afpC	Adhesion/Colonization	"hypothetical protein, AFP fimbrial cluster"
+afpD	afpD	Adhesion/Colonization	"DNA binding protein type II/IV SS family protein, AFP fimbrial cluster"
+afpE	afpE	Adhesion/Colonization	"type II SS protein, AFP fimbrial cluster"
+afpF	afpF	Adhesion/Colonization	"type II/IV SS family protein, AFP fimbrial cluster"
+afpG	afpG	Adhesion/Colonization	"hypothetical protein, AFP fimbrial cluster"
+afpH	afpH	Adhesion/Colonization	"lytic transglycosylase, AFP fimbrial cluster"
+afpI	afpI	Adhesion/Colonization	"hypothetical protein, AFP fimbrial cluster"
+afpJ	afpJ	Adhesion/Colonization	"hypothetical protein, AFP fimbrial cluster"
+afpK	afpK	Adhesion/Colonization	"hypothetical protein, AFP fimbrial cluster"
+afpL	afpL	Adhesion/Colonization	"hypothetical protein, AFP fimbrial cluster"
+afpP	afpP	Adhesion/Colonization	"prepilin peptidase, AFP fimbrial cluster"
+afpU	afpU	Adhesion/Colonization	"hypothetical protein, AFP fimbrial cluster"
+agg	agg	Adhesion/Colonization	aggregation substance
+agg3A	agg3A	Adhesion/Colonization	AAF/III major fimbrial subunit
+agg4A	agg4A	Adhesion/Colonization	AAF/IV major fimbrial subunit
+aggA	aggA	Adhesion/Colonization	AAF/I major fimbrial subunit
+aggR	aggR	Adhesion/Colonization	AraC transcriptional activator
+agn43	AIDA-I	Adhesion/Colonization	AIDA-I type autotransporter protein
+CAA46156	AIDA-I	Adhesion/Colonization	AIDA-I type autotransporter protein
+cah	AIDA-I	Adhesion/Colonization	AIDA-I type autotransporter protein
+ehaA	AIDA-I	Adhesion/Colonization	AIDA-I type autotransporter protein
+upaH	AIDA-I	Adhesion/Colonization	AIDA-I type autotransporter protein
+air	air	Adhesion/Colonization	Enteroaggregative immunoglobulin repeat protein
+anr	anr		AraC negative regulator
+aslA	aslA		Acyltransferase
+astA	astA (EAST-1)	Toxins	Heat-stable enterotoxin EAST-1
+east1	astA (EAST-1)	Toxins	Heat-stable enterotoxin EAST-1
+atl	atl		bifunctional autolysin Atl
+aur	aur		aureolysin
+bfpA	bfpA	Adhesion/Colonization	Major subunit of bundle-forming pili
+boa	boa		Protease from Salmonella bongori
+cad	cad		
+camE	camE		sex pheromone cAM373 precursor
+cap1A	cap1A	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap1A
+cap1B	cap1B	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap1B
+cap1C	cap1C	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap1C
+cap5A	cap5A	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5A
+cap5B	cap5B	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5B
+cap5C	cap5C	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5C
+cap5D	cap5D	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5D
+cap5E	cap5E	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5E
+cap5F	cap5F	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5F
+cap5G	cap5G	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5G
+cap5H	cap5H	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5H
+cap5I	cap5I	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5I
+cap5J	cap5J	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5J
+cap5K	cap5K	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5K
+cap5L	cap5L	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5L
+cap5M	cap5M	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5M
+cap5N	cap5N	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5N
+cap5O	cap5O	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5O
+cap5P	cap5P	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein cap5P
+cap8A	cap8A	Protectins/Resistance to body defenses	truncated capsular polysaccharide synthesis enzyme cap5A
+cap8B	cap8B	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8B
+cap8C	cap8C	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8C
+cap8D	cap8D	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8D
+cap8E	cap8E	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8E
+cap8F	cap8F	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8F
+cap8G	cap8G	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8G
+cap8H	cap8H	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8H
+cap8I	cap8I	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8I
+cap8J	cap8J	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8J
+cap8K	cap8K	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8K
+cap8L	cap8L	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8L
+cap8M	cap8M	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8M
+cap8O	cap8O	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8O
+cap8P	cap8P	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme cap8P
+capA	capA	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein capA
+capB	capB	Protectins/Resistance to body defenses	capsular polysaccharide biosynthesis protein capB
+capC	capC	Protectins/Resistance to body defenses	capsular polysaccharide synthesis protein capC
+capD	capD	Protectins/Resistance to body defenses	polysaccharide biosynthesis protein capD
+capE	capE	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capE
+capF	capF	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capF
+capG	capG	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capG
+capH	capH	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capH
+capI	capI	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capI
+capJ	capJ	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capJ
+capK	capK	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capK
+capL	capL	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capL
+capM	capM	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capM
+capN	capN	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capN
+capO	capO	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capO
+capP	capP	Protectins/Resistance to body defenses	capsular polysaccharide synthesis enzyme capP
+capU	capU	Adhesion/Colonization	Hexosyltransferase homolog
+cba	cba	Colicin/Bacteriocins/Microcins	Colicin B
+cCF10	cCF10		
+ccI	ccI		Cloacin
+cdt-IB	cdt-B	Toxins	Cytolethal distending toxin sub unit B
+cdt-IIB	cdt-B	Toxins	Cytolethal distending toxin sub unit B
+cdt-IIIB	cdt-B	Toxins	Cytolethal distending toxin sub unit B
+cdt-VB	cdt-B	Toxins	Cytolethal distending toxin sub unit B
+cdt-VIB	cdt-B	Toxins	Cytolethal distending toxin sub unit B
+cdt-Ea	cdt-Ea	Toxins	Escherichia albertii cytolethal distending toxin B
+cdt-Sb	cdt-Sb	Toxins	Shigella boydii strain K-1 cytolethal distending toxin ABC
+cdtA	cdtA	Toxins	Cytolethal distending toxin sub unit A
+cdtB	cdtB	Toxins	Cytolethal distending toxin sub unit B
+cdtC	cdtC	Toxins	Cytolethal distending toxinsub unit C
+cea	cea	Colicin/Bacteriocins/Microcins	Colicin E1
+cfaA	cfaA	Adhesion/Colonization	Colonisation factor antigen A  Major pilin
+cfaE	cfaE	Adhesion/Colonization	CFA/1 Pilus length modulator
+chuA	chuA	Iron uptake and utilization	Outer membrane hemin receptor
+cia	cia	Colicin/Bacteriocins/Microcins	Colicin ia
+cib	cib	Colicin/Bacteriocins/Microcins	Colicin ib
+cif	cif	Secretion system	"Type III secretion system effector Cif, cyclomodulin"
+clbB	clbB	Colicin/Bacteriocins/Microcins	Hybrid non-ribosomal peptide / polyketide megasynthase
+clfA	clfA		"fibrinogen-binding protein A, clumping factor"
+clfB	clfB		"clumping factor ClfB, fibrinogen binding protein"
+clpK1	clpK1		heat shock survival AAA family ATPase ClpK. thermal stress survival
+clpK2	clpK2		heat shock survival AAA family ATPase ClpK. thermal stress survival
+cma	cma	Colicin/Bacteriocins/Microcins	Colicin M activity
+cmaHa	cmaHa	Adhesion/Colonization	CS27 Coli surface antigen a
+cmaHb	cmaHb	Adhesion/Colonization	CS27 Coli surface antigen b
+cna	cna	Adhesion/Colonization	collagen adhesin precursor
+cnf1	cnf1	Toxins	Cytotoxic necrotizing factor 1
+cnf2	cnf2	Toxins	Cytotoxic necrotizing factor 2
+cnf3	cnf3	Toxins	Cytotoxic necrotizing factor 3
+cnmHa	cnmHa	Adhesion/Colonization	CS28 Coli surface antigen a
+cnmHb	cnmHb	Adhesion/Colonization	CS28 Coli surface antigen b
+coa	coa		staphylocoagulase precursor
+cOB1	cOB1		
+cofA	cofA	Adhesion/Colonization	CS8 Type IV pilin precursor; major pilin
+cofD	cofD	Adhesion/Colonization	CS8 Lipoprotein; secretin
+cofE	cofE	Adhesion/Colonization	CS8 Inner membrane accessory protein (IMAP)
+cofF	cofF	Adhesion/Colonization	CS8 Inner membrane accessory protein (IMAP)
+cofG	cofG	Adhesion/Colonization	CS8 Inner membrane accessory protein (IMAP)
+cofH	cofH	Adhesion/Colonization	CS8 Nucleotide-binding protein; assembly ATPase
+cofI	cofI	Adhesion/Colonization	CS8 Integral membrane protein; inner membrane core protein (IMCP)
+cofJ	cofJ	Adhesion/Colonization	CS8 Secreted colonization factor
+cofP	cofP	Adhesion/Colonization	CS8 Prepilin peptidase
+cofS	cofS	Adhesion/Colonization	CS8 AraC-like protein
+cofT	cofT	Adhesion/Colonization	CS8 Unknown
+colE2	colE2	Colicin/Bacteriocins/Microcins	Colicin E2
+colE2-like	colE2-like	Colicin/Bacteriocins/Microcins	Colicin lysis protein precursor E2-like
+colE4	colE4	Colicin/Bacteriocins/Microcins	Colicin E4
+colE5	colE5	Colicin/Bacteriocins/Microcins	Colicin E5 lysis protein Lys
+colE6	colE6	Colicin/Bacteriocins/Microcins	Colicin E6
+colE7	colE7	Colicin/Bacteriocins/Microcins	Colicin E7
+colE8	colE8	Colicin/Bacteriocins/Microcins	Colicin E8
+colE9	colE9	Colicin/Bacteriocins/Microcins	Colicin E9
+cooA	cooA	Adhesion/Colonization	CS1 pilin major subunit
+cosA	cosA	Adhesion/Colonization	PCFO71 Major fimbrial subunit
+crsF	crsF	Adhesion/Colonization	CS26 fimbrial protein
+crsG	crsG	Adhesion/Colonization	CS26 hypothetical protein
+crsH	crsH	Adhesion/Colonization	"CS26 Coli surface antigen, type 1 fimbrial protein"
+crsS	crsS	Adhesion/Colonization	CS26 Tyrosine-type DNA invertase
+crsT	crsT	Adhesion/Colonization	CS26 Tyrosine-type DNA invertase
+C719-09_CS22	CS22	Adhesion/Colonization	"Colonization factor (CF), CS22"
+clpL	CS31A	Adhesion/Colonization	CS31A minor subunit
+csaB	csaB	Adhesion/Colonization	CS4 major fimbrial subunit
+csbA	csbA	Adhesion/Colonization	CS17 Fimbrial major subunit
+csdA	csdA	Adhesion/Colonization	CS19 Major fimbrial subunit
+cseA	cseA	Adhesion/Colonization	CS22 Adhesin protein
+csfA	csfA	Adhesion/Colonization	CS5 major subunit
+csfE	csfE	Adhesion/Colonization	CS5 Pilus length modulator
+csgA	csgA	Adhesion/Colonization	curlin major subunit CsgA
+cshE	cshE	Adhesion/Colonization	CS13 Pilin
+csmA	csmA	Adhesion/Colonization	CS30 Major subunit
+csmG	csmG	Adhesion/Colonization	CS30 Fimbrial adhesin
+csmS	csmS	Adhesion/Colonization	CS30 Site specific recombinase
+csmT	csmT	Adhesion/Colonization	CS30 Site specific recombinase
+csnA	csnA	Adhesion/Colonization	CS20 Fimbria major subunit
+cssA	cssA	Adhesion/Colonization	CS6 Structural subunit A
+cssB	cssB	Adhesion/Colonization	CS6 Structural subunit B
+cstG	cstG	Adhesion/Colonization	CS3 Major pilin
+cstH	cstH	Adhesion/Colonization	CS3 Major pilin reported but not found
+csuA	csuA	Adhesion/Colonization	CS14 Major fimbrial subunit
+csvA	csvA	Adhesion/Colonization	CS7 Major subunit
+cswA	cswA	Adhesion/Colonization	CS12 Major subunit
+cswG	cswG	Adhesion/Colonization	CS12 Putative adhesin
+cswR	cswR	Adhesion/Colonization	CS12 Transcriptional activator
+cvaC	cvaC	Colicin/Bacteriocins/Microcins	Microcin C
+cylA	cylA		
+cylB	cylB		
+cylL	cylL		
+cylM	cylM		
+dhaK	dhaK		Dihydroxyacetone kinase (ptnC)
+eae	eae	Adhesion/Colonization	Intimin
+eae-a01-alpha1	eae	Adhesion/Colonization	Intimin
+eae-a02-alpha2	eae	Adhesion/Colonization	Intimin
+eae-a03-zeta	eae	Adhesion/Colonization	Intimin
+eae-a04-zeta	eae	Adhesion/Colonization	Intimin
+eae-a05a-nu	eae	Adhesion/Colonization	Intimin
+eae-a05b-nu	eae	Adhesion/Colonization	Intimin
+eae-a06-omicron	eae	Adhesion/Colonization	Intimin
+eae-a07-tau	eae	Adhesion/Colonization	Intimin
+eae-a08-alpha8	eae	Adhesion/Colonization	Intimin
+eae-a09-alpha9	eae	Adhesion/Colonization	Intimin
+eae-a10-alpha10	eae	Adhesion/Colonization	Intimin
+eae-a11-alpha11	eae	Adhesion/Colonization	Intimin
+eae-a12-alpha12	eae	Adhesion/Colonization	Intimin
+eae-a13a-alpha13	eae	Adhesion/Colonization	Intimin
+eae-a13b-alpha13	eae	Adhesion/Colonization	Intimin
+eae-a14-alpha14	eae	Adhesion/Colonization	Intimin
+eae-a15-alpha15	eae	Adhesion/Colonization	Intimin
+eae-a16-alpha16	eae	Adhesion/Colonization	Intimin
+eae-a17-alpha17	eae	Adhesion/Colonization	Intimin
+eae-a18-alpha18	eae	Adhesion/Colonization	Intimin
+eae-b01a-beta1a	eae	Adhesion/Colonization	Intimin
+eae-b01b-beta1b	eae	Adhesion/Colonization	Intimin
+eae-b02a-beta2a	eae	Adhesion/Colonization	Intimin
+eae-b02b-beta2b	eae	Adhesion/Colonization	Intimin
+eae-b03-beta3	eae	Adhesion/Colonization	Intimin
+eae-b04-delta	eae	Adhesion/Colonization	Intimin
+eae-b05-Citrobacter	eae	Adhesion/Colonization	Intimin
+eae-b06-beta4	eae	Adhesion/Colonization	Intimin
+eae-b07-beta7	eae	Adhesion/Colonization	Intimin
+eae-b08-kappa	eae	Adhesion/Colonization	Intimin
+eae-e01-epsilon1	eae	Adhesion/Colonization	Intimin
+eae-e02-epsilon2	eae	Adhesion/Colonization	Intimin
+eae-e03a-epsilon3	eae	Adhesion/Colonization	Intimin
+eae-e03b-epsilon3	eae	Adhesion/Colonization	Intimin
+eae-e04-epsilon4	eae	Adhesion/Colonization	Intimin
+eae-e05-eta1	eae	Adhesion/Colonization	Intimin
+eae-e06-eta2	eae	Adhesion/Colonization	Intimin
+eae-e07-xi	eae	Adhesion/Colonization	Intimin
+eae-e08-pi	eae	Adhesion/Colonization	Intimin
+eae-e09-epsilon9	eae	Adhesion/Colonization	Intimin
+eae-e10-epsilon10	eae	Adhesion/Colonization	Intimin
+eae-e11-epsilon11	eae	Adhesion/Colonization	Intimin
+eae-e12-eta2	eae	Adhesion/Colonization	Intimin
+eae-g01-gamma1	eae	Adhesion/Colonization	Intimin
+eae-g02-theta	eae	Adhesion/Colonization	Intimin
+eae-g03-mu	eae	Adhesion/Colonization	Intimin
+eae-g04-sigma	eae	Adhesion/Colonization	Intimin
+eae-g05-gamma5	eae	Adhesion/Colonization	Intimin
+eae-g06-gamma6	eae	Adhesion/Colonization	Intimin
+eae-g07-gamma7	eae	Adhesion/Colonization	Intimin
+eae-g08-gamma8	eae	Adhesion/Colonization	Intimin
+eae-g09-gamma9	eae	Adhesion/Colonization	Intimin
+eae-i01-iota1	eae	Adhesion/Colonization	Intimin
+eae-i02b-iota2	eae	Adhesion/Colonization	Intimin
+eae-i03-upsilon	eae	Adhesion/Colonization	Intimin
+eae-l01-lambda1	eae	Adhesion/Colonization	Intimin
+eae-l02-lambda2	eae	Adhesion/Colonization	Intimin
+eae-l03-lambda3	eae	Adhesion/Colonization	Intimin
+eae-l04a-lambda4	eae	Adhesion/Colonization	Intimin
+eae-l04b-lambda4	eae	Adhesion/Colonization	Intimin
+eae-l05-lambda5	eae	Adhesion/Colonization	Intimin
+eae-r01-rho1	eae	Adhesion/Colonization	Intimin
+eae-r02-rho2	eae	Adhesion/Colonization	Intimin
+eae-r03-rho3	eae	Adhesion/Colonization	Intimin
+eae-r04-rho4	eae	Adhesion/Colonization	Intimin
+eap	eap	Adhesion/Colonization	extracellular adherence protein
+eap/map	eap/map	Adhesion/Colonization	extracellular adherence protein
+eatA	eatA	Adhesion/Colonization	Mucin-degrading serine protease autotransporter
+ebh	ebh	Adhesion/Colonization	cell wall associated fibronectin-binding protein
+ebpA	ebpA		
+ebpB	ebpB		
+ebpC	ebpC		
+ebpS	ebpS	Adhesion/Colonization	cell surface elastin binding protein
+edinA	edinA		epidermal cell differentiation inhibitor A
+edinB	edinB		epidermal cell differentiation inhibitor B
+edinC	edinC		epidermal cell differentiation inhibitor C
+efa1	efa1	Adhesion/Colonization	EHEC factor for adherence
+efaAfm	efaAfm		
+efaAfs	efaAfs		
+efb	efb		extracelular fibrinogen-binding protein
+ehxA	ehxA	Toxins	Enterohaemolysin
+eilA	eilA	Invasion	Salmonella HilA homolog
+ElrA	ElrA		
+eltIAB-1	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-10	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-11	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-12	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-13	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-14	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-15	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-15b	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-16	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-17	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-18	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-19	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-2	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-20	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-21	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-22	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-23	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-24	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-25	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-26	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-27	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-28	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-29	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-3	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-30	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-31	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-33	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-33	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-4	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-5	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-6	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-7	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-8	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-9	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-a	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-b1	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-b2	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c1	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c2	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c3	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c4	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c5	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c6	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c7	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c8	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c9	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-d1	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-d2	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-e	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+epeA	epeA	Adhesion/Colonization	Serine protease autotransporter
+esaA	esaA	Secretion system	type VII secretion protein EsaA
+esaB	esaB	Secretion system	Putative secretion accessory protein EsaB/YukD
+esaC	esaC	Secretion system	EsaC protein within ESAT-6 gene cluster
+espA	espA	Secretion system	Type III secretion system translocator protein A
+espA-Cr	espA-Cr	Secretion system	"Type III secretions system, C. rodentium"
+espB	espB	Secretion system	Type III secretion system translocator protein B
+espC	espC	Secretion system	Type III secretion system secreted protein C
+espD	espD	Secretion system	Type III secretion system translocator protein D
+espF	espF	Secretion system	Type III secretion system effector F
+espF-Cr	espF-Cr	Secretion system	Citrobacter rodentium secreted protein F; Type III secretion system
+espfm	espfm	Secretion system	
+espfs	espfs	Secretion system	
+espI	espI	Secretion system	Serine protease autotransporter
+espJ	espJ	Secretion system	Prophage-encoded type III secretion system effector
+espP	espP	Secretion system	Serine protease autotransporter
+espY1	espY1	Secretion system	Type III secretion system effector EspY1
+espy2	espy2	Secretion system	Non-LEE-encoded type III secreted effector
+espy3	espy3	Secretion system	Non-LEE-encoded type III secreted effector
+essA	essA	Secretion system	protein secretion system EssA
+essB	essB	Secretion system	putative secretion system component EssB
+essC	essC	Secretion system	type VII secretion protein EssC
+estah-STa2	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estah-STa3	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa1	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa4	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa5	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa6	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa7	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa8	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa9	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estIa	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estb-STb1	estB (STb)	Toxins	Heat-stable enterotoxin STb
+estb-STb2	estB (STb)	Toxins	Heat-stable enterotoxin STb
+esxA	esxA		ESAT-6/WXG100 family secreted protein EsxA/YukE
+esxB	esxB		Virulence factor EsxB family protein
+eta	eta	Toxins	Exfoliative toxin A
+etd	etd	Toxins	Exfoliative toxin A
+etpA	etpA	Adhesion/Colonization	EtpA Invasin and adherence
+etpB	etpB	Adhesion/Colonization	EtpB Nonfimbrial adhesin/TPS transporter
+etpC	etpC	Secretion system	EtpC Glycotransferase
+etpD	etpD	Secretion system	Type II secretion protein EtpD
+etsC	etsC	Secretion system	Putative type I secretion outer membrane protein
+F17A	F17A	Adhesion/Colonization	Major fimbrial subunit of F17
+f17d-A	F17A	Adhesion/Colonization	Major fimbrial subunit of F17
+faeG	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGab	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGab1	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGab2	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGac	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGad	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGW	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+fanC	fanC (K99)	Adhesion/Colonization	F5 (K99) Major fimbrial subunit
+fasA	fasA (987P)	Adhesion/Colonization	F6 (987P) Major subunit
+fdeC	fdeC	Adhesion/Colonization	intimin-like adhesin FdeC
+fedAab	fedA (F18)	Adhesion/Colonization	F18ab (F107) Major serotype specific fimbrial subunit A
+fedAac	fedA (F18)	Adhesion/Colonization	F18ac (F107) Major serotype specific fimbrial subunit A
+fedAnt	fedA (F18)	Adhesion/Colonization	F18 nontypeable (F107) Major serotype specific fimbrial subunit A
+fib	fib	Adhesion/Colonization	fibrinogen-binding protein
+fimF41	fimF41 (F41)	Adhesion/Colonization	FimF41 Major fimbrial subunit
+fimH	fimH	Adhesion/Colonization	Type 1 fimbriae
+fnbA	fnbA	Adhesion/Colonization	fibronectin-binding protein A
+fnbB	fnbB	Adhesion/Colonization	fibronectin-binding protein B
+focA	focA	Adhesion/Colonization	S fimbrial/F1C major fimbrial subunit
+fotA	fotA	Adhesion/Colonization	CS18 Major subunit
+fotS	fotS	Adhesion/Colonization	CS18 Site-specific recombinase
+fotT	fotT	Adhesion/Colonization	CS18 Site-specific recombinase
+fsrB	fsrB		biofilm formation
+fyuA	fyuA	Iron uptake and utilization	Siderophore receptor
+gad	gad	Protectins/Resistance to body defenses	Glutamate decarboxylase
+geh	geh		glycerol ester hydrolase
+gelE	gelE		
+hha	hha	Toxins	hemolysin expression modulator Hha (previous rmoA)
+hla	hla	Toxins	alpha-hemolysin precursor
+hlb	hlb	Toxins	beta-hemolysin
+hld	hld	Toxins	delta-hemolysin
+hlgA	hlgA	Toxins	gamma-hemolysin chain II precursor
+hlgB	hlgB	Toxins	gamma-hemolysin component B precursor
+hlgC	hlgC	Toxins	gamma-hemolysin component C
+hlyA	hlyA	Toxins	Hemolysin A
+hlyB	hlyB	Toxins	Hemolysin B
+hlyC	hlyC	Toxins	Hemolysin C
+hlyD	hlyD	Toxins	Hemolysin D
+avian-hlye	hlyE	Toxins	Avian E. coli hemolysin
+hlyE	hlyE	Toxins	Avian E. coli hemolysin
+hlyF	hlyF	Toxins	Hemolysin F
+hra	hra	Adhesion/Colonization	Heat-resistant agglutinin
+hra1-3	hra	Adhesion/Colonization	Heat-resistant agglutinin
+hylA	hylA	Toxins	
+hylB	hylB	Toxins	
+hylEfm	hylEfm	Toxins	
+hysA	hysA	Toxins	hyaluronate lyase
+ibeA	ibeA	Invasion	Invasion protein
+icaA	icaA	Adhesion/Colonization	intercellular adhesion protein A
+icaB	icaB	Adhesion/Colonization	intercellular adhesion protein B
+icaC	icaC	Adhesion/Colonization	intercellular adhesion protein C
+icaD	icaD	Adhesion/Colonization	intercellular adhesion protein D
+iha	iha	Adhesion/Colonization	Adherence protein
+ipaD	ipaD	Invasion	Invasion protein Shigella flexneri
+ipaH	ipaH	Invasion	Invasion plasmid antigen
+ipah	ipaH	Invasion	Invasion plasmid antigen
+ipaH7.8	ipaH7.8	Invasion	Invasion plasmid antigen
+ipaH9.8	ipaH9.8	Invasion	Invasion plasmid antigen
+ireA	ireA	Iron uptake and utilization	Siderophore receptor
+iroN	iroN	Iron uptake and utilization	Enterobactin siderophore receptor protein
+irp2	irp2	Iron uptake and utilization	High molecular weight protein 2 non-ribosomal peptide synthetase
+isb	isb	Protectins/Resistance to body defenses	IgG-binding protein SBI
+iss	iss	Protectins/Resistance to body defenses	Increased serum survival
+iss2	iss	Protectins/Resistance to body defenses	Increased serum survival
+iucC	iucC	Iron uptake and utilization	Aerobactin synthetase
+iutA	iutA	Iron uptake and utilization	Ferric aerobactin receptor
+katP	katP	Protectins/Resistance to body defenses	Plasmid-encoded catalase peroxidase
+kpsD	kpsD	Protectins/Resistance to body defenses	Capsule protein KpsD
+kpsE	kpsE	Protectins/Resistance to body defenses	Capsule polysaccharide export inner-membrane protein
+kpsM	kpsM	Protectins/Resistance to body defenses	Group 3 capsule
+kpsM_K11	kpsM	Protectins/Resistance to body defenses	Group 3 capsule
+kpsM_K15	kpsM	Protectins/Resistance to body defenses	Group 3 capsule
+kpsM_K19	kpsM	Protectins/Resistance to body defenses	Group 3 capsule
+kpsM_K19K23	kpsM	Protectins/Resistance to body defenses	Group 3 capsule
+kpsMII	kpsMII	Protectins/Resistance to body defenses	Polysialic acid transport protein; Group 2 capsule
+kpsMII_K1	kpsMII	Protectins/Resistance to body defenses	Polysialic acid transport protein; Group 2 capsule
+kpsMII_K23	kpsMII	Protectins/Resistance to body defenses	Polysialic acid transport protein; Group 2 capsule
+kpsMII_K24	kpsMII	Protectins/Resistance to body defenses	Polysialic acid transport protein; Group 2 capsule
+kpsMII_K4	kpsMII	Protectins/Resistance to body defenses	Polysialic acid transport protein; Group 2 capsule
+kpsMII_K5	kpsMII	Protectins/Resistance to body defenses	Polysialic acid transport protein; Group 2 capsule
+kpsMII_K52	kpsMII	Protectins/Resistance to body defenses	Polysialic acid transport protein; Group 2 capsule
+kpsMII_K94	kpsMII	Protectins/Resistance to body defenses	Polysialic acid transport protein; Group 2 capsule
+kpsMIII	kpsMIII	Protectins/Resistance to body defenses	Group 3 capsule
+kpsMIII_K10	kpsMIII	Protectins/Resistance to body defenses	Group 3 capsule
+kpsMIII_K96	kpsMIII	Protectins/Resistance to body defenses	Group 3 capsule
+kpsMIII_K98	kpsMIII	Protectins/Resistance to body defenses	Group 3 capsule
+kpsT	kpsT	Protectins/Resistance to body defenses	Capsule protein  KpsT
+lip	lip		triacylglycerol lipase
+lngA	lngA	Adhesion/Colonization	CS21 Major pilin
+lngB	lngB	Adhesion/Colonization	CS21
+lngC	lngC	Adhesion/Colonization	CS21
+lngD	lngD	Adhesion/Colonization	CS21 Putative outer membrane protein
+lngE	lngE	Adhesion/Colonization	CS21 Putative inner membrane protein
+lngF	lngF	Adhesion/Colonization	CS21 Putative inner membrane protein
+lngG	lngG	Adhesion/Colonization	CS21 Putative periplasmic protein
+lngH	lngH	Adhesion/Colonization	CS21 Putative nucleotide-binding protein
+lngI	lngI	Adhesion/Colonization	CS21 Putative inner membrane protein
+lngJ	lngJ	Adhesion/Colonization	CS21 Putative ATPase-like
+lngP	lngP	Adhesion/Colonization	CS21 Putative prepilin peptidase
+lngT	lngT	Adhesion/Colonization	CS21
+lngX1	lngX1	Adhesion/Colonization	CS21
+lngX2	lngX2	Adhesion/Colonization	CS21
+lpfA	lpfA	Adhesion/Colonization	Long polar fimbriae
+lukD	lukD	Toxins	leukocidin D component
+lukE	lukE	Toxins	leukocidin E component
+lukF-PV	lukF-PV	Toxins	Panton Valentine leukocidin F component
+lukM	lukM	Toxins	LukM precursor
+lukS-PV	lukS-PV	Toxins	Panton Valentine leukocidin S component
+lys	lys	Colicin/Bacteriocins/Microcins	Colicin release protein
+mcbA	mcbA	Colicin/Bacteriocins/Microcins	Bacteriocin microcin B17
+mchB	mchB	Colicin/Bacteriocins/Microcins	Microcin H47 part of colicin H
+mchC	mchC	Colicin/Bacteriocins/Microcins	MchC protein
+mchF	mchF	Colicin/Bacteriocins/Microcins	ABC transporter protein MchF
+mcmA	mcmA	Colicin/Bacteriocins/Microcins	Microcin M part of colicin H
+mrkA	mrkA	Colicin/Bacteriocins/Microcins	type 3 fimbrial major subunit
+neuC	neuC	Colicin/Bacteriocins/Microcins	Polysialic acid capsule biosynthesis protein
+nfaA	nfaA	Colicin/Bacteriocins/Microcins	CS15 Nonfimbrial adhesin A
+nfaE	nfaE	Adhesion/Colonization	Diffuse adherence fibrillar adhesin gene
+nleA	nleA	Secretion system	Non-LEE encoded effector A
+nleA/espI	nleA	Secretion system	Non-LEE encoded effector A
+nleB	nleB	Secretion system	Non-LEE encoded effector B
+nleB1	nleB	Secretion system	Non-LEE encoded effector B
+nleB2	nleB	Secretion system	Non-LEE encoded effector B
+nleC	nleC	Secretion system	Non-LEE encoded effector C
+nlpI	nlpI		lipoprotein NlpI precursor
+ompA	ompA	Protectins/Resistance to body defenses	Outer membrane protein A
+ompT	ompT	Protectins/Resistance to body defenses	Outer membrane protease
+ORF3	ORF3		Isoprenoid Biosynthesis
+ORF4	ORF4		Putative isopentenyl-diphosphate delta-isomerase
+paa	paa	Adhesion/Colonization	Outer membrane adhesin Paa / Porcine attaching-effacing associated protein P
+papA	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F11	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F12	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F13	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F14	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F1651A	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F19	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F20	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F40	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F43	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F48	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F536	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F7-1	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F7-2	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_F9	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_feiA_F8	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_ffiA_F15	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_ffoA_F14	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_fsiA_F16	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_fteA_F10	papA	Adhesion/Colonization	Major pilin subunit papA
+papA_prsA_F12	papA	Adhesion/Colonization	Major pilin subunit papA
+perA	perA	Adhesion/Colonization	EPEC adherence factor
+pet	pet	Adhesion/Colonization	Autotransporter enterotoxin
+pic	pic	Adhesion/Colonization	serine protease autotransporter
+picU	picU	Adhesion/Colonization	Pic from uropathogenic E. coli (UPEC)
+pssA	pssA	Adhesion/Colonization	Protease secreted by Shiga toxin-producing E. coli (STEC)
+rpeA	rpeA	Adhesion/Colonization	serine protease autotransporter
+saa	saa	Adhesion/Colonization	Auto agglutinating adhesin
+sak	sak		staphylokinase
+sal	sal		superantigen-like protein
+sat	sat	Adhesion/Colonization	serine protease autotransporter
+scn	scn	Protectins/Resistance to body defenses	staphylococcal complement inhibitor
+sdrC	sdrC	Adhesion/Colonization	Ser-Asp rich fibrinogen-binding protein C
+sdrD	sdrD	Adhesion/Colonization	Ser-Asp rich fibrinogen-binding protein D
+sdrE	sdrE	Adhesion/Colonization	Ser-Asp rich fibrinogen-binding protein E
+sdrH	sdrH	Adhesion/Colonization	Ser-Asp rich fibrinogen-binding portein H
+sea	sea	Toxins	enterotoxin A
+seb	seb	Toxins	enterotoxin B
+sec	sec	Toxins	enterotoxin C
+sed	sed	Toxins	enterotoxin D
+see	see	Toxins	enterotoxin E
+seg	seg	Toxins	enterotoxin G
+seh	seh	Toxins	enterotoxin H
+sei	sei	Toxins	enterotoxin I
+sej	sej	Toxins	enterotoxin J
+sek	sek	Toxins	enterotoxin K
+sel	sel	Toxins	enterotoxin L
+sem	sem	Toxins	enterotoxin M
+sen	sen	Toxins	enterotoxin N
+senB	senB	Toxins	Plasmid-encoded enterotoxin
+SEnt	SEnt	Toxins	enterotoxin
+SEnt-like	SEnt-like	Toxins	enterotoxin-like toxin
+SEnt-protiein	SEnt-protiein	Toxins	enterotoxin protein
+SEntA	SEntA	Toxins	putative enterotoxin type A
+SEntB	SEntB	Toxins	enterotoxin B
+SEntC	SEntC	Toxins	enterotoxin type C precursor
+SEntG	SEntG	Toxins	extracellular enterotoxin type G precursor
+SEntH	SEntH	Toxins	enterotoxin H
+SEntI	SEntI	Toxins	extracellular enterotoxin type I precursor
+SEntK	SEntK	Toxins	enterotoxin K
+SEntL	SEntL	Toxins	extracellular enterotoxin L
+SEntM	SEntM	Toxins	extracellular enterotoxin type I
+SEntN	SEntN	Toxins	enterotoxin N
+SEntO	SEntO	Toxins	enterotoxin O
+SEntP	SEntP	Toxins	enterotoxin P
+SEntQ	SEntQ	Toxins	enterotoxin Q
+SEntyent1	SEntyent1	Toxins	enterotoxin yent1
+SEntyent2	SEntyent2	Toxins	enterotoxin yent2
+seo	seo	Toxins	enterotoxin O
+sep	sep	Toxins	enterotoxin P
+sepA	sepA	Adhesion/Colonization	Serine protease autotransporter
+seq	seq	Toxins	enterotoxin Q
+ser	ser	Toxins	enterotoxin R
+set1	set1	Toxins	superantigen-like protein
+set10	set10	Toxins	superantigen-like protein
+set11	set11	Toxins	superantigen-like protein
+set12	set12	Toxins	superantigen-like protein
+set13	set13	Toxins	superantigen-like protein
+set14	set14	Toxins	superantigen-like protein
+set15	set15	Toxins	superantigen-like protein
+set16	set16	Toxins	exotoxin homolog
+set17	set17	Toxins	exotoxin homolog
+set18	set18	Toxins	superantigen-like protein
+set19	set19	Toxins	superantigen-like protein
+set1A	set1A	Toxins	toxin subunit Set1A
+set1B	set1B	Toxins	toxin subunit Set1B
+set2	set2	Toxins	superantigen-like protein
+set20	set20	Toxins	superantigen-like protein 5
+set21	set21	Toxins	superantigen-like protein
+set22	set22	Toxins	superantigen-like protein 7
+set23	set23	Toxins	superantigen-like protein
+set24	set24	Toxins	superantigen-like protein
+set25	set25	Toxins	superantigen-like protein
+set26	set26	Toxins	exotoxin homolog
+set3	set3	Toxins	superantigen-like protein
+set30	set30	Toxins	superanitgne-like protein
+set4	set4	Toxins	superantigen-like protein
+set5	set5	Toxins	superantigen-like protein 5
+set6	set6	Toxins	superantigen-like protein
+set7	set7	Toxins	superantigen-like protein
+set8	set8	Toxins	superantigen-like protein
+set9	set9	Toxins	superantigen-like protein
+seu	seu	Toxins	enterotoxin U
+SExo	SExo	Toxins	exotoxin
+sfaA	sfaA	Adhesion/Colonization	S-fimbrial major subunit SfaA
+shiA	shiA		homologs of the Shigella flexneri SHI-2 pathogenicity island gene shiA
+shiB	shiB		homologs of the Shigella flexneri SHI-2 pathogenicity island gene shiA
+sigA	sigA	Adhesion/Colonization	Serine protease autotransporter
+sitA	sitA	Iron uptake and utilization	Iron transport protein
+spa	spa		spa immunoglobulin G binding protein A
+splA	splA		serine protease splA
+splB	splB		serine protease splB
+splC	splC		serine protease splC
+splD	splD		serine protease splD
+splE	splE		serine protease splE
+splF	splF		serine protease splF
+SrtA	SrtA		
+sspA	sspA		serine V8 protease
+sspB	sspB		cysteine protease
+sspB2	sspB2		cysteine protease SspB
+sspC	sspC		cysteine protease
+stx1-S.-sonnei-CB7888	stx1	Toxins	Shiga-like toxin 1
+stx1a-O111-04-06263	stx1	Toxins	Shiga-like toxin 1
+stx1a-O111-3385-00	stx1	Toxins	Shiga-like toxin 1
+stx1a-O111-CB168	stx1	Toxins	Shiga-like toxin 1
+stx1a-O111-PH	stx1	Toxins	Shiga-like toxin 1
+stx1a-O157-AI2001-52	stx1	Toxins	Shiga-like toxin 1
+stx1a-O157-EDL933	stx1	Toxins	Shiga-like toxin 1
+stx1a-O157-FLY16	stx1	Toxins	Shiga-like toxin 1
+stx1a-O157-GPU96MM	stx1	Toxins	Shiga-like toxin 1
+stx1a-O165-HI-2	stx1	Toxins	Shiga-like toxin 1
+stx1a-O48-94C	stx1	Toxins	Shiga-like toxin 1
+stx1a-ONT-HI-A	stx1	Toxins	Shiga-like toxin 1
+stx1B	stx1	Toxins	Shiga-like toxin 1
+stx1c-O174-DG131-3	stx1	Toxins	Shiga-like toxin 1
+stx1c-ONT-BCN26	stx1	Toxins	Shiga-like toxin 1
+stx1c-ONT-HI-B	stx1	Toxins	Shiga-like toxin 1
+stx1c-ONT-HI-C	stx1	Toxins	Shiga-like toxin 1
+stx1c-Out-HI-N	stx1	Toxins	Shiga-like toxin 1
+stx1d-ONT-92-1251	stx1	Toxins	Shiga-like toxin 1
+stx1d-ONT-92-1252	stx1	Toxins	Shiga-like toxin 1
+stx1d-ONT-AB8SF	stx1	Toxins	Shiga-like toxin 1
+stx1d-ONT-MHI813	stx1	Toxins	Shiga-like toxin 1
+stx1e-E.-cloacae-M12X01451	stx1	Toxins	Shiga-like toxin 1
+stx1A	stx1	Toxins	Shiga-like toxin 1
+stx11	stx11	Toxins	Shiga-like Toxin stx11
+stx110	stx110	Toxins	Shiga-like Toxin stx110
+stx111	stx111	Toxins	Shiga-like Toxin stx111
+stx112	stx112	Toxins	Shiga-like Toxin stx112
+stx113	stx113	Toxins	Shiga-like Toxin stx113
+stx114	stx114	Toxins	Shiga-like Toxin stx114
+stx115	stx115	Toxins	Shiga-like Toxin stx115
+stx116	stx116	Toxins	Shiga-like Toxin stx116
+stx117	stx117	Toxins	Shiga-like Toxin stx117
+stx118	stx118	Toxins	Shiga-like Toxin stx118
+stx119	stx119	Toxins	Shiga-like Toxin stx119
+stx12	stx12	Toxins	Shiga-like Toxin stx12
+stx120	stx120	Toxins	Shiga-like Toxin stx120
+stx121	stx121	Toxins	Shiga-like Toxin stx121
+stx122	stx122	Toxins	Shiga-like Toxin stx122
+stx123	stx123	Toxins	Shiga-like Toxin stx123
+stx124	stx124	Toxins	Shiga-like Toxin stx124
+stx125	stx125	Toxins	Shiga-like Toxin stx125
+stx13	stx13	Toxins	Shiga-like Toxin stx13
+stx14	stx14	Toxins	Shiga-like Toxin stx14
+stx15	stx15	Toxins	Shiga-like Toxin stx15
+stx16	stx16	Toxins	Shiga-like Toxin stx16
+stx17	stx17	Toxins	Shiga-like Toxin stx17
+stx18	stx18	Toxins	Shiga-like Toxin stx18
+stx19	stx19	Toxins	Shiga-like Toxin stx19
+stx2A	stx2	Toxins	Shiga-like toxin 2
+stx2a-A.-haemolyticus	stx2	Toxins	Shiga-like toxin 2
+stx2a-E.-cloacae-95MV2	stx2	Toxins	Shiga-like toxin 2
+stx2a-O104-G5506	stx2	Toxins	Shiga-like toxin 2
+stx2a-O111-928-91	stx2	Toxins	Shiga-like toxin 2
+stx2a-O113-CL-3	stx2	Toxins	Shiga-like toxin 2
+stx2a-O136-VTB60	stx2	Toxins	Shiga-like toxin 2
+stx2a-O157-93-111	stx2	Toxins	Shiga-like toxin 2
+stx2a-O157-A397	stx2	Toxins	Shiga-like toxin 2
+stx2a-O157-EDL933	stx2	Toxins	Shiga-like toxin 2
+stx2a-O157-I6581	stx2	Toxins	Shiga-like toxin 2
+stx2a-O157-SF-258-98	stx2	Toxins	Shiga-like toxin 2
+stx2a-O178-TS22-08	stx2	Toxins	Shiga-like toxin 2
+stx2a-O22-EBC217	stx2	Toxins	Shiga-like toxin 2
+stx2a-O26-126814	stx2	Toxins	Shiga-like toxin 2
+stx2a-O26-FD930	stx2	Toxins	Shiga-like toxin 2
+stx2a-O48-94C	stx2	Toxins	Shiga-like toxin 2
+stx2a-O8-BMH-17-0027	stx2	Toxins	Shiga-like toxin 2
+stx2a-O8-VTB178	stx2	Toxins	Shiga-like toxin 2
+stx2a-O83-N1135	stx2	Toxins	Shiga-like toxin 2
+stx2a-O88-N2688	stx2	Toxins	Shiga-like toxin 2
+stx2a-ONT-23765	stx2	Toxins	Shiga-like toxin 2
+stx2a-ONT-EBC210	stx2	Toxins	Shiga-like toxin 2
+stx2a-ONT-EK9900	stx2	Toxins	Shiga-like toxin 2
+stx2B	stx2	Toxins	Shiga-like toxin 2
+stx2b-O111-PH	stx2	Toxins	Shiga-like toxin 2
+stx2b-O111-S-1	stx2	Toxins	Shiga-like toxin 2
+stx2b-O111-S-3	stx2	Toxins	Shiga-like toxin 2
+stx2b-O118-EH250	stx2	Toxins	Shiga-like toxin 2
+stx2b-O128-24196-97	stx2	Toxins	Shiga-like toxin 2
+stx2b-O146-BMH-17-0036	stx2	Toxins	Shiga-like toxin 2
+stx2b-O174-031	stx2	Toxins	Shiga-like toxin 2
+stx2b-O22-3143-97	stx2	Toxins	Shiga-like toxin 2
+stx2b-O40-5293-98	stx2	Toxins	Shiga-like toxin 2
+stx2b-O8-S-9	stx2	Toxins	Shiga-like toxin 2
+stx2b-O93-S-5	stx2	Toxins	Shiga-like toxin 2
+stx2b-O96-S-10	stx2	Toxins	Shiga-like toxin 2
+stx2b-O96-S-6	stx2	Toxins	Shiga-like toxin 2
+stx2b-O96-S-7	stx2	Toxins	Shiga-like toxin 2
+stx2b-ONT-I7606	stx2	Toxins	Shiga-like toxin 2
+stx2b-Out-HI-N	stx2	Toxins	Shiga-like toxin 2
+stx2b-Out-S-4	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-020324	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-310	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-469	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-A75	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-C394-03	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-E32511	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-FLY16	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-G5101	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-V20	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-Y350-	stx2	Toxins	Shiga-like toxin 2
+stx2c-O171-EBC287	stx2	Toxins	Shiga-like toxin 2
+stx2c-O171-VTB46	stx2	Toxins	Shiga-like toxin 2
+stx2c-O174-031	stx2	Toxins	Shiga-like toxin 2
+stx2c-O177-06-5121	stx2	Toxins	Shiga-like toxin 2
+stx2c-O177-CB7126	stx2	Toxins	Shiga-like toxin 2
+stx2c-ONT-EBC219	stx2	Toxins	Shiga-like toxin 2
+stx2c-ONT-EBC289	stx2	Toxins	Shiga-like toxin 2
+stx2c-OR-TS27-08	stx2	Toxins	Shiga-like toxin 2
+stx2d-C.-freundii-LM76	stx2	Toxins	Shiga-like toxin 2
+stx2d-O103-CVM9322	stx2	Toxins	Shiga-like toxin 2
+stx2d-O113-TS03-07	stx2	Toxins	Shiga-like toxin 2
+stx2d-O113-TS21-08	stx2	Toxins	Shiga-like toxin 2
+stx2d-O157-7279	stx2	Toxins	Shiga-like toxin 2
+stx2d-O174-EC1720a	stx2	Toxins	Shiga-like toxin 2
+stx2d-O174-EC173b	stx2	Toxins	Shiga-like toxin 2
+stx2d-O2-EC604a	stx2	Toxins	Shiga-like toxin 2
+stx2d-O22-KY-O19	stx2	Toxins	Shiga-like toxin 2
+stx2d-O28-MT71	stx2	Toxins	Shiga-like toxin 2
+stx2d-O55-5905	stx2	Toxins	Shiga-like toxin 2
+stx2d-O6-NV206	stx2	Toxins	Shiga-like toxin 2
+stx2d-O73-C165-02	stx2	Toxins	Shiga-like toxin 2
+stx2d-O8-C466-01B	stx2	Toxins	Shiga-like toxin 2
+stx2d-ONT-EBC275	stx2	Toxins	Shiga-like toxin 2
+stx2d-ONT-EC1871a	stx2	Toxins	Shiga-like toxin 2
+stx2d-OR-TS06-08	stx2	Toxins	Shiga-like toxin 2
+stx2d1-O91-B2F1	stx2	Toxins	Shiga-like toxin 2
+stx2d2-O91-B2F1	stx2	Toxins	Shiga-like toxin 2
+stx2f-O115-F08-101-31	stx2	Toxins	Shiga-like toxin 2
+stx2f-O128-HI8	stx2	Toxins	Shiga-like toxin 2
+stx2f-O128-T4-97	stx2	Toxins	Shiga-like toxin 2
+stx2g-O2-7v	stx2	Toxins	Shiga-like toxin 2
+stx2g-O2-HI-11	stx2	Toxins	Shiga-like toxin 2
+stx2g-O2-S86	stx2	Toxins	Shiga-like toxin 2
+stx2g-Out-S-8	stx2	Toxins	Shiga-like toxin 2
+stx2h-O102-STEC299	stx2	Toxins	Shiga-like toxin 2
+stx2i-O9-CB10366	stx2	Toxins	Shiga-like toxin 2
+stx2j-O101-O101-2012C-4221	stx2	Toxins	Shiga-like toxin 2
+stx2j-O33-PNUSAE005447	stx2	Toxins	Shiga-like toxin 2
+stx2k-O159-12GZSW01	stx2	Toxins	Shiga-like toxin 2
+stx2k-O48-STEC309	stx2	Toxins	Shiga-like toxin 2
+stx2l-O65-1610T27873	stx2	Toxins	Shiga-like toxin 2
+stx2l-O8-FHI-1106-1092	stx2	Toxins	Shiga-like toxin 2
+stx2m-O96-2001F31428	stx2	Toxins	Shiga-like toxin 2
+stx2n-O23-2017C-4317	stx2	Toxins	Shiga-like toxin 2
+stx2o-O85-03-3638	stx2	Toxins	Shiga-like toxin 2
+stx21	stx21	Toxins	Shiga-like toxin stx21
+stx210	stx210	Toxins	Shiga-like toxin stx210
+stx2100	stx2100	Toxins	Shiga-like toxin stx2100
+stx2101	stx2101	Toxins	Shiga-like toxin stx2101
+stx2102	stx2102	Toxins	Shiga-like toxin stx2102
+stx2103	stx2103	Toxins	Shiga-like toxin stx2103
+stx2104	stx2104	Toxins	Shiga-like toxin stx2104
+stx2105	stx2105	Toxins	Shiga-like toxin stx2105
+stx2106	stx2106	Toxins	Shiga-like toxin stx2106
+stx2107	stx2107	Toxins	Shiga-like toxin stx2107
+stx2108	stx2108	Toxins	Shiga-like toxin stx2108
+stx2109	stx2109	Toxins	Shiga-like toxin stx2109
+stx211	stx211	Toxins	Shiga-like toxin stx211
+stx2110	stx2110	Toxins	Shiga-like toxin stx2110
+stx2111	stx2111	Toxins	Shiga-like toxin stx2111
+stx2112	stx2112	Toxins	Shiga-like toxin stx2112
+stx2113	stx2113	Toxins	Shiga-like toxin stx2113
+stx2114	stx2114	Toxins	Shiga-like toxin stx2114
+stx2115	stx2115	Toxins	Shiga-like toxin stx2115
+stx2116	stx2116	Toxins	Shiga-like toxin stx2116
+stx2117	stx2117	Toxins	Shiga-like toxin stx2117
+stx2118	stx2118	Toxins	Shiga-like toxin stx2118
+stx2119	stx2119	Toxins	Shiga-like toxin stx2119
+stx212	stx212	Toxins	Shiga-like toxin stx212
+stx2120	stx2120	Toxins	Shiga-like toxin stx2120
+stx2121	stx2121	Toxins	Shiga-like toxin stx2121
+stx2122	stx2122	Toxins	Shiga-like toxin stx2122
+stx2123	stx2123	Toxins	Shiga-like toxin stx2123
+stx2124	stx2124	Toxins	Shiga-like toxin stx2124
+stx2125	stx2125	Toxins	Shiga-like toxin stx2125
+stx2126	stx2126	Toxins	Shiga-like toxin stx2126
+stx2127	stx2127	Toxins	Shiga-like toxin stx2127
+stx2128	stx2128	Toxins	Shiga-like toxin stx2128
+stx213	stx213	Toxins	Shiga-like toxin stx213
+stx2130	stx2130	Toxins	Shiga-like toxin stx2130
+stx2131	stx2131	Toxins	Shiga-like toxin stx2131
+stx2132	stx2132	Toxins	Shiga-like toxin stx2132
+stx2133	stx2133	Toxins	Shiga-like toxin stx2133
+stx2135	stx2135	Toxins	Shiga-like toxin stx2135
+stx2136	stx2136	Toxins	Shiga-like toxin stx2136
+stx2137	stx2137	Toxins	Shiga-like toxin stx2137
+stx2138	stx2138	Toxins	Shiga-like toxin stx2138
+stx214	stx214	Toxins	Shiga-like toxin stx214
+stx215	stx215	Toxins	Shiga-like toxin stx215
+stx216	stx216	Toxins	Shiga-like toxin stx216
+stx217	stx217	Toxins	Shiga-like toxin stx217
+stx218	stx218	Toxins	Shiga-like toxin stx218
+stx219	stx219	Toxins	Shiga-like toxin stx219
+stx22	stx22	Toxins	Shiga-like toxin stx22
+stx220	stx220	Toxins	Shiga-like toxin stx220
+stx221	stx221	Toxins	Shiga-like toxin stx221
+stx222	stx222	Toxins	Shiga-like toxin stx222
+stx223	stx223	Toxins	Shiga-like toxin stx223
+stx224	stx224	Toxins	Shiga-like toxin stx224
+stx225	stx225	Toxins	Shiga-like toxin stx225
+stx226	stx226	Toxins	Shiga-like toxin stx226
+stx227	stx227	Toxins	Shiga-like toxin stx227
+stx228	stx228	Toxins	Shiga-like toxin stx228
+stx229	stx229	Toxins	Shiga-like toxin stx229
+stx23	stx23	Toxins	Shiga-like toxin stx23
+stx230	stx230	Toxins	Shiga-like toxin stx230
+stx231	stx231	Toxins	Shiga-like toxin stx231
+stx232	stx232	Toxins	Shiga-like toxin stx232
+stx233	stx233	Toxins	Shiga-like toxin stx233
+stx234	stx234	Toxins	Shiga-like toxin stx234
+stx235	stx235	Toxins	Shiga-like toxin stx235
+stx236	stx236	Toxins	Shiga-like toxin stx236
+stx237	stx237	Toxins	Shiga-like toxin stx237
+stx238	stx238	Toxins	Shiga-like toxin stx238
+stx239	stx239	Toxins	Shiga-like toxin stx239
+stx24	stx24	Toxins	Shiga-like toxin stx24
+stx240	stx240	Toxins	Shiga-like toxin stx240
+stx241	stx241	Toxins	Shiga-like toxin stx241
+stx242	stx242	Toxins	Shiga-like toxin stx242
+stx243	stx243	Toxins	Shiga-like toxin stx243
+stx244	stx244	Toxins	Shiga-like toxin stx244
+stx245	stx245	Toxins	Shiga-like toxin stx245
+stx246	stx246	Toxins	Shiga-like toxin stx246
+stx247	stx247	Toxins	Shiga-like toxin stx247
+stx248	stx248	Toxins	Shiga-like toxin stx248
+stx249	stx249	Toxins	Shiga-like toxin stx249
+stx25	stx25	Toxins	Shiga-like toxin stx25
+stx250	stx250	Toxins	Shiga-like toxin stx250
+stx251	stx251	Toxins	Shiga-like toxin stx251
+stx252	stx252	Toxins	Shiga-like toxin stx252
+stx253	stx253	Toxins	Shiga-like toxin stx253
+stx254	stx254	Toxins	Shiga-like toxin stx254
+stx255	stx255	Toxins	Shiga-like toxin stx255
+stx256	stx256	Toxins	Shiga-like toxin stx256
+stx257	stx257	Toxins	Shiga-like toxin stx257
+stx258	stx258	Toxins	Shiga-like toxin stx258
+stx259	stx259	Toxins	Shiga-like toxin stx259
+stx26	stx26	Toxins	Shiga-like toxin stx26
+stx260	stx260	Toxins	Shiga-like toxin stx260
+stx261	stx261	Toxins	Shiga-like toxin stx261
+stx262	stx262	Toxins	Shiga-like toxin stx262
+stx263	stx263	Toxins	Shiga-like toxin stx263
+stx264	stx264	Toxins	Shiga-like toxin stx264
+stx265	stx265	Toxins	Shiga-like toxin stx265
+stx266	stx266	Toxins	Shiga-like toxin stx266
+stx267	stx267	Toxins	Shiga-like toxin stx267
+stx268	stx268	Toxins	Shiga-like toxin stx268
+stx269	stx269	Toxins	Shiga-like toxin stx269
+stx27	stx27	Toxins	Shiga-like toxin stx27
+stx270	stx270	Toxins	Shiga-like toxin stx270
+stx271	stx271	Toxins	Shiga-like toxin stx271
+stx272	stx272	Toxins	Shiga-like toxin stx272
+stx273	stx273	Toxins	Shiga-like toxin stx273
+stx274	stx274	Toxins	Shiga-like toxin stx274
+stx275	stx275	Toxins	Shiga-like toxin stx275
+stx276	stx276	Toxins	Shiga-like toxin stx276
+stx277	stx277	Toxins	Shiga-like toxin stx277
+stx278	stx278	Toxins	Shiga-like toxin stx278
+stx279	stx279	Toxins	Shiga-like toxin stx279
+stx28	stx28	Toxins	Shiga-like toxin stx28
+stx280	stx280	Toxins	Shiga-like toxin stx280
+stx281	stx281	Toxins	Shiga-like toxin stx281
+stx282	stx282	Toxins	Shiga-like toxin stx282
+stx283	stx283	Toxins	Shiga-like toxin stx283
+stx284	stx284	Toxins	Shiga-like toxin stx284
+stx285	stx285	Toxins	Shiga-like toxin stx285
+stx286	stx286	Toxins	Shiga-like toxin stx286
+stx287	stx287	Toxins	Shiga-like toxin stx287
+stx288	stx288	Toxins	Shiga-like toxin stx288
+stx289	stx289	Toxins	Shiga-like toxin stx289
+stx29	stx29	Toxins	Shiga-like toxin stx29
+stx290	stx290	Toxins	Shiga-like toxin stx290
+stx291	stx291	Toxins	Shiga-like toxin stx291
+stx292	stx292	Toxins	Shiga-like toxin stx292
+stx293	stx293	Toxins	Shiga-like toxin stx293
+stx294	stx294	Toxins	Shiga-like toxin stx294
+stx295	stx295	Toxins	Shiga-like toxin stx295
+stx296	stx296	Toxins	Shiga-like toxin stx296
+stx297	stx297	Toxins	Shiga-like toxin stx297
+stx298	stx298	Toxins	Shiga-like toxin stx298
+stx299	stx299	Toxins	Shiga-like toxin stx299
+stx2e-O100-TS01-07	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O101-CB10394	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O101-E-D42	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O101-E-D43	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O101-E-D53	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O101-E-D68	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O121-NP9621	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O138-NN	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O139-S1191	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O22-3615-99	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O26-R107	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O8-1509W52833	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O89-1810F65304	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O9-1706T56070	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-ONT-26725-97	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-ONT-2771	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-ONT-TS03-08	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-ONT-TS29-08	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-OR-TS09-07	stx2e	Toxins	Shiga-like toxin 2e
+subA	subA	Toxins	Subtilase toxin subunit
+tccP	tccP	Adhesion/Colonization	Tir-cytoskeleton coupling protein
+tcpC	tcpC	Adhesion/Colonization	Tir domain-containing protein
+terC	terC	Protectins/Resistance to body defenses	Tellurium ion resistance protein
+tia	tia	Invasion	Tia Invasion determinant
+tibA	tibA	Invasion	TibA Adhesin/invasin (Glycoprotein)
+tibC	tibC	Invasion	Glycosyltransferase
+tir	tir	Invasion	Translocated intimin receptor protein
+tir-Cr	tir-Cr	Invasion	"Translocated intimin receptor protein, C. rodentium"
+tleA	tleA	Adhesion/Colonization	tsh-like ETEC autotransporter
+toxB	toxB	Toxins	Cytotoxin B
+tpx	tpx		
+traT	traT	Protectins/Resistance to body defenses	Outer membrane protein complement resistance
+tsh	tsh	Adhesion/Colonization	Temperature-sensitive hemagglutinin
+tsst	tsst	Toxins	Toxic shock syndrome toxin-1
+tst	tst	Toxins	Toxic shock syndrome toxin-1
+usp	usp	Protectins/Resistance to body defenses	Uropathogenic specific protein
+vat	vat	Toxins	Vacuolating autotransporter toxin
+vat-EXPEC	vat	Toxins	Vacuolating autotransporter toxin
+virF	virF		VirF transcriptional activator
+vwb	vwb	Adhesion/Colonization	von Willebrand factor-binding protein
+yehD	yehD	Adhesion/Colonization	Major pilin subunit YHD
+yfcV	yfcV	Adhesion/Colonization	Fimbrial protein

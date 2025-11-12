@@ -1,0 +1,9 @@
+name: viramr
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - ncbi-amrfinderplus=4.0.23
+  - resfinder=4.7.2
+  - virulencefinder=3.2.0

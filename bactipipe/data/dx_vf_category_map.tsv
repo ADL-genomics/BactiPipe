@@ -1,0 +1,294 @@
+gene	display_name	functional_category	notes
+agn43	AIDA-I	Adhesion/Colonization	AIDA-I type autotransporter protein
+CAA46156	AIDA-I	Adhesion/Colonization	AIDA-I type autotransporter protein
+cah	AIDA-I	Adhesion/Colonization	AIDA-I type autotransporter protein
+ehaA	AIDA-I	Adhesion/Colonization	AIDA-I type autotransporter protein
+upaH	AIDA-I	Adhesion/Colonization	AIDA-I type autotransporter protein
+astA	astA (EAST-1)	Toxins	Heat-stable enterotoxin EAST-1
+east1	astA (EAST-1)	Toxins	Heat-stable enterotoxin EAST-1
+cnf1	cnf1	Toxins	Cytotoxic necrotizing factor 1
+cnf2	cnf2	Toxins	Cytotoxic necrotizing factor 2
+clpL	CS31A	Adhesion/Colonization	CS31A minor subunit
+eae-a01-alpha1	eae	Adhesion/Colonization	Intimin
+eae-a02-alpha2	eae	Adhesion/Colonization	Intimin
+eae-a03-zeta	eae	Adhesion/Colonization	Intimin
+eae-a04-zeta	eae	Adhesion/Colonization	Intimin
+eae-a05a-nu	eae	Adhesion/Colonization	Intimin
+eae-a05b-nu	eae	Adhesion/Colonization	Intimin
+eae-a06-omicron	eae	Adhesion/Colonization	Intimin
+eae-a07-tau	eae	Adhesion/Colonization	Intimin
+eae-a08-alpha8	eae	Adhesion/Colonization	Intimin
+eae-a09-alpha9	eae	Adhesion/Colonization	Intimin
+eae-a10-alpha10	eae	Adhesion/Colonization	Intimin
+eae-a11-alpha11	eae	Adhesion/Colonization	Intimin
+eae-a12-alpha12	eae	Adhesion/Colonization	Intimin
+eae-a13a-alpha13	eae	Adhesion/Colonization	Intimin
+eae-a13b-alpha13	eae	Adhesion/Colonization	Intimin
+eae-a14-alpha14	eae	Adhesion/Colonization	Intimin
+eae-a15-alpha15	eae	Adhesion/Colonization	Intimin
+eae-a16-alpha16	eae	Adhesion/Colonization	Intimin
+eae-a17-alpha17	eae	Adhesion/Colonization	Intimin
+eae-a18-alpha18	eae	Adhesion/Colonization	Intimin
+eae-b01a-beta1a	eae	Adhesion/Colonization	Intimin
+eae-b01b-beta1b	eae	Adhesion/Colonization	Intimin
+eae-b02a-beta2a	eae	Adhesion/Colonization	Intimin
+eae-b02b-beta2b	eae	Adhesion/Colonization	Intimin
+eae-b03-beta3	eae	Adhesion/Colonization	Intimin
+eae-b04-delta	eae	Adhesion/Colonization	Intimin
+eae-b05-Citrobacter	eae	Adhesion/Colonization	Intimin
+eae-b06-beta4	eae	Adhesion/Colonization	Intimin
+eae-b07-beta7	eae	Adhesion/Colonization	Intimin
+eae-b08-kappa	eae	Adhesion/Colonization	Intimin
+eae-e01-epsilon1	eae	Adhesion/Colonization	Intimin
+eae-e02-epsilon2	eae	Adhesion/Colonization	Intimin
+eae-e03a-epsilon3	eae	Adhesion/Colonization	Intimin
+eae-e03b-epsilon3	eae	Adhesion/Colonization	Intimin
+eae-e04-epsilon4	eae	Adhesion/Colonization	Intimin
+eae-e05-eta1	eae	Adhesion/Colonization	Intimin
+eae-e06-eta2	eae	Adhesion/Colonization	Intimin
+eae-e07-xi	eae	Adhesion/Colonization	Intimin
+eae-e08-pi	eae	Adhesion/Colonization	Intimin
+eae-e09-epsilon9	eae	Adhesion/Colonization	Intimin
+eae-e10-epsilon10	eae	Adhesion/Colonization	Intimin
+eae-e11-epsilon11	eae	Adhesion/Colonization	Intimin
+eae-e12-eta2	eae	Adhesion/Colonization	Intimin
+eae-g01-gamma1	eae	Adhesion/Colonization	Intimin
+eae-g02-theta	eae	Adhesion/Colonization	Intimin
+eae-g03-mu	eae	Adhesion/Colonization	Intimin
+eae-g04-sigma	eae	Adhesion/Colonization	Intimin
+eae-g05-gamma5	eae	Adhesion/Colonization	Intimin
+eae-g06-gamma6	eae	Adhesion/Colonization	Intimin
+eae-g07-gamma7	eae	Adhesion/Colonization	Intimin
+eae-g08-gamma8	eae	Adhesion/Colonization	Intimin
+eae-g09-gamma9	eae	Adhesion/Colonization	Intimin
+eae-i01-iota1	eae	Adhesion/Colonization	Intimin
+eae-i02b-iota2	eae	Adhesion/Colonization	Intimin
+eae-i03-upsilon	eae	Adhesion/Colonization	Intimin
+eae-l01-lambda1	eae	Adhesion/Colonization	Intimin
+eae-l02-lambda2	eae	Adhesion/Colonization	Intimin
+eae-l03-lambda3	eae	Adhesion/Colonization	Intimin
+eae-l04a-lambda4	eae	Adhesion/Colonization	Intimin
+eae-l04b-lambda4	eae	Adhesion/Colonization	Intimin
+eae-l05-lambda5	eae	Adhesion/Colonization	Intimin
+eae-r01-rho1	eae	Adhesion/Colonization	Intimin
+eae-r02-rho2	eae	Adhesion/Colonization	Intimin
+eae-r03-rho3	eae	Adhesion/Colonization	Intimin
+eae-r04-rho4	eae	Adhesion/Colonization	Intimin
+eae	eae	Adhesion/Colonization	Intimin
+eltIAB-1	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-10	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-11	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-12	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-13	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-14	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-15	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-15b	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-16	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-17	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-18	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-19	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-2	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-20	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-21	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-22	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-23	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-24	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-25	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-26	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-27	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-28	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-29	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-3	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-30	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-31	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-33	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-33	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-4	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-5	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-6	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-7	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-8	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIAB-9	eltIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-a	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-b1	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-b2	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c1	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c2	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c3	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c4	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c5	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c6	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c7	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c8	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-c9	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-d1	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-d2	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+eltIIAB-e	eltIIAB (LT)	Toxins	Heat-labile enterotoxin LT
+estah-STa2	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estah-STa3	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa1	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa4	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa5	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa6	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa7	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa8	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estap-STa9	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estIa	estA (STa)	Toxins	Heat-stable enterotoxin STa
+estb-STb1	estB (STb)	Toxins	Heat-stable enterotoxin STb
+estb-STb2	estB (STb)	Toxins	Heat-stable enterotoxin STb
+F17A	F17A	Adhesion/Colonization	Major fimbrial subunit of F17
+f17d-A	F17A	Adhesion/Colonization	Major fimbrial subunit of F17
+faeG	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGab	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGab1	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGab2	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGac	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGad	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+faeGW	faeG (K88)	Adhesion/Colonization	F4 (K88) Major fimbrial subunit
+fanC	fanC (K99)	Adhesion/Colonization	F5 (K99) Major fimbrial subunit
+fasA	fasA (987P)	Adhesion/Colonization	F6 (987P) Major subunit
+fedAab	fedA (F18)	Adhesion/Colonization	F18 Major  fimbrial subunit A
+fedAac	fedA (F18)	Adhesion/Colonization	F18 Major  fimbrial subunit A
+fedAnt	fedA (F18)	Adhesion/Colonization	F18 Major  fimbrial subunit A
+fimF41	fimF41 (F41)	Adhesion/Colonization	FimF41 Major fimbrial subunit
+paa	paa	Adhesion/Colonization	Outer membrane adhesin Paa
+stx1-S.-sonnei-CB7888	stx1	Toxins	Shiga-like toxin 1
+stx1a-O111-04-06263	stx1	Toxins	Shiga-like toxin 1
+stx1a-O111-3385-00	stx1	Toxins	Shiga-like toxin 1
+stx1a-O111-CB168	stx1	Toxins	Shiga-like toxin 1
+stx1a-O111-PH	stx1	Toxins	Shiga-like toxin 1
+stx1a-O157-AI2001-52	stx1	Toxins	Shiga-like toxin 1
+stx1a-O157-EDL933	stx1	Toxins	Shiga-like toxin 1
+stx1a-O157-FLY16	stx1	Toxins	Shiga-like toxin 1
+stx1a-O157-GPU96MM	stx1	Toxins	Shiga-like toxin 1
+stx1a-O165-HI-2	stx1	Toxins	Shiga-like toxin 1
+stx1a-O48-94C	stx1	Toxins	Shiga-like toxin 1
+stx1a-ONT-HI-A	stx1	Toxins	Shiga-like toxin 1
+stx1c-O174-DG131-3	stx1	Toxins	Shiga-like toxin 1
+stx1c-ONT-BCN26	stx1	Toxins	Shiga-like toxin 1
+stx1c-ONT-HI-B	stx1	Toxins	Shiga-like toxin 1
+stx1c-ONT-HI-C	stx1	Toxins	Shiga-like toxin 1
+stx1c-Out-HI-N	stx1	Toxins	Shiga-like toxin 1
+stx1d-ONT-92-1251	stx1	Toxins	Shiga-like toxin 1
+stx1d-ONT-92-1252	stx1	Toxins	Shiga-like toxin 1
+stx1d-ONT-AB8SF	stx1	Toxins	Shiga-like toxin 1
+stx1d-ONT-MHI813	stx1	Toxins	Shiga-like toxin 1
+stx1e-E.-cloacae-M12X01451	stx1	Toxins	Shiga-like toxin 1
+stx1B	stx1	Toxins	Shiga-like toxin 1
+stx1A	stx1	Toxins	Shiga-like toxin 1
+stx2a-A.-haemolyticus	stx2	Toxins	Shiga-like toxin 2
+stx2a-E.-cloacae-95MV2	stx2	Toxins	Shiga-like toxin 2
+stx2a-O104-G5506	stx2	Toxins	Shiga-like toxin 2
+stx2a-O111-928-91	stx2	Toxins	Shiga-like toxin 2
+stx2a-O113-CL-3	stx2	Toxins	Shiga-like toxin 2
+stx2a-O136-VTB60	stx2	Toxins	Shiga-like toxin 2
+stx2a-O157-93-111	stx2	Toxins	Shiga-like toxin 2
+stx2a-O157-A397	stx2	Toxins	Shiga-like toxin 2
+stx2a-O157-EDL933	stx2	Toxins	Shiga-like toxin 2
+stx2a-O157-I6581	stx2	Toxins	Shiga-like toxin 2
+stx2a-O157-SF-258-98	stx2	Toxins	Shiga-like toxin 2
+stx2a-O178-TS22-08	stx2	Toxins	Shiga-like toxin 2
+stx2a-O22-EBC217	stx2	Toxins	Shiga-like toxin 2
+stx2a-O26-126814	stx2	Toxins	Shiga-like toxin 2
+stx2a-O26-FD930	stx2	Toxins	Shiga-like toxin 2
+stx2a-O48-94C	stx2	Toxins	Shiga-like toxin 2
+stx2a-O8-BMH-17-0027	stx2	Toxins	Shiga-like toxin 2
+stx2a-O8-VTB178	stx2	Toxins	Shiga-like toxin 2
+stx2a-O83-N1135	stx2	Toxins	Shiga-like toxin 2
+stx2a-O88-N2688	stx2	Toxins	Shiga-like toxin 2
+stx2a-ONT-23765	stx2	Toxins	Shiga-like toxin 2
+stx2a-ONT-EBC210	stx2	Toxins	Shiga-like toxin 2
+stx2a-ONT-EK9900	stx2	Toxins	Shiga-like toxin 2
+stx2b-O111-PH	stx2	Toxins	Shiga-like toxin 2
+stx2b-O111-S-1	stx2	Toxins	Shiga-like toxin 2
+stx2b-O111-S-3	stx2	Toxins	Shiga-like toxin 2
+stx2b-O118-EH250	stx2	Toxins	Shiga-like toxin 2
+stx2b-O128-24196-97	stx2	Toxins	Shiga-like toxin 2
+stx2b-O146-BMH-17-0036	stx2	Toxins	Shiga-like toxin 2
+stx2b-O174-031	stx2	Toxins	Shiga-like toxin 2
+stx2b-O22-3143-97	stx2	Toxins	Shiga-like toxin 2
+stx2b-O40-5293-98	stx2	Toxins	Shiga-like toxin 2
+stx2b-O8-S-9	stx2	Toxins	Shiga-like toxin 2
+stx2b-O93-S-5	stx2	Toxins	Shiga-like toxin 2
+stx2b-O96-S-10	stx2	Toxins	Shiga-like toxin 2
+stx2b-O96-S-6	stx2	Toxins	Shiga-like toxin 2
+stx2b-O96-S-7	stx2	Toxins	Shiga-like toxin 2
+stx2b-ONT-I7606	stx2	Toxins	Shiga-like toxin 2
+stx2b-Out-HI-N	stx2	Toxins	Shiga-like toxin 2
+stx2b-Out-S-4	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-020324	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-310	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-469	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-A75	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-C394-03	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-E32511	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-FLY16	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-G5101	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-V20	stx2	Toxins	Shiga-like toxin 2
+stx2c-O157-Y350-	stx2	Toxins	Shiga-like toxin 2
+stx2c-O171-EBC287	stx2	Toxins	Shiga-like toxin 2
+stx2c-O171-VTB46	stx2	Toxins	Shiga-like toxin 2
+stx2c-O174-031	stx2	Toxins	Shiga-like toxin 2
+stx2c-O177-06-5121	stx2	Toxins	Shiga-like toxin 2
+stx2c-O177-CB7126	stx2	Toxins	Shiga-like toxin 2
+stx2c-ONT-EBC219	stx2	Toxins	Shiga-like toxin 2
+stx2c-ONT-EBC289	stx2	Toxins	Shiga-like toxin 2
+stx2c-OR-TS27-08	stx2	Toxins	Shiga-like toxin 2
+stx2d-C.-freundii-LM76	stx2	Toxins	Shiga-like toxin 2
+stx2d-O103-CVM9322	stx2	Toxins	Shiga-like toxin 2
+stx2d-O113-TS03-07	stx2	Toxins	Shiga-like toxin 2
+stx2d-O113-TS21-08	stx2	Toxins	Shiga-like toxin 2
+stx2d-O157-7279	stx2	Toxins	Shiga-like toxin 2
+stx2d-O174-EC1720a	stx2	Toxins	Shiga-like toxin 2
+stx2d-O174-EC173b	stx2	Toxins	Shiga-like toxin 2
+stx2d-O2-EC604a	stx2	Toxins	Shiga-like toxin 2
+stx2d-O22-KY-O19	stx2	Toxins	Shiga-like toxin 2
+stx2d-O28-MT71	stx2	Toxins	Shiga-like toxin 2
+stx2d-O55-5905	stx2	Toxins	Shiga-like toxin 2
+stx2d-O6-NV206	stx2	Toxins	Shiga-like toxin 2
+stx2d-O73-C165-02	stx2	Toxins	Shiga-like toxin 2
+stx2d-O8-C466-01B	stx2	Toxins	Shiga-like toxin 2
+stx2d-ONT-EBC275	stx2	Toxins	Shiga-like toxin 2
+stx2d-ONT-EC1871a	stx2	Toxins	Shiga-like toxin 2
+stx2d-OR-TS06-08	stx2	Toxins	Shiga-like toxin 2
+stx2d1-O91-B2F1	stx2	Toxins	Shiga-like toxin 2
+stx2d2-O91-B2F1	stx2	Toxins	Shiga-like toxin 2
+stx2f-O115-F08-101-31	stx2	Toxins	Shiga-like toxin 2
+stx2f-O128-HI8	stx2	Toxins	Shiga-like toxin 2
+stx2f-O128-T4-97	stx2	Toxins	Shiga-like toxin 2
+stx2g-O2-7v	stx2	Toxins	Shiga-like toxin 2
+stx2g-O2-HI-11	stx2	Toxins	Shiga-like toxin 2
+stx2g-O2-S86	stx2	Toxins	Shiga-like toxin 2
+stx2g-Out-S-8	stx2	Toxins	Shiga-like toxin 2
+stx2h-O102-STEC299	stx2	Toxins	Shiga-like toxin 2
+stx2i-O9-CB10366	stx2	Toxins	Shiga-like toxin 2
+stx2j-O101-O101-2012C-4221	stx2	Toxins	Shiga-like toxin 2
+stx2j-O33-PNUSAE005447	stx2	Toxins	Shiga-like toxin 2
+stx2k-O159-12GZSW01	stx2	Toxins	Shiga-like toxin 2
+stx2k-O48-STEC309	stx2	Toxins	Shiga-like toxin 2
+stx2l-O65-1610T27873	stx2	Toxins	Shiga-like toxin 2
+stx2l-O8-FHI-1106-1092	stx2	Toxins	Shiga-like toxin 2
+stx2m-O96-2001F31428	stx2	Toxins	Shiga-like toxin 2
+stx2n-O23-2017C-4317	stx2	Toxins	Shiga-like toxin 2
+stx2o-O85-03-3638	stx2	Toxins	Shiga-like toxin 2
+stx2A	stx2	Toxins	Shiga-like toxin 2
+stx2B	stx2	Toxins	Shiga-like toxin 2
+stx2e-O100-TS01-07	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O101-CB10394	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O101-E-D42	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O101-E-D43	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O101-E-D53	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O101-E-D68	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O121-NP9621	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O138-NN	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O139-S1191	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O22-3615-99	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O26-R107	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O8-1509W52833	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O89-1810F65304	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-O9-1706T56070	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-ONT-26725-97	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-ONT-2771	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-ONT-TS03-08	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-ONT-TS29-08	stx2e	Toxins	Shiga-like toxin 2e
+stx2e-OR-TS09-07	stx2e	Toxins	Shiga-like toxin 2e
