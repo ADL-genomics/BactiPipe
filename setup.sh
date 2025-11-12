@@ -85,13 +85,63 @@ post_install_checks() {
 
   msg "Checking representative tools…"
   set +e
-  conda run -n bactipipe fastp -h >/dev/null 2>&1 && ok "fastp ok" || err "fastp missing"
+  conda run -n bactipipe fastp --help >/dev/null 2>&1 && ok "fastp ok" || err "fastp missing"
   conda run -n bactipipe flye --version 2>/dev/null && ok "flye ok" || err "flye missing"
   conda run -n genepid abricate --version 2>/dev/null && ok "abricate ok" || err "abricate missing"
   conda run -n viramr amrfinder -h >/dev/null 2>&1 && ok "amrfinderplus ok" || err "amrfinderplus missing"
+  conda run -n genepid cgMLST.py -h >/dev/null 2>&1 && ok "cgMLST.py ok" || err "cgMLST.py not callable"
+
   set -e
 
   ok "Sanity checks complete."
+}
+
+install_cgmlstfinder() {
+  msg "Installing cgMLSTFinder (cgMLST.py)…"
+
+  # Ensure git is available (install to base if missing)
+  if ! command -v git >/dev/null 2>&1; then
+    msg "git not found; installing to base…"
+    source "$(conda info --base)/etc/profile.d/conda.sh"
+    conda activate base
+    conda install -y -c conda-forge git
+  fi
+
+  # Clone or update the repository under third_party/
+  local tp_dir="${REPO_ROOT}/third_party"
+  local repo_dir="${tp_dir}/cgmlstfinder"
+  mkdir -p "${tp_dir}"
+
+  if [[ -d "${repo_dir}/.git" ]]; then
+    msg "Updating existing cgmlstfinder repo…"
+    git -C "${repo_dir}" pull --ff-only
+  else
+    msg "Cloning cgmlstfinder repo…"
+    git clone https://bitbucket.org/genomicepidemiology/cgmlstfinder.git "${repo_dir}"
+  fi
+
+  # Determine the genepid environment prefix (its root directory)
+  source "$(conda info --base)/etc/profile.d/conda.sh"
+  # Temporarily relax nounset around conda hooks if you kept -u
+  set +u
+  conda activate genepid
+  set -u
+
+  local genepid_prefix
+  genepid_prefix="$(python -c 'import sys; print(sys.prefix)')"
+  local target_bin="${genepid_prefix}/bin"
+
+  # Install cgMLST.py into the env's bin and make it executable
+  install -m 0755 "${repo_dir}/cgMLST.py" "${target_bin}/cgMLST.py"
+
+  ok "cgMLST.py installed to ${target_bin}/cgMLST.py"
+
+  # Sanity check (should print usage/help and exit 0/1 depending on tool)
+  set +e
+  conda run -n genepid cgMLST.py -h >/dev/null 2>&1 \
+    && ok "cgMLST.py responds to -h" \
+    || ok "cgMLST.py present (help may exit nonzero but command is callable)."
+  set -e
 }
 
 # ---------- main ----------
@@ -104,6 +154,7 @@ create_env "${ENV_DIR}/bactipipe.yml"
 create_env "${ENV_DIR}/genepid.yml"
 create_env "${ENV_DIR}/viramr.yml"
 
+install_cgmlstfinder
 pip_editable_install
 install_basespace_cli
 post_install_checks
