@@ -143,10 +143,31 @@ install_cgmlstfinder() {
     || ok "cgMLST.py present (help may exit nonzero but command is callable)."
   set -e
 }
+configure_channels_and_tos() {
+  # Load conda
+  source "$(conda info --base)/etc/profile.d/conda.sh"
+  conda activate base
 
-# ---------- main ----------
+  # Accept TOS for defaults if supported (Conda >= 24.9). Ignore if not available.
+  conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main || true
+  conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r    || true
+
+  # Preferred channel order (strict)
+  conda config --remove-key channels 2>/dev/null || true
+  conda config --add channels conda-forge
+  conda config --add channels bioconda
+  conda config --add channels defaults
+  conda config --set channel_priority strict
+}
+
+
+#################################################
+#################### MAIN ########################
+#################################################
+
 detect_platform
 ensure_conda
+configure_channels_and_tos
 ensure_mamba
 
 msg "Creating environments…"
