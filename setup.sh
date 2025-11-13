@@ -150,7 +150,13 @@ ensure_conda
 ensure_mamba
 
 msg "Creating environments…"
-create_env "${ENV_DIR}/bactipipe.yml"
+
+if [[ "$PLATFORM" == "MacOSX" ]]; then
+  create_env "${ENV_DIR}/bactipipe-macos.yml"
+else
+  create_env "${ENV_DIR}/bactipipe.yml"
+fi
+
 create_env "${ENV_DIR}/genepid.yml"
 create_env "${ENV_DIR}/viramr.yml"
 
