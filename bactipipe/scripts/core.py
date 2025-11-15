@@ -307,7 +307,7 @@ def update_databases(args):
 def check_updates():
     """Check for environment and database updates without installing them."""
 
-    print("=== Checking Conda environment updates ===\n")
+    print("\n=== Checking Conda environment updates ===\n")
 
     for env in ENV_NAMES:
         try:

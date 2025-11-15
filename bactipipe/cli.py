@@ -15,11 +15,6 @@ from bactipipe.scripts.core import (
     DB_ROOT,
 )
 
-
-ENV_NAMES = ("bactipipe", "genepid", "viramr")
-
-
-
 def main():
     # if config.should_check_for_updates():
     #     updater.check_outdated_pip()
@@ -44,7 +39,6 @@ def main():
     update-db <dbs>    :  Install or update one or more databases.
                             Example: update-db virulencefinder,amrfinder,kmerfinder
                             Use "update-db all" to install/update every database.
-
 
     Other:
     -v, --version      :  Show the current version of BactiPipe.
