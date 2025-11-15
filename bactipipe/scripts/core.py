@@ -149,7 +149,7 @@ def _run(cmd, cwd=None):
     subprocess.run(cmd, check=True, cwd=cwd)
 def list_databases():
     """List known databases and whether they appear to be installed."""
-    print(f"Database root: {DB_ROOT}\n")
+    print(f"\nDatabase root: {DB_ROOT}\n")
 
     rows = []
     abricate_dbs = []   # we'll fill this from `abricate --list`
@@ -395,12 +395,25 @@ def check_updates():
                 check=False,
             )
             lines = [ln for ln in result.stdout.splitlines() if ln.strip()]
-            if len(lines) > 1:  # header + entries
-                print(f"[{env}] {len(lines)-1} updates available")
+
+            if len(lines) > 1:
+                # First line is header → skip it
+                outdated = []
+                for ln in lines[1:]:
+                    parts = ln.split()
+                    if len(parts) > 0:
+                        outdated.append(parts[0])
+                if outdated:
+                    pkgs = ", ".join(outdated)
+                    print(f"[{env}] {len(outdated)} updates available: {pkgs}")
+                else:
+                    print(f"[{env}] up-to-date")
             else:
                 print(f"[{env}] up-to-date")
-        except Exception:
-            print(f"[{env}] unable to check (error)")
+
+        except Exception as e:
+            print(f"[{env}] unable to check (error: {e})")
+
 
     print("\n=== Checking databases ===\n")
 
