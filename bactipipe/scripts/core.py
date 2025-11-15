@@ -3,6 +3,7 @@ import sys
 import shlex
 from shutil import which
 import subprocess
+import datetime as dt
 
 def env_cmd(tool: str) -> list:
     """
@@ -137,7 +138,6 @@ DB_SPECS = {
     },
 }
 
-
 def _run(cmd, cwd=None):
     """Run a shell command with printing and error propagation."""
     if isinstance(cmd, str):
@@ -152,6 +152,8 @@ def list_databases():
     print(f"Database root: {DB_ROOT}\n")
 
     rows = []
+    abricate_dbs = []   # we'll fill this from `abricate --list`
+
     for key, spec in DB_SPECS.items():
         label = spec["label"]
         db_type = spec["type"]
@@ -159,6 +161,7 @@ def list_databases():
         status = "unknown"
         location = ""
 
+        # --- CGE git-based DBs ---
         if db_type.startswith("git"):
             if path and os.path.isdir(path) and os.listdir(path):
                 status = "installed"
@@ -166,11 +169,11 @@ def list_databases():
                 status = "missing"
             location = path
 
+        # --- AMRFinder (tool-managed in viramr env) ---
         elif key == "amrfinder":
-            # DB lives inside the viramr env (e.g. env/share/amrfinderplus/data/...)
             env_name = spec.get("env", "viramr")
             try:
-                # This prints DB dir/version; we only care that it works
+                # Check that amrfinder runs; version output may include DB info.
                 result = subprocess.run(
                     ["conda", "run", "-n", env_name, "amrfinder", "-V"],
                     stdout=subprocess.PIPE,
@@ -179,9 +182,9 @@ def list_databases():
                     check=True,
                 )
                 status = "installed"
-                # Try to extract the "Database directory:" line if present
                 db_dir_line = next(
-                    (ln for ln in result.stdout.splitlines() if "Database directory:" in ln),
+                    (ln for ln in result.stdout.splitlines()
+                     if "Database directory:" in ln),
                     None,
                 )
                 if db_dir_line:
@@ -192,6 +195,7 @@ def list_databases():
                 status = "missing"
                 location = f"(inside {env_name} environment)"
 
+        # --- ABRicate (tool-managed in genepid env) ---
         elif key == "abricate":
             env_name = spec.get("env", "genepid")
             try:
@@ -204,19 +208,28 @@ def list_databases():
                 )
                 lines = [ln for ln in result.stdout.splitlines() if ln.strip()]
                 status = "installed" if len(lines) > 1 else "missing"
-                # Try to discover ABRICATE_DB, if set
-                env_check = subprocess.run(
-                    [
-                        "conda", "run", "-n", env_name,
-                        "bash", "-lc", 'echo "${ABRICATE_DB:-}"'
-                    ],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    check=True,
-                )
-                db_root = env_check.stdout.strip()
-                location = db_root if db_root else f"(inside {env_name} environment)"
+                location = f"(inside {env_name} environment)"
+
+                # Parse the table: header + rows like:
+                # DATABASE    SEQUENCES   DBTYPE   DATE
+                if len(lines) > 1:
+                    header = lines[0].split()
+                    for ln in lines[1:]:
+                        parts = ln.split()
+                        if len(parts) < 4:
+                            continue
+                        dbname = parts[0]
+                        sequences = parts[1]
+                        dbtype = parts[2]
+                        date = " ".join(parts[3:])
+                        abricate_dbs.append(
+                            {
+                                "name": dbname,
+                                "sequences": sequences,
+                                "dbtype": dbtype,
+                                "date": date,
+                            }
+                        )
             except Exception:
                 status = "missing"
                 location = f"(inside {env_name} environment)"
@@ -226,12 +239,27 @@ def list_databases():
 
         rows.append((label, key, db_type, status, location or "-"))
 
-    # pretty print
+    # Main summary table
     headers = ("Label", "Key", "Type", "Status", "Location")
     print("{:<18} {:<14} {:<15} {:<10} {}".format(*headers))
     print("-" * 80)
     for label, key, db_type, status, location in rows:
         print("{:<18} {:<14} {:<15} {:<10} {}".format(label, key, db_type, status, location))
+
+    # Extra: ABRicate databases
+    if abricate_dbs:
+        print("\nABRicate databases (env: genepid):")
+        print("  {:<15} {:>10}   {:<6}   {}".format("DATABASE", "SEQUENCES", "TYPE", "DATE"))
+        print("  " + "-" * 55)
+        for db in abricate_dbs:
+            print(
+                "  {:<15} {:>10}   {:<6}   {}".format(
+                    db["name"],
+                    db["sequences"],
+                    db["dbtype"],
+                    db["date"],
+                )
+            )
     
 def _parse_db_names(args):
     if not args:
@@ -321,7 +349,7 @@ def _update_simple_git_db(key, url):
 
 def update_databases(args):
     dbs = _parse_db_names(args)
-    print(f"Database root: {DB_ROOT}")
+    print(f"\nDatabase root: {DB_ROOT}")
     os.makedirs(DB_ROOT, exist_ok=True)
 
     for db in dbs:
@@ -350,8 +378,13 @@ def update_databases(args):
 def check_updates():
     """Check for environment and database updates without installing them."""
 
+    import datetime as dt
+
     print("\n=== Checking Conda environment updates ===\n")
 
+    # -----------------------------------------
+    # Check outdated conda packages per env
+    # -----------------------------------------
     for env in ENV_NAMES:
         try:
             result = subprocess.run(
@@ -371,16 +404,27 @@ def check_updates():
 
     print("\n=== Checking databases ===\n")
 
+    today = dt.date.today()
+    stale_days = 183  # ~6 months
+
     for key, spec in DB_SPECS.items():
         label = spec["label"]
         db_type = spec["type"]
         path = spec["path"]()
 
+        # -------------------------
+        # CGE git-based DBs
+        # -------------------------
         if db_type == "git-only" or db_type.startswith("git"):
             if path and os.path.isdir(os.path.join(path, ".git")):
                 try:
-                    result = subprocess.run(
-                        ["git", "fetch"], cwd=path, stdout=subprocess.PIPE
+                    subprocess.run(
+                        ["git", "fetch"],
+                        cwd=path,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        check=False,
+                        text=True,
                     )
                     local = subprocess.check_output(
                         ["git", "rev-parse", "HEAD"], cwd=path, text=True
@@ -397,13 +441,108 @@ def check_updates():
             else:
                 print(f"{label:18} not installed")
 
+        # -------------------------
+        # AMRFinderPlus DB (tool-managed in viramr env)
+        # SAFE: show installed DB version, do NOT update
+        # -------------------------
         elif key == "amrfinder":
-            print(f"{label:18} run: 'bactipipe update-db amrfinder' to update")
+            env_name = spec.get("env", "viramr")
+            try:
+                result = subprocess.run(
+                    ["conda", "run", "-n", env_name, "amrfinder", "--database_version"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=True,
+                )
+                db_version = None
+                db_dir = None
+                for ln in result.stdout.splitlines():
+                    if "Database version:" in ln:
+                        db_version = ln.split(":", 1)[1].strip()
+                    if "Database directory:" in ln:
+                        db_dir = ln.split(":", 1)[1].strip().strip("'\"")
 
+                if db_version:
+                    msg = f"installed DB version {db_version}"
+                    if db_dir:
+                        msg += f" at {db_dir}"
+                    msg += " (not checked against NCBI; run 'bactipipe update-db amrfinder' to refresh)"
+                else:
+                    msg = "installed (database version unknown)"
+
+                print(f"{label:18} {msg}")
+            except Exception as e:
+                print(f"{label:18} unable to check (error: {e})")
+
+        # -------------------------
+        # ABRicate DBs (tool-managed in genepid env)
+        # classify by age based on DATE column
+        # -------------------------
         elif key == "abricate":
-            print(f"{label:18} run: 'bactipipe update-db abricate' to update")
+            env_name = spec.get("env", "genepid")
+            try:
+                result = subprocess.run(
+                    ["conda", "run", "-n", env_name, "abricate", "--list"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=True,
+                )
+                lines = [ln for ln in result.stdout.splitlines() if ln.strip()]
+                if len(lines) <= 1:
+                    print(f"{label:18} no databases installed")
+                    continue
+
+                stale = 0
+                total = 0
+                oldest = None
+                newest = None
+
+                # Expected format:
+                # DATABASE    SEQUENCES   DBTYPE   DATE
+                for ln in lines[1:]:
+                    parts = ln.split()
+                    if len(parts) < 4:
+                        continue
+                    date_str = parts[3]
+                    total += 1
+                    try:
+                        db_date = dt.datetime.strptime(date_str, "%Y-%b-%d").date()
+                    except ValueError:
+                        # skip unparsable dates
+                        continue
+
+                    if oldest is None or db_date < oldest:
+                        oldest = db_date
+                    if newest is None or db_date > newest:
+                        newest = db_date
+
+                    if (today - db_date).days > stale_days:
+                        stale += 1
+
+                if total == 0 or oldest is None:
+                    print(f"{label:18} installed (dates unavailable)")
+                else:
+                    if stale == 0:
+                        print(
+                            f"{label:18} all {total} DBs downloaded within 6 months "
+                            f"(newest: {newest.isoformat()})"
+                        )
+                    else:
+                        print(
+                            f"{label:18} {stale}/{total} DBs older than 6 months "
+                            f"(oldest: {oldest.isoformat()})"
+                        )
+            except Exception as e:
+                print(f"{label:18} unable to check (error: {e})")
+
+        else:
+            # For any future DB types not explicitly handled
+            print(f"{label:18} check not implemented")
 
     print("\nDone.\n")
+
 
 
 
