@@ -122,17 +122,21 @@ DB_SPECS = {
         "path": lambda: os.path.join(DB_ROOT, "virulencefinder_db"),
         "type": "git-only",
     },
+    # NOTE: tool-managed inside envs, no DB_ROOT path
     "amrfinder": {
         "label": "amrfinder",
-        "path": lambda: os.path.expanduser("~/.amrfinderplus"),  # default DB location
+        "path": lambda: None,
         "type": "tool-managed",
+        "env": "viramr",
     },
     "abricate": {
         "label": "abricate",
-        "path": lambda: None,  # abricate has multiple DB dirs; query via CLI
+        "path": lambda: None,
         "type": "tool-managed",
+        "env": "genepid",
     },
 }
+
 
 def _run(cmd, cwd=None):
     """Run a shell command with printing and error propagation."""
@@ -147,47 +151,86 @@ def list_databases():
     """List known databases and whether they appear to be installed."""
     print(f"Database root: {DB_ROOT}\n")
 
-    lines = []
+    rows = []
     for key, spec in DB_SPECS.items():
         label = spec["label"]
         db_type = spec["type"]
         path = spec["path"]()
         status = "unknown"
+        location = ""
 
-        if key in {"cgmlstfinder", "kmerfinder", "mlst", "serotypefinder", "virulencefinder"}:
+        if db_type.startswith("git"):
             if path and os.path.isdir(path) and os.listdir(path):
                 status = "installed"
             else:
                 status = "missing"
+            location = path
+
         elif key == "amrfinder":
-            # consider DB installed if default DB dir exists
-            if path and os.path.isdir(path) and os.listdir(path):
-                status = "installed"
-            else:
-                status = "missing"
-        elif key == "abricate":
+            # DB lives inside the viramr env (e.g. env/share/amrfinderplus/data/...)
+            env_name = spec.get("env", "viramr")
             try:
+                # This prints DB dir/version; we only care that it works
                 result = subprocess.run(
-                    ["conda", "run", "-n", "genepid", "abricate", "--list"],
-                    check=True,
+                    ["conda", "run", "-n", env_name, "amrfinder", "-V"],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
+                    check=True,
                 )
-                # more than header line → DBs configured
-                num_lines = len([ln for ln in result.stdout.splitlines() if ln.strip()])
-                status = "installed" if num_lines > 1 else "missing"
+                status = "installed"
+                # Try to extract the "Database directory:" line if present
+                db_dir_line = next(
+                    (ln for ln in result.stdout.splitlines() if "Database directory:" in ln),
+                    None,
+                )
+                if db_dir_line:
+                    location = db_dir_line.split(":", 1)[1].strip()
+                else:
+                    location = f"(inside {env_name} environment)"
             except Exception:
                 status = "missing"
+                location = f"(inside {env_name} environment)"
 
-        location = path or "(managed by tool)"
-        lines.append((label, key, db_type, status, location))
+        elif key == "abricate":
+            env_name = spec.get("env", "genepid")
+            try:
+                result = subprocess.run(
+                    ["conda", "run", "-n", env_name, "abricate", "--list"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=True,
+                )
+                lines = [ln for ln in result.stdout.splitlines() if ln.strip()]
+                status = "installed" if len(lines) > 1 else "missing"
+                # Try to discover ABRICATE_DB, if set
+                env_check = subprocess.run(
+                    [
+                        "conda", "run", "-n", env_name,
+                        "bash", "-lc", 'echo "${ABRICATE_DB:-}"'
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=True,
+                )
+                db_root = env_check.stdout.strip()
+                location = db_root if db_root else f"(inside {env_name} environment)"
+            except Exception:
+                status = "missing"
+                location = f"(inside {env_name} environment)"
 
-    # pretty-ish table
-    colnames = ("Label", "Key", "Type", "Status", "Location")
-    print("{:<18} {:<14} {:<15} {:<10} {}".format(*colnames))
+        else:
+            location = path or ""
+
+        rows.append((label, key, db_type, status, location or "-"))
+
+    # pretty print
+    headers = ("Label", "Key", "Type", "Status", "Location")
+    print("{:<18} {:<14} {:<15} {:<10} {}".format(*headers))
     print("-" * 80)
-    for label, key, db_type, status, location in lines:
+    for label, key, db_type, status, location in rows:
         print("{:<18} {:<14} {:<15} {:<10} {}".format(label, key, db_type, status, location))
     
 def _parse_db_names(args):
