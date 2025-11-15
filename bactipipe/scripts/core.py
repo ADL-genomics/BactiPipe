@@ -33,6 +33,65 @@ def set_tmp_env(tmp_dir: str) -> dict:
     return env
 
 ############CLI TOOL MANAGEMENT HELPERS ############
+#Package management
+ENV_NAMES = ("bactipipe", "genepid", "viramr")
+
+def _run(cmd, **kwargs):
+    """Run a shell command with pretty printing and error bubbling."""
+    if isinstance(cmd, str):
+        printable = cmd
+        cmd = shlex.split(cmd)
+    else:
+        printable = " ".join(cmd)
+    print(f"[bactipipe:update] $ {printable}", flush=True)
+    subprocess.run(cmd, check=True, **kwargs)
+
+def _which(cmd):
+    from shutil import which
+    return which(cmd)
+
+def update_packages():
+    """Update Python + conda packages in all envs, then pip-upgrade outdated pip packages."""
+    mgr = "mamba" if _which("mamba") else "conda"
+
+    # 1) Update all conda-managed packages (includes python) per env
+    for env in ENV_NAMES:
+        print(f"\n=== Updating conda packages in env: {env} ===", flush=True)
+        _run([mgr, "update", "-n", env, "--all", "-y"])
+
+    # 2) Upgrade pip-managed packages that are outdated in each env
+    for env in ENV_NAMES:
+        print(f"\n=== Upgrading pip packages in env: {env} ===", flush=True)
+        # list outdated pip packages (name==version pins are not upgraded unless compatible)
+        try:
+            # capture the list of outdated in 'pkg==ver' lines
+            result = subprocess.run(
+                ["conda", "run", "-n", env, "python", "-m", "pip", "list", "--outdated", "--format=freeze"],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+        except subprocess.CalledProcessError as e:
+            # pip may not exist in some envs (e.g., viramr if no pip installs) -> skip
+            if "No module named pip" in e.stderr or "No module named pip" in e.stdout:
+                print(f"[bactipipe:update] pip not present in env {env}; skipping pip upgrades.")
+                continue
+            # other errors bubble up
+            raise
+
+        lines = [ln.strip() for ln in result.stdout.splitlines() if ln.strip()]
+        if not lines:
+            print("[bactipipe:update] No outdated pip packages.")
+            continue
+
+        # Each line looks like: 'package==current_version'
+        pkgs = [ln.split("==", 1)[0] for ln in lines if "==" in ln]
+        for pkg in pkgs:
+            _run(["conda", "run", "-n", env, "python", "-m", "pip", "install", "-U", pkg])
+
+    print("\n✅ Update complete. Tip: if you maintain lockfiles, regenerate them now.", flush=True)
+
 
 # DB root: 
 DB_ROOT = os.environ.get("BACTIPIPE_DB_DIR", os.path.expanduser("~/src/database/BactiPipe"))

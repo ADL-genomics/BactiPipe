@@ -104,7 +104,7 @@ def main():
         "relate": os.path.join(script_dir, "type_genomes.py"),
         "detect": os.path.join(script_dir, "run_traits.py"),
     }
-    
+
     if cmd not in script_map and cmd not in tool_manage_commands:
         print(f"\nError: Invalid command '{cmd}'.")
         print(usage)
