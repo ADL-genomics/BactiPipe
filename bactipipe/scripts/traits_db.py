@@ -172,13 +172,12 @@ def _virulencefinder_version() -> Optional[str]:
       2) fallback to a safe default 'v3.2.0' if not resolvable.
     """
     # Try conda list in the current (possibly env-routed) context
-    cmd = _env_launch("bash", "-lc", "conda list | grep -E '^virulencefinder\\s' | awk '{print $2}' | head -n1")
+    cmd = _env_launch("bash", "-lc", "conda list | grep 'virulencefinder' | awk '{print $2}' | head -n1")
     rc, out, _ = _run_cmd(cmd)
     ver = (out or "").strip()
     if rc == 0 and ver:
         return _fmt_ver(ver)
 
-    # Fallback (you mentioned v3.2.0 is the package version in your Anaconda channel)
     return "v3.2.0"
 
 

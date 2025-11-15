@@ -160,6 +160,38 @@ configure_channels_and_tos() {
   conda config --set channel_priority strict
 }
 
+configure_db_root() {
+  # If user already exported BACTIPIPE_DB_DIR, respect it
+  if [[ -n "${BACTIPIPE_DB_DIR:-}" ]]; then
+    ok "Using existing BACTIPIPE_DB_DIR=${BACTIPIPE_DB_DIR}"
+  else
+    export BACTIPIPE_DB_DIR="${HOME}/src/database/BactiPipe"
+    ok "Setting default BACTIPIPE_DB_DIR=${BACTIPIPE_DB_DIR}"
+    mkdir -p "${BACTIPIPE_DB_DIR}"
+
+    # Persist in shell startup (bash/zsh)
+    local shell_rc
+    if [[ -n "${BASH_VERSION:-}" ]]; then
+      shell_rc="${HOME}/.bashrc"
+    elif [[ -n "${ZSH_VERSION:-}" ]]; then
+      shell_rc="${HOME}/.zshrc"
+    else
+      shell_rc="${HOME}/.bashrc"
+    fi
+
+    if ! grep -q "BACTIPIPE_DB_DIR" "${shell_rc}" 2>/dev/null; then
+      {
+        echo ""
+        echo "# BactiPipe database root"
+        echo "export BACTIPIPE_DB_DIR=\"${BACTIPIPE_DB_DIR}\""
+      } >> "${shell_rc}"
+      ok "Exported BACTIPIPE_DB_DIR in ${shell_rc}"
+    fi
+  fi
+
+  mkdir -p "${BACTIPIPE_DB_DIR}"
+}
+
 
 #################################################
 #################### MAIN ########################
@@ -168,6 +200,7 @@ configure_channels_and_tos() {
 detect_platform
 ensure_conda
 configure_channels_and_tos
+configure_db_root
 ensure_mamba
 
 msg "Creating environments…"

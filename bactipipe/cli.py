@@ -1,11 +1,23 @@
 #!/usr/bin/env python3
 
 import sys
+import shlex
+from shutil import which
 import subprocess
 import os
-from bactipipe.scripts.downloader import setup_databases, update_databases
-from bactipipe.scripts import updater, config
+
 from bactipipe.__version__ import __version__
+from bactipipe.scripts.core import (
+    list_databases,
+    update_databases,
+    update_packages,
+    check_updates,
+    DB_ROOT,
+)
+
+
+ENV_NAMES = ("bactipipe", "genepid", "viramr")
+
 
 
 def main():
@@ -15,19 +27,31 @@ def main():
     #     updater.check_database_versions()
     #     config.update_last_checked() 
     
-    usage = '''\nUsage: bactipipe.py <command> [options]
-    \nPackage/Database management commands:
-      Check-updates    :  Check for updates to pipeline packages.
-      Update-packages  :  Update all Python/Conda packages.
-      Update-databases :  Re-download the latest databases.
-    \nPipeline commands:
-      qc-illumina      :  Run Illumina QC pipeline.
-      qc-nanopore      :  Run Nanopore QC pipeline.
-      relate           :  Type assembled genomes and compute relatedness.
-      detect           :  Detect virulence and antimicrobial resistance genes in assemblies.
+    usage = '''\nUsage: bactipipe <command> [options]
 
-    \nbactipipe -v / --version:  Show the current version of BactiPipe.\n
-    \nUse 'bactipipe <command> -h' to see help for the specific pipelines.\n'''
+    Pipeline Commands:
+    qc-illumina        :  Run the Illumina QC pipeline.
+    qc-nanopore        :  Run the Nanopore QC pipeline.
+    relate             :  Run genome typing and strain relatedness analysis.
+    detect             :  Detect virulence and antimicrobial resistance genes in assemblies.    
+
+    Package / Environment Management:
+    check-updates      :  Check for available updates to environments and databases.
+    update-packages    :  Update all Python and Conda packages in the three environments.
+
+    Database Management:
+    list-db            :  List all databases required by BactiPipe and their installation status.
+    update-db <dbs>    :  Install or update one or more databases.
+                            Example: update-db virulencefinder,amrfinder,kmerfinder
+                            Use "update-db all" to install/update every database.
+
+
+    Other:
+    -v, --version      :  Show the current version of BactiPipe.
+    -h, --help         :  Show this help message.
+
+    Use 'bactipipe <command> -h' to see help for a specific pipeline.\n'''
+
 
     if len(sys.argv) < 2 or sys.argv[1] in ["-h", "--help"]:
         print(usage)
@@ -38,9 +62,39 @@ def main():
         sys.exit(0)
 
 
-    command = sys.argv[1].lower()
-    
-    tool_manage_commands = ["check-updates", "update-packages", "update-databases"]
+    cmd = sys.argv[1].lower()
+
+    if cmd == "check-updates":
+        check_updates()
+        sys.exit(0)
+
+    if cmd == "update-packages":
+        try:
+            update_packages()
+            sys.exit(0)
+        except subprocess.CalledProcessError as e:
+            sys.stderr.write(f"\n[bactipipe:update-packages] ERROR (exit {e.returncode}): {e}\n")
+            sys.exit(e.returncode)
+
+    if cmd == "list-db":
+        list_databases()
+        sys.exit(0)
+
+    if cmd == "update-db":
+        try:
+            update_databases(sys.argv[2:])
+            sys.exit(0)
+        except SystemExit as e:
+            # _parse_db_names may raise SystemExit with a message
+            if str(e):
+                sys.stderr.write(str(e) + "\n")
+            sys.exit(e.code or 1)
+        except subprocess.CalledProcessError as e:
+            sys.stderr.write(f"\n[bactipipe:update-db] ERROR (exit {e.returncode}): {e}\n")
+            sys.exit(e.returncode)        
+
+
+    tool_manage_commands = ["list-db", "update-db", "check-updates", "update-packages"]
 
     # Map run commands to the corresponding script
     script_dir = os.path.join(os.path.dirname(__file__), "scripts")
@@ -50,30 +104,15 @@ def main():
         "relate": os.path.join(script_dir, "type_genomes.py"),
         "detect": os.path.join(script_dir, "run_traits.py"),
     }
-
-    if command not in script_map and command not in tool_manage_commands:
-        print(f"\nError: Invalid command '{command}'.")
+    
+    if cmd not in script_map and cmd not in tool_manage_commands:
+        print(f"\nError: Invalid command '{cmd}'.")
         print(usage)
         sys.exit(1)
 
-    elif command in tool_manage_commands:
-        if command == "check-updates":
-            updater.check_outdated_pip()
-            updater.check_outdated_conda()
-            updater.check_database_versions()
-            config.update_last_checked()
-        elif command == "update-packages":
-            updater.update_pip_packages()
-            updater.update_conda_packages()
-        elif command == "update-databases":
-            update_databases()
-        sys.exit(0)
-
-    elif command in script_map:
+    elif cmd in script_map:
         # Ensure databases are present before running any pipeline
-        setup_databases(notifications="off")
-        script_to_run = script_map[command]
-
+        script_to_run = script_map[cmd]
     # Forward all remaining arguments to the appropriate script
     run_command = ["python3", script_to_run] + sys.argv[2:]
 
