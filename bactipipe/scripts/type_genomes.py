@@ -828,7 +828,11 @@ def _build_argparser() -> argparse.ArgumentParser:
                    help=argparse.SUPPRESS)
     opt.add_argument("--kleborate-env",
                    default=os.environ.get("BACTIPIPE_ENV_KLEBORATE") or "bactipipe",
+                   help=argparse.SUPPRESS)    
+    opt.add_argument("--cge-env",
+                   default=os.environ.get("BACTIPIPE_ENV_CGE") or "genepid",
                    help=argparse.SUPPRESS)
+
     return p
 
 def main(argv: Optional[List[str]] = None) -> int:
