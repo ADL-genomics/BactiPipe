@@ -828,24 +828,10 @@ def _build_argparser() -> argparse.ArgumentParser:
                    help=argparse.SUPPRESS)
     opt.add_argument("--kleborate-env",
                    default=os.environ.get("BACTIPIPE_ENV_KLEBORATE") or "bactipipe",
-                   help=argparse.SUPPRESS)    
+                   help=argparse.SUPPRESS)
     opt.add_argument("--cge-env",
                    default=os.environ.get("BACTIPIPE_ENV_CGE") or "genepid",
                    help=argparse.SUPPRESS)
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    opt.add_argument("--cge-env",
-                   default=os.environ.get("BACTIPIPE_ENV_CGE") or "genepid",
-                   help=argparse.SUPPRESS)
->>>>>>> 1ea388f (removed false AIDA (AIDA-like) records)
-=======
-    opt.add_argument("--cge-env",
-                   default=os.environ.get("BACTIPIPE_ENV_CGE") or "genepid",
-                   help=argparse.SUPPRESS)
-=======
->>>>>>> 00d37d3 (added cgs_envs to opt.args)
->>>>>>> 73cb978 (rebased)
 
     return p
 

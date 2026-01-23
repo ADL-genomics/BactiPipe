@@ -28,7 +28,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
-bactipipe_version = "v0.1.0"  # Update as needed
+bactipipe_version = "v1.0.0"  # Update as needed
 
 _LEVEL_MAP = {
     "Norm": logging.INFO,
