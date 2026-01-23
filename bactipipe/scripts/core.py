@@ -1,6 +1,11 @@
 import os
 import sys
+import time
 import shlex
+import shutil
+import tarfile
+import tempfile
+import urllib.request
 from shutil import which
 import subprocess
 import datetime as dt
@@ -305,36 +310,79 @@ def _ensure_git():
     if which("git") is None:
         raise SystemExit("ERROR: 'git' not found on PATH. Please install git and retry.")
 
+def _download_and_extract_tar_gz(url: str, dest_dir: str, label: str) -> None:
+    """
+    Download a tar.gz database archive and extract it into dest_dir.
+
+    Strategy:
+      - Download to a temporary file
+      - Extract to a temporary directory
+      - If dest_dir exists and is non-empty, move it to a timestamped backup
+      - Move extracted content into dest_dir
+
+    Handles archives that either:
+      A) contain a single top-level directory, or
+      B) contain files directly at top-level.
+    """
+    os.makedirs(DB_ROOT, exist_ok=True)
+
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    backup_dir = f"{dest_dir}.bak-{timestamp}"
+
+    with tempfile.TemporaryDirectory(prefix="bactipipe_db_") as tmpd:
+        tgz_path = os.path.join(tmpd, f"{label}.tar.gz")
+
+        print(f"[bactipipe] Downloading {label} from: {url}")
+        urllib.request.urlretrieve(url, tgz_path)
+
+        extract_dir = os.path.join(tmpd, "extract")
+        os.makedirs(extract_dir, exist_ok=True)
+
+        print(f"[bactipipe] Extracting {label} archive…")
+        with tarfile.open(tgz_path, "r:gz") as tf:
+            tf.extractall(path=extract_dir)
+
+        # Determine extracted payload location
+        entries = [e for e in os.listdir(extract_dir) if e not in (".", "..")]
+        if not entries:
+            raise RuntimeError(f"{label}: archive extracted but no files were found.")
+
+        # If the tarball contains exactly one top-level directory, treat that as payload
+        payload_path = extract_dir
+        if len(entries) == 1:
+            single = os.path.join(extract_dir, entries[0])
+            if os.path.isdir(single):
+                payload_path = single
+
+        # Backup existing DB if present and non-empty
+        if os.path.isdir(dest_dir) and os.listdir(dest_dir):
+            print(f"[bactipipe] Backing up existing {label} to: {backup_dir}")
+            shutil.move(dest_dir, backup_dir)
+        else:
+            # Ensure clean destination
+            if os.path.exists(dest_dir):
+                shutil.rmtree(dest_dir, ignore_errors=True)
+
+        # Install new DB into dest_dir
+        print(f"[bactipipe] Installing {label} into: {dest_dir}")
+        shutil.move(payload_path, dest_dir)
+
+        print(f"[bactipipe] {label} install complete.")
 
 def _update_cgmlstfinder():
-    _ensure_git()
     db_dir = DB_SPECS["cgmlstfinder"]["path"]()
     os.makedirs(DB_ROOT, exist_ok=True)
-    if os.path.isdir(os.path.join(db_dir, ".git")):
-        print(f"[bactipipe] Updating cgmlstfinder_db in {db_dir}")
-        _run(["git", "pull", "--ff-only"], cwd=db_dir)
-    else:
-        print(f"[bactipipe] Cloning cgmlstfinder_db into {db_dir}")
-        _run(["git", "clone", "https://bitbucket.org/genomicepidemiology/cgmlstfinder_db.git", db_dir])
 
-    # Install databases via INSTALL.py in genepid env
-    _run(["conda", "run", "-n", "genepid", "python", "INSTALL.py"], cwd=db_dir)
+    url = "https://cge.food.dtu.dk/services/cgMLSTFinder/etc/cgmlst_db.tar.gz"
+    _download_and_extract_tar_gz(url=url, dest_dir=db_dir, label="cgmlstfinder_db")
 
 
 def _update_kmerfinder():
-    _ensure_git()
     db_dir = DB_SPECS["kmerfinder"]["path"]()
     os.makedirs(DB_ROOT, exist_ok=True)
-    if os.path.isdir(os.path.join(db_dir, ".git")):
-        print(f"[bactipipe] Updating kmerfinder_db in {db_dir}")
-        _run(["git", "pull", "--ff-only"], cwd=db_dir)
-    else:
-        print(f"[bactipipe] Cloning kmerfinder_db into {db_dir}")
-        _run(["git", "clone", "https://bitbucket.org/genomicepidemiology/kmerfinder_db.git", db_dir])
 
-    # Install only bacteria DB from latest update
-    _run(["bash", "INSTALL.sh", db_dir, "bacteria", "latest"], cwd=db_dir)
-
+    url = "https://cge.food.dtu.dk/services/KmerFinder/etc/kmerfinder_db.tar.gz"
+    _download_and_extract_tar_gz(url=url, dest_dir=db_dir, label="kmerfinder_db")
 
 def _update_simple_git_db(key, url):
     _ensure_git()

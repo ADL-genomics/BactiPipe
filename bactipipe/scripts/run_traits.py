@@ -382,7 +382,7 @@ def main():
     os.makedirs(os.path.join(cfg["outdir"], "reports"), exist_ok=True)
 
     # Multiprocessing over *only* those isolates specified in the sample sheet
-    pool = mp.Pool(processes=min(len(sample_rows), cfg["threads"]))
+    pool = mp.Pool(processes=min(len(sample_rows), cfg["threads"])) # type: ignore
     try:
         results = pool.map(_run_one, [(iso, samp, fa, cfg) for (iso, samp, fa) in sample_rows])
     finally:
@@ -391,6 +391,7 @@ def main():
     # --- unified run-level reporting ---
     # Key reports by the 'sample' (display name from column 2)
     all_merged = {sample_display: merged for (sample_display, merged) in results}
+    print(f"all_merged: {all_merged}")
 
     # Unified TSV for convenience
     traits_report.write_run_summary(all_merged, cfg["outdir"])

@@ -832,6 +832,12 @@ def _build_argparser() -> argparse.ArgumentParser:
     opt.add_argument("--cge-env",
                    default=os.environ.get("BACTIPIPE_ENV_CGE") or "genepid",
                    help=argparse.SUPPRESS)
+<<<<<<< HEAD
+=======
+    opt.add_argument("--cge-env",
+                   default=os.environ.get("BACTIPIPE_ENV_CGE") or "genepid",
+                   help=argparse.SUPPRESS)
+>>>>>>> 1ea388f (removed false AIDA (AIDA-like) records)
 
     return p
 
