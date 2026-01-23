@@ -183,49 +183,62 @@ def _run_virulencefinder(
     out_root: str,
     db_root: str,
     logger_fn,
+    *,
+    min_id: float = 90.0,
+    min_cov: float = 60.0,
+    databases: str = "all",
 ) -> str | None:
     """
-    Run DTU virulencefinder.py directly into the final raw directory
-    (no temp dir). Returns path to results_tab.tsv on success, else None.
+    Run DTU VirulenceFinder via module invocation:
+        python -m virulencefinder ...
+
+    Writes directly into:
+        <out_root>/raw/virulencefinder/<sample>/
+
+    Returns the path to results_tab.tsv on success, else None.
     """
+    import os
+    import subprocess
+
     # Validate inputs
     if not os.path.isfile(fasta):
         logger_fn(f"[{sample}] VirulenceFinder SKIP: FASTA not found: {fasta}")
         return None
     if not db_root:
-        logger_fn(f"[{sample}] VirulenceFinder SKIP: --db-dir/BACTIPIPE_DB_DIR not set.")
+        logger_fn(f"[{sample}] VirulenceFinder SKIP: --db-dir / $BACTIPIPE_DB_DIR not set.")
         return None
 
-    vdb = os.path.join(db_root, "virulencefinder_db")
-    if not os.path.isdir(vdb):
-        logger_fn(f"[{sample}] VirulenceFinder SKIP: DB not found at: {vdb}")
+    # VirulenceFinder database root
+    vdb_root = os.path.join(db_root, "virulencefinder_db")
+    if not os.path.isdir(vdb_root):
+        logger_fn(f"[{sample}] VirulenceFinder SKIP: DB root not found: {vdb_root}")
         return None
 
-    # Final output dir (created up front)
+    # Final output dir
     final_dir = os.path.join(out_root, "raw", "virulencefinder", sample)
     os.makedirs(final_dir, exist_ok=True)
 
-    # Best-effort resolution of the executable (for logging)
-    exe_path = "virulencefinder.py"
-    try:
-        which = subprocess.run(
-            ["bash", "-lc", "command -v virulencefinder.py || which virulencefinder.py || true"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
-        )
-        exe_path = (which.stdout or "").strip() or "virulencefinder.py"
-    except Exception:
-        pass
+    # Temp dir inside final_dir (keeps all VF temp artifacts contained)
+    tmp_dir = os.path.join(final_dir, "tmp")
+    os.makedirs(tmp_dir, exist_ok=True)
 
-    # Build command (no --threads)
-    if env_cmd is not None:
-        cmd = env_cmd("virulencefinder.py") + ["-i", fasta, "-o", final_dir, "-p", vdb, "-x"]
-        launcher = "env_cmd"
-    else:
-        cmd = [exe_path, "-i", fasta, "-o", final_dir, "-d", vdb, "-x"]
-        launcher = "direct"
+    # Build command (NOTE: -d expects DB NAMES, not a path)
+    cmd = [
+        "python", "-m", "virulencefinder",
+        "-ifa", fasta,
+        "-o", final_dir,
+        "-tmp", tmp_dir,
+        "-p", vdb_root,
+        "-d", databases,                 # e.g., "all" or "virulence_ecoli"
+        "-t", str(float(min_id)),        # identity threshold
+        "-l", str(float(min_cov)),       # coverage threshold
+        "-x",                             # produces results_tab.tsv
+    ]
 
-    # Log and run
-    logger_fn(f"[{sample}] VirulenceFinder TRY ({launcher}) | exe={exe_path} | DB={vdb} | OUT={final_dir}")
+    logger_fn(
+        f"[{sample}] VirulenceFinder TRY | DB_ROOT={vdb_root} | DBs={databases} | "
+        f"OUT={final_dir} | TMP={tmp_dir}"
+    )
     logger_fn(f"[{sample}] VirulenceFinder CMD: {' '.join(cmd)}")
 
     try:
@@ -234,16 +247,7 @@ def _run_virulencefinder(
         logger_fn(f"[{sample}] VirulenceFinder FAILED to start: {e}")
         return None
 
-    if p.returncode != 0:
-        logger_fn(f"[{sample}] VirulenceFinder FAILED (exit {p.returncode}).\nSTDOUT:\n{p.stdout}\nSTDERR:\n{p.stderr}")
-        return None
-
-    res_tsv = os.path.join(final_dir, "results_tab.tsv")
-    if not os.path.isfile(res_tsv):
-        logger_fn(f"[{sample}] VirulenceFinder OK exit but missing results_tab.tsv.\nSTDOUT:\n{p.stdout}\nSTDERR:\n{p.stderr}")
-        return None
-
-    # Keep small run logs alongside results
+    # Save logs regardless of success (useful for debugging)
     try:
         with open(os.path.join(final_dir, "virulencefinder.stdout.txt"), "w") as f:
             f.write(p.stdout or "")
@@ -252,10 +256,23 @@ def _run_virulencefinder(
     except Exception as e:
         logger_fn(f"[{sample}] VirulenceFinder WARN: failed to save stdout/stderr logs: {e}")
 
+    if p.returncode != 0:
+        logger_fn(
+            f"[{sample}] VirulenceFinder FAILED (exit {p.returncode}).\n"
+            f"STDOUT:\n{p.stdout}\nSTDERR:\n{p.stderr}"
+        )
+        return None
+
+    res_tsv = os.path.join(final_dir, "results_tab.tsv")
+    if not os.path.isfile(res_tsv):
+        logger_fn(
+            f"[{sample}] VirulenceFinder OK exit but missing results_tab.tsv.\n"
+            f"STDOUT:\n{p.stdout}\nSTDERR:\n{p.stderr}"
+        )
+        return None
+
     logger_fn(f"[{sample}] VirulenceFinder OK → {res_tsv}")
     return res_tsv
-
-
 
 def _run_abricate(
     sample: str,
