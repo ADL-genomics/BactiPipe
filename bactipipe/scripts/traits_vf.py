@@ -223,16 +223,15 @@ def _run_virulencefinder(
     os.makedirs(tmp_dir, exist_ok=True)
 
     # Build command (NOTE: -d expects DB NAMES, not a path)
-    cmd = [
-        "python", "-m", "virulencefinder",
+    cmd = env_cmd("virulencefinder") + [
         "-ifa", fasta,
         "-o", final_dir,
         "-tmp", tmp_dir,
         "-p", vdb_root,
-        "-d", databases,                 # e.g., "all" or "virulence_ecoli"
-        "-t", str(float(min_id)),        # identity threshold
-        "-l", str(float(min_cov)),       # coverage threshold
-        "-x",                             # produces results_tab.tsv
+        "-d", databases,      # e.g. "all" or "virulence_ecoli"
+        "-t", str(min_id),
+        "-l", str(min_cov),
+        "-x",
     ]
 
     logger_fn(
