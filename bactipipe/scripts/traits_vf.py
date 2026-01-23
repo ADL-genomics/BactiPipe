@@ -184,8 +184,8 @@ def _run_virulencefinder(
     db_root: str,
     logger_fn,
     *,
-    min_id: float = 90.0,
-    min_cov: float = 60.0,
+    min_id: float = 0.9,
+    min_cov: float = 0.6,
     databases: str = "all",
 ) -> str | None:
     """
