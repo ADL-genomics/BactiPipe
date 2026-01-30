@@ -813,6 +813,7 @@ def _build_argparser() -> argparse.ArgumentParser:
     opt.add_argument("--threads", type=int, default=4, help="Threads for serotyping (SeqSero2).")
     opt.add_argument("--list-organisms", action="store_true", help="List supported organisms/schemes and exit")
     opt.add_argument("--no-ska", action="store_true", help="Disable SKA split-kmer relatedness (enabled by default).")
+    opt.add_argument("--no-cgmlst", action="store_true", help="Disable cgMLST typing (enabled by default for supported organisms).")
     opt.add_argument("-v", "--verbose", action="store_true", help="More console detail (DEBUG).")
     opt.add_argument(
     "--resume",
@@ -890,7 +891,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     org = args.organism.lower()
     caps = CAPS.get(org, {})
     need_mlst   = bool(caps.get("mlst"))
-    need_cgmlst = bool(caps.get("cgmlst"))
+    if args.no_cgmlst:
+        need_cgmlst = False
+    else:
+        need_cgmlst = bool(caps.get("cgmlst"))
+
     mlst_scheme   = caps.get("mlst_scheme") if need_mlst else None
     cgmlst_scheme = caps.get("cgmlst_scheme") if need_cgmlst else None
 
