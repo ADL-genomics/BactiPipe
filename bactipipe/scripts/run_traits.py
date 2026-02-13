@@ -158,6 +158,8 @@ def parse_args():
                      help="Enable VirulenceFinder (DTU Python tool).")
     opt.add_argument("--abricate-vfdb", action="store_true",
                      help="Enable ABRicate/VFDB (Set A). If provided, will be used regardless of the organism.")
+    opt.add_argument("--no-pdf", action="store_true",
+                     help="Do not generate PDF reports.")
 
     opt.add_argument("-h","--help", action="help", help="Show this help message and exit")
     return p.parse_args()
@@ -397,18 +399,19 @@ def main():
     traits_report.write_run_summary(all_merged, cfg["outdir"])
 
     # Single PDF for the entire run
-    traits_report.render_run_pdf(
-        out_root=cfg["outdir"],
-        run_name=cfg["run_name"],
-        accession=cfg["accession"],
-        tech_name=cfg["analyst"],
-        versions=versions,
-        thresholds=versions.get("thresholds", {}),
-        all_merged=all_merged,
-        pipeline_title="Virulence and AMR Gene Detection",
-        run_amr=(not args.virulence_only),
-        run_vf=(not args.amr_only),
-    )
+    if not args.no_pdf:
+        traits_report.render_run_pdf(
+            out_root=cfg["outdir"],
+            run_name=cfg["run_name"],
+            accession=cfg["accession"],
+            tech_name=cfg["analyst"],
+            versions=versions,
+            thresholds=versions.get("thresholds", {}),
+            all_merged=all_merged,
+            pipeline_title="Virulence and AMR Gene Detection",
+            run_amr=(not args.virulence_only),
+            run_vf=(not args.amr_only),
+        )
     # Also emit a consolidated matrix TSV (no header)
     accession = cfg["accession"]
     traits_report.write_consolidated_tsv(all_merged, cfg["outdir"], f"{accession}_vir_amr_detect.tsv")

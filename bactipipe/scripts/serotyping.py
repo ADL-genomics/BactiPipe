@@ -24,12 +24,12 @@ def run_serotypefinder(
     env_name: Optional[str] = None,
 ) -> Tuple[str, str]:
     """
-    Run serotypefinder.py and return (O_type, H_type) if present.
+    Run serotypefinder and return (O_type, H_type) if present.
     If multiple O hits, choose the one with full-length coverage (>=1.0) and highest identity.
     Returns 'Unknown' when not found.
     """
     _ensure_dir(outdir)
-    cmd = ["serotypefinder.py", "-i", str(genome), "-o", str(outdir), "-p", str(serodb_dir), "-x"]
+    cmd = ["serotypefinder", "-i", str(genome), "-o", str(outdir), "-p", str(serodb_dir), "-x"]
     rc, out = _run(cmd, cwd=None, log=logger, env_name=env_name)
     (outdir / "serotypefinder.stdout.txt").write_text(out)
     if rc != 0:

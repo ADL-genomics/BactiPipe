@@ -128,7 +128,7 @@ def _check_tool(
     default_tests: Dict[str, Tuple[str, ...]] = {
         "mlst.py": ("-h",),
         "cgMLST.py": ("-h",),
-        "serotypefinder.py": ("-h",),
+        "serotypefinder": ("-h",),
         "SeqSero2_package.py": ("-h",),
         "kleborate": ("--version",),
         "skani": ("--version",),
@@ -925,6 +925,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "kleborate": args.kleborate_env,
             "mlst": "genepid",
             "cgmlst": "genepid",
+            "serotypefinder": "genepid",
         },       
     }
 
@@ -952,7 +953,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     elif serotyper_label == "kleborate":
         ok &= _must("kleborate", env=run_cfg["envs"].get("kleborate"))
     else:
-        ok &= _must("serotypefinder.py", env=run_cfg["envs"].get("serotypefinder"))
+        ok &= _must("serotypefinder", env=run_cfg["envs"].get("serotypefinder"))
 
     # MLST / cgMLST (if used)
     if need_mlst:   ok &= _must("mlst.py",   env=run_cfg["envs"].get("mlst"))
