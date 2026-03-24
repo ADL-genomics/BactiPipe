@@ -961,18 +961,19 @@ def main(argv: Optional[List[str]] = None) -> int:
     if need_cgmlst: ok &= _must("cgMLST.py", env=run_cfg["envs"].get("cgmlst"))
 
     # ANI tools
-    has_ref = bool(args.reference)
-    ani_mode = args.ani_tool
-    if has_ref:
-        if args.ani_tool == "skani":
-            ok &= _must("skani", env=ani_env_skani)
-        elif args.ani_tool == "fastani":
-            ok &= _must("fastANI", env=ani_env_fastani)
-        else:  # auto
-            if not _must("skani", env=ani_env_skani):
+    if not args.no_ani:
+        has_ref = bool(args.reference)
+        ani_mode = args.ani_tool
+        if has_ref:
+            if args.ani_tool == "skani":
+                ok &= _must("skani", env=ani_env_skani)
+            elif args.ani_tool == "fastani":
                 ok &= _must("fastANI", env=ani_env_fastani)
-    else:
-        ok &= _must("skani", env=ani_env_skani)
+            else:  # auto
+                if not _must("skani", env=ani_env_skani):
+                    ok &= _must("fastANI", env=ani_env_fastani)
+        else:
+            ok &= _must("skani", env=ani_env_skani)
 
     # SKA2 (unless disabled)
     if not args.no_ska:
