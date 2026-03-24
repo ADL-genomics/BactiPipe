@@ -813,6 +813,7 @@ def _build_argparser() -> argparse.ArgumentParser:
     opt.add_argument("--threads", type=int, default=4, help="Threads for serotyping (SeqSero2).")
     opt.add_argument("--list-organisms", action="store_true", help="List supported organisms/schemes and exit")
     opt.add_argument("--no-ska", action="store_true", help="Disable SKA split-kmer relatedness (enabled by default).")
+    opt.add_argument("--no-ani", action="store_true", help="Disable ANI analysis (enabled by default).")
     opt.add_argument("--no-cgmlst", action="store_true", help="Disable cgMLST typing (enabled by default for supported organisms).")
     opt.add_argument("-v", "--verbose", action="store_true", help="More console detail (DEBUG).")
     opt.add_argument(
@@ -1144,51 +1145,52 @@ def main(argv: Optional[List[str]] = None) -> int:
     # =========================
     # ANI logic (verbose steps)
     # =========================
-    if args.reference:
-        with _step(logger, "ANI vs reference (skani/fastANI)"):
-            write_reference_ani_table(
-                manifest=manifest,
-                reference_index=0,
-                ani_tool=args.ani_tool,
-                out_tsv=paths["ani_tsv"],
-                workdir=paths["ani_pairs_dir"],
-                logger=logger,
-                skani_env=ani_env_skani,
-                fastani_env=ani_env_fastani,
-            )
-            logger.info(f"  ANI table: {paths['ani_tsv']}")
-    else:
-        with _step(logger, "ANI triangle (skani all-vs-all)"):
-            # 1) Build (sample_name, fasta_path) list
-            samples = [(rec.sample, rec.genome_path) for rec in manifest if rec.exists]
-            logger.info(f"  Genomes for triangle: {len(samples)}")
-            if len(samples) < 2:
-                logger.info("  Not enough genomes (need ≥ 2); skipping triangle.")
-            else:
-                # 2) Ensure skani_root path exists in paths dict
-                paths["skani_root"] = paths.get("skani_root", paths["outdir"] / "skani")
-
-                # 3) Run triangle and write *.pairs / *.pairs_samples
-                skani_out = U.run_skani_triangle_and_write(
-                    samples=samples,
-                    skani_root=paths["skani_root"],
-                    out_prefix=f"{accession}_skani",
+    if not args.no_ani:
+        if args.reference:
+            with _step(logger, "ANI vs reference (skani/fastANI)"):
+                write_reference_ani_table(
+                    manifest=manifest,
+                    reference_index=0,
+                    ani_tool=args.ani_tool,
+                    out_tsv=paths["ani_tsv"],
+                    workdir=paths["ani_pairs_dir"],
                     logger=logger,
-                    env_name=(args.skani_env if hasattr(args, "skani_env") else None),
+                    skani_env=ani_env_skani,
+                    fastani_env=ani_env_fastani,
                 )
-
-                if not skani_out:
-                    logger.error("  skani triangle failed; no output produced.")
+                logger.info(f"  ANI table: {paths['ani_tsv']}")
+        else:
+            with _step(logger, "ANI triangle (skani all-vs-all)"):
+                # 1) Build (sample_name, fasta_path) list
+                samples = [(rec.sample, rec.genome_path) for rec in manifest if rec.exists]
+                logger.info(f"  Genomes for triangle: {len(samples)}")
+                if len(samples) < 2:
+                    logger.info("  Not enough genomes (need ≥ 2); skipping triangle.")
                 else:
-                    # 4) Publish outputs into paths for the final writer
-                    if "pairs" in skani_out:
-                        paths["skani_pairs"] = skani_out["pairs"]
-                        logger.info(f"  skani pairs (files):   {paths['skani_pairs']}")
-                    if "pairs_samples" in skani_out:
-                        paths["skani_pairs_samples"] = skani_out["pairs_samples"]
-                        logger.info(f"  skani pairs (samples): {paths['skani_pairs_samples']}")
-                    if "triangle" in skani_out:
-                        logger.info(f"  skani triangle (raw):  {skani_out['triangle']}")
+                    # 2) Ensure skani_root path exists in paths dict
+                    paths["skani_root"] = paths.get("skani_root", paths["outdir"] / "skani")
+
+                    # 3) Run triangle and write *.pairs / *.pairs_samples
+                    skani_out = U.run_skani_triangle_and_write(
+                        samples=samples,
+                        skani_root=paths["skani_root"],
+                        out_prefix=f"{accession}_skani",
+                        logger=logger,
+                        env_name=(args.skani_env if hasattr(args, "skani_env") else None),
+                    )
+
+                    if not skani_out:
+                        logger.error("  skani triangle failed; no output produced.")
+                    else:
+                        # 4) Publish outputs into paths for the final writer
+                        if "pairs" in skani_out:
+                            paths["skani_pairs"] = skani_out["pairs"]
+                            logger.info(f"  skani pairs (files):   {paths['skani_pairs']}")
+                        if "pairs_samples" in skani_out:
+                            paths["skani_pairs_samples"] = skani_out["pairs_samples"]
+                            logger.info(f"  skani pairs (samples): {paths['skani_pairs_samples']}")
+                        if "triangle" in skani_out:
+                            logger.info(f"  skani triangle (raw):  {skani_out['triangle']}")
     # === SKA2 split-kmer relatedness (always on unless disabled) ===
     if not args.no_ska:
         logger.info("SKA2 build + distance ...")
