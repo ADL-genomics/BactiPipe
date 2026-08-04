@@ -202,3 +202,8 @@ def find_species_with_kmrf(s_name, lab_species, genome, dataOut, org_type="bacte
         bh_display = f"Determined: {bh_display}) --- Expected: {lab_species}"
 
     return bh_display, tax_confirm, others
+
+# Use Blast to clean genome fasta contigs
+
+
+
