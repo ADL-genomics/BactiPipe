@@ -1,31 +1,28 @@
 # bactipipe/scripts/traits_amr.py
 from __future__ import annotations
-import os, re, csv, shlex, subprocess
+import os, re, csv, subprocess
 from typing import List, Dict, Optional
 
 # --- env helpers --------------------------------------------------------------
 
 def _env_prefix(tool: str, *, viramr_env: Optional[str], abricate_env: Optional[str]) -> List[str]:
     """
-    Build a bash -lc conda-run prefix for a given tool, or return [] to call directly.
+    Build a direct argv conda-run prefix for a given tool.
     - amrfinder -> viramr_env
     - abricate  -> abricate_env
     """
     if tool == "amrfinder" and viramr_env:
-        return ["bash", "-lc", f"conda run -n {shlex.quote(viramr_env)} amrfinder"]
+        return ["conda", "run", "-n", viramr_env, "amrfinder"]
     if tool == "abricate" and abricate_env:
-        return ["bash", "-lc", f"conda run -n {shlex.quote(abricate_env)} abricate"]
+        return ["conda", "run", "-n", abricate_env, "abricate"]
     return [tool]
 
 def _run(cmd: List[str], *, env: Optional[dict] = None, logger_fn=None) -> None:
     """
-    Run either a direct argv command or a 'bash -lc "<cmd...>"' style prefix.
+    Run a direct argv command.
     """
     if logger_fn:
         logger_fn(f"[CMD] {' '.join(cmd)}")
-    if len(cmd) >= 2 and cmd[0] == "bash" and cmd[1] == "-lc":
-        # join the rest into a single string for bash -lc
-        cmd = [cmd[0], cmd[1], " ".join(cmd[2:])]
     cp = subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if logger_fn and cp.stdout:
         logger_fn(f"[STDOUT]\n{cp.stdout.strip()}")
@@ -226,7 +223,7 @@ def run_amr_for_sample(
     env["TMPDIR"] = env["TEMP"] = env["TMP"] = tmp_dir
 
     viramr_env = os.getenv("VIRAMR_ENV", "viramr")
-    abricate_env = os.getenv("ABRICATE_ENV", "abricate")
+    abricate_env = os.getenv("ABRICATE_ENV", "genepid")
 
     rows: List[Dict[str, str]] = []
 
@@ -237,15 +234,7 @@ def run_amr_for_sample(
         if not os.path.exists(out_tsv):
             # use conda env for amrfinder
             prefix = _env_prefix("amrfinder", viramr_env=viramr_env, abricate_env=abricate_env)
-            if prefix[0] == "bash":
-                cmd = prefix + [
-                    "-n", shlex.quote(fasta),
-                    "-O", shlex.quote(organism or "bacteria"),
-                    "--threads", str(threads),
-                    "--output", shlex.quote(out_tsv),
-                ]
-            else:
-                cmd = prefix + ["-n", fasta, "-O", (organism or "bacteria"), "--threads", str(threads), "--output", out_tsv]
+            cmd = prefix + ["-n", fasta, "-O", (organism or "bacteria"), "--threads", str(threads), "--output", out_tsv]
             _run(cmd, env=env, logger_fn=logger_fn)
         rows.extend(parse_amrfinder_tsv(out_tsv, sample=sample, min_id=min_id, min_cov=min_cov))
 
@@ -255,20 +244,13 @@ def run_amr_for_sample(
         os.makedirs(os.path.dirname(out_tsv), exist_ok=True)
         if not os.path.exists(out_tsv):
             prefix = _env_prefix("abricate", viramr_env=viramr_env, abricate_env=abricate_env)
-            if prefix[0] == "bash":
-                # need redirection inside bash -lc
-                cmd = prefix + ["--db", "resfinder", shlex.quote(fasta), ">", shlex.quote(out_tsv)]
-            else:
-                cmd = prefix + ["--db", "resfinder", fasta]
-            if prefix[0] == "bash":
-                _run(cmd, env=env, logger_fn=logger_fn)
-            else:
-                with open(out_tsv, "w") as fout:
-                    cp = subprocess.run(cmd, env=env, stdout=fout, stderr=subprocess.PIPE, text=True)
-                    if cp.returncode != 0:
-                        if logger_fn:
-                            logger_fn(cp.stderr, level="Warn")
-                        raise subprocess.CalledProcessError(cp.returncode, cmd, cp.stdout, cp.stderr)
+            cmd = prefix + ["--db", "resfinder", fasta]
+            with open(out_tsv, "w") as fout:
+                cp = subprocess.run(cmd, env=env, stdout=fout, stderr=subprocess.PIPE, text=True)
+                if cp.returncode != 0:
+                    if logger_fn:
+                        logger_fn(cp.stderr, level="Warn")
+                    raise subprocess.CalledProcessError(cp.returncode, cmd, cp.stdout, cp.stderr)
         rows.extend(parse_abricate_tsv(out_tsv, sample=sample, database="resfinder", min_id=min_id, min_cov=min_cov))
 
     # --- ABRicate: CARD ---
@@ -277,19 +259,13 @@ def run_amr_for_sample(
         os.makedirs(os.path.dirname(out_tsv), exist_ok=True)
         if not os.path.exists(out_tsv):
             prefix = _env_prefix("abricate", viramr_env=viramr_env, abricate_env=abricate_env)
-            if prefix[0] == "bash":
-                cmd = prefix + ["--db", "card", shlex.quote(fasta), ">", shlex.quote(out_tsv)]
-            else:
-                cmd = prefix + ["--db", "card", fasta]
-            if prefix[0] == "bash":
-                _run(cmd, env=env, logger_fn=logger_fn)
-            else:
-                with open(out_tsv, "w") as fout:
-                    cp = subprocess.run(cmd, env=env, stdout=fout, stderr=subprocess.PIPE, text=True)
-                    if cp.returncode != 0:
-                        if logger_fn:
-                            logger_fn(cp.stderr, level="Warn")
-                        raise subprocess.CalledProcessError(cp.returncode, cmd, cp.stdout, cp.stderr)
+            cmd = prefix + ["--db", "card", fasta]
+            with open(out_tsv, "w") as fout:
+                cp = subprocess.run(cmd, env=env, stdout=fout, stderr=subprocess.PIPE, text=True)
+                if cp.returncode != 0:
+                    if logger_fn:
+                        logger_fn(cp.stderr, level="Warn")
+                    raise subprocess.CalledProcessError(cp.returncode, cmd, cp.stdout, cp.stderr)
         rows.extend(parse_abricate_tsv(out_tsv, sample=sample, database="card", min_id=min_id, min_cov=min_cov))
 
     if logger_fn:

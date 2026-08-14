@@ -146,7 +146,7 @@ def run_kleborate(
     Returns (K_call, O_call, species_label). On failure -> ('Unknown','Unknown','Klebsiella').
     """
     outdir.mkdir(parents=True, exist_ok=True)
-    if not shutil.which("kleborate"):
+    if not env_name and not shutil.which("kleborate"):
         logger.warning("kleborate not found on PATH; falling back to Unknown.")
         return "Unknown", "Unknown", "Klebsiella"
 

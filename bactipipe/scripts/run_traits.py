@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, argparse, json, subprocess, shlex
+import os, sys, argparse, json, subprocess
 import multiprocessing as mp
 from datetime import datetime
 from pathlib import Path
@@ -35,9 +35,9 @@ class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
             return super()._get_help_string(action)
         return action.help
 
-def _conda_run(env_name: str, cmd: str) -> subprocess.CompletedProcess:
+def _conda_run(env_name: str, command: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(
-        ["bash", "-lc", f"conda run -n {shlex.quote(env_name)} {cmd}"],
+        ["conda", "run", "-n", env_name, *command],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
     )
 
@@ -46,7 +46,7 @@ def _list_amrfinder_organisms() -> list[str]:
     Return AMRFinderPlus organism tokens (+ 'Listeria'), parsed only from the
     'Available --organism options:' line, ignoring Software/Database/Running/timing lines.
     """
-    cp = _conda_run(VIRAMR_ENV, "amrfinder --list_organisms || true")
+    cp = _conda_run(VIRAMR_ENV, ["amrfinder", "--list_organisms"])
     raw = (cp.stdout or "") + "\n" + (cp.stderr or "")
 
     orgs: set[str] = set()
@@ -98,9 +98,9 @@ def _format_organism_list(orgs: list[str]) -> str:
         lines.append(f"{mark} {o}")
     return "\n".join(lines)
 
-def parse_args():
+def parse_args(argv=None):
     p = argparse.ArgumentParser(
-        prog="bactipipe traits-detect",
+        prog="bactipipe detect",
         description="Detect AMR determinants and virulence genes from assembled genomes.",
         formatter_class=CustomHelpFormatter,
         add_help=False
@@ -111,10 +111,10 @@ def parse_args():
     # Make these optional at parse-time; we'll validate unless --organism-list is used.
     req.add_argument("--analyst",
         help="Name/initials of the analyst (required).")
-    req.add_argument("--genomes_dir",
+    req.add_argument("--genomes_dir", "--genomes-dir", dest="genomes_dir",
         help="Directory of *.fasta assemblies (required).")
-    req.add_argument("--sample_sheet",
-        help="TSV (no header): isolate\\tsample\\tspecimen. Only first two columns used. "
+    req.add_argument("--sample_sheet", "--sample-sheet", dest="sample_sheet",
+        help="TSV (no header): sample_id\\tdisplay_name\\tspecimen. "
              "(required).")
     req.add_argument("--run-name",
         help="Run name identifier, e.g., 250101_10_SEQ10_XYZ (required).")
@@ -133,9 +133,10 @@ def parse_args():
                      help="Print organisms supported by AMRFinderPlus & VirulenceFinder and exit.")
 
     opt.add_argument("--threads", type=int, default=8, help="CPU threads")
+    opt.add_argument("--jobs", type=int, default=4, help="Maximum samples processed concurrently")
     # Escape % in help strings for argparse
-    opt.add_argument("--min_identity", type=float, default=90.0, help="Minimum %% identity")
-    opt.add_argument("--min_coverage", type=float, default=60.0, help="Minimum %% coverage")
+    opt.add_argument("--min_identity", "--min-identity", dest="min_identity", type=float, default=90.0, help="Minimum %% identity")
+    opt.add_argument("--min_coverage", "--min-coverage", dest="min_coverage", type=float, default=60.0, help="Minimum %% coverage")
 
     mode = opt.add_mutually_exclusive_group()
     mode.add_argument("--amr-only", action="store_true", help="Run AMR only")
@@ -162,16 +163,17 @@ def parse_args():
                      help="Do not generate PDF reports.")
 
     opt.add_argument("-h","--help", action="help", help="Show this help message and exit")
-    return p.parse_args()
+    return p.parse_args(argv)
 
-def _read_sample_sheet(sample_sheet: str, genomes_dir: str) -> list[tuple[str, str, str]]:
+def _read_sample_sheet(sample_sheet: str, genomes_dir: str) -> list[tuple[str, str, str, str]]:
     """
-    Returns a list of (isolate_id, sample_display, fasta_path).
-    - sample_sheet columns: isolate \t sample \t specimen  (no header)
+    Returns a list of (isolate_id, sample_display, specimen, fasta_path).
+    - sample_sheet columns: sample_id \t display_name \t specimen  (no header)
     - fasta_path = genomes_dir/{isolate}.fasta
-    Only rows where fasta exists are kept.
+    Only rows where FASTA exists are kept. The sample ID is the stable key used
+    for assembly and result filenames; the display name is presentation-only.
     """
-    rows: list[tuple[str, str, str]] = []
+    rows: list[tuple[str, str, str, str]] = []
     missing: list[str] = []
     with open(sample_sheet, "r", encoding="utf-8") as fh:
         for ln in fh:
@@ -183,9 +185,10 @@ def _read_sample_sheet(sample_sheet: str, genomes_dir: str) -> list[tuple[str, s
                 continue
             isolate = parts[0].strip()
             sample = parts[1].strip()
+            specimen = parts[2].strip() if len(parts) > 2 else ""
             fasta = os.path.join(genomes_dir, f"{isolate}.fasta")
             if os.path.isfile(fasta):
-                rows.append((isolate, sample, fasta))
+                rows.append((isolate, sample, specimen, fasta))
             else:
                 missing.append(isolate)
     if missing:
@@ -193,10 +196,16 @@ def _read_sample_sheet(sample_sheet: str, genomes_dir: str) -> list[tuple[str, s
     if not rows:
         sys.stderr.write("ERROR: No valid rows found in --sample_sheet (no matching FASTA files).\n")
         sys.exit(2)
+    isolate_ids = [row[0] for row in rows]
+    display_names = [row[1] for row in rows]
+    if len(isolate_ids) != len(set(isolate_ids)):
+        raise ValueError("Duplicate isolate IDs are not allowed in --sample-sheet.")
+    if len(display_names) != len(set(display_names)):
+        raise ValueError("Duplicate sample display names are not allowed in --sample-sheet.")
     return rows
 
 def _run_one(args_pack):
-    isolate_id, sample_display, fasta, cfg = args_pack
+    isolate_id, sample_display, specimen, fasta, cfg = args_pack
     out_root = cfg["outdir"]
     log = os.path.join(out_root, "logs", f"{isolate_id}.log")
     os.makedirs(os.path.dirname(log), exist_ok=True)
@@ -249,10 +258,10 @@ def _run_one(args_pack):
     traits_report.write_sample_tsvs(isolate_id, merged, out_root)
 
     # Return using the display name as the key for reporting
-    return sample_display, merged
+    return isolate_id, sample_display, specimen, merged
 
-def main():
-    args = parse_args()
+def main(argv=None):
+    args = parse_args(argv)
 
     # --- short-circuit: just list organisms and exit ---
     if args.organism_list:
@@ -279,7 +288,7 @@ def main():
 
     # --- discover samples from sample_sheet (maps isolate -> sample display) ---
     sample_rows = _read_sample_sheet(args.sample_sheet, args.genomes_dir)
-    # sample_rows: list of (isolate_id, sample_display, fasta_path)
+    # sample_rows: list of (isolate_id, sample_display, specimen, fasta_path)
 
     # --- decide default tool selection per your logic ---
     # AMR defaults: AMRFinderPlus ON (unless virulence-only); ABRicate toggles add-on if flagged
@@ -294,7 +303,7 @@ def main():
     vf_vfinder = bool(args.virulencefinder)
     vf_vfdb = bool(args.abricate_vfdb)
     if not vf_vfinder and not vf_vfdb:
-        if args.organism in SUPPORTED_VF_ORGS:
+        if args.organism.casefold() in {item.casefold() for item in SUPPORTED_VF_ORGS}:
             vf_vfinder = True
         else:
             vf_vfdb = True
@@ -305,7 +314,7 @@ def main():
 
     # Escherichia => run VirulenceFinder + VFDB + ecoli_vf
     use_ecoli_vf = False
-    if run_vf and args.organism == "Escherichia":
+    if run_vf and args.organism.casefold() == "escherichia":
         vf_vfinder = True
         vf_vfdb = True
         use_ecoli_vf = True
@@ -317,7 +326,7 @@ def main():
         use_ecoli_vf = False
 
     # AMR tool flags (unchanged semantics, but compute once)
-    use_amrfinder = bool(args.amrfinder) and run_amr
+    use_amrfinder = bool(amr_amrfinder) and run_amr
     use_resfinder = bool(args.abricate_resfinder) and run_amr
     use_card      = bool(args.abricate_card) and run_amr
 
@@ -378,22 +387,26 @@ def main():
         accession=args.accession,
     )
 
-    start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    time_print(f"traits-detect started at {start}", "Header")
+    started_at = datetime.now().astimezone()
+    time_print(f"traits-detect started at {started_at.strftime('%Y-%m-%d %H:%M:%S')}", "Header")
     os.makedirs(os.path.join(cfg["outdir"], "raw"), exist_ok=True)
     os.makedirs(os.path.join(cfg["outdir"], "reports"), exist_ok=True)
 
-    # Multiprocessing over *only* those isolates specified in the sample sheet
-    pool = mp.Pool(processes=min(len(sample_rows), cfg["threads"])) # type: ignore
+    # Treat --threads as the total CPU budget, not a per-sample allocation.
+    jobs = max(1, min(len(sample_rows), args.jobs, cfg["threads"]))
+    cfg["threads"] = max(1, cfg["threads"] // jobs)
+    pool = mp.Pool(processes=jobs)
     try:
-        results = pool.map(_run_one, [(iso, samp, fa, cfg) for (iso, samp, fa) in sample_rows])
+        results = pool.map(
+            _run_one,
+            [(iso, samp, specimen, fa, cfg) for (iso, samp, specimen, fa) in sample_rows],
+        )
     finally:
         pool.close(); pool.join()
 
     # --- unified run-level reporting ---
     # Key reports by the 'sample' (display name from column 2)
-    all_merged = {sample_display: merged for (sample_display, merged) in results}
-    print(f"all_merged: {all_merged}")
+    all_merged = {sample_display: merged for (_iso, sample_display, _specimen, merged) in results}
 
     # Unified TSV for convenience
     traits_report.write_run_summary(all_merged, cfg["outdir"])
@@ -415,6 +428,51 @@ def main():
     # Also emit a consolidated matrix TSV (no header)
     accession = cfg["accession"]
     traits_report.write_consolidated_tsv(all_merged, cfg["outdir"], f"{accession}_vir_amr_detect.tsv")
+
+    completed_at = datetime.now().astimezone()
+    result_payload = {
+        "schema_version": 1,
+        "command": "detect",
+        "status": "completed",
+        "run_name": cfg["run_name"],
+        "accession": cfg["accession"],
+        "organism": cfg["organism"],
+        "started_at": started_at.isoformat(),
+        "completed_at": completed_at.isoformat(),
+        "parameters": {
+            "min_identity": cfg["min_id"],
+            "min_coverage": cfg["min_cov"],
+            "jobs": jobs,
+            "threads_per_sample": cfg["threads"],
+            "amr": run_amr,
+            "virulence": run_vf,
+            "amrfinder": cfg["amrfinder"],
+            "abricate_resfinder": cfg["resfinder"],
+            "abricate_card": cfg["card"],
+            "virulencefinder": cfg["virulencefinder"],
+            "abricate_vfdb": cfg["vfdb"],
+            "extended_virulence": cfg["extended_vf"],
+        },
+        "samples": [
+            {
+                "sample_id": isolate_id,
+                "display_name": sample_display,
+                "specimen": specimen,
+                "amr_tsv": f"{isolate_id}.amr.tsv",
+                "virulence_tsv": f"{isolate_id}.vf.tsv",
+                "summary_tsv": f"{isolate_id}.summary.tsv",
+            }
+            for isolate_id, sample_display, specimen, _merged in results
+        ],
+        "outputs": {
+            "run_summary_tsv": "run.summary.tsv",
+            "consolidated_tsv": f"reports/{accession}_vir_amr_detect.tsv",
+            "consolidated_pdf": None if args.no_pdf else f"reports/{accession}_vir_amr_detect.pdf",
+            "versions": "versions.json",
+        },
+    }
+    with open(os.path.join(cfg["outdir"], "analysis_result.json"), "w", encoding="utf-8") as handle:
+        json.dump(result_payload, handle, indent=2)
 
 
     time_print("traits-detect completed.", "Header")

@@ -76,7 +76,7 @@ def run_vf_for_sample(
     """
 
     # --- Determine which sources to run (Escherichia rule)
-    if organism == "Escherichia":
+    if organism.casefold() == "escherichia":
         enable_vfinder = True
         enable_vfdb = True
         enable_ecoli_vf = True
@@ -148,7 +148,7 @@ def _select_vf_map_path(organism: str, extended_vf: bool) -> Path:
         from importlib_resources import files as resource_files  # type: ignore
 
     data_pkg = resource_files("bactipipe.data")
-    if organism == "Escherichia":
+    if organism.casefold() == "escherichia":
         fname = "all_vf_category_map.tsv" if extended_vf else "dx_vf_category_map.tsv"
     else:
         fname = "all_vf_category_map.tsv"

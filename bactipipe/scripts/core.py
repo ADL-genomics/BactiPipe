@@ -1,10 +1,12 @@
 import os
 import sys
 import time
+import json
 import shlex
 import shutil
 import tarfile
 import tempfile
+import urllib.parse
 import urllib.request
 from shutil import which
 import subprocess
@@ -126,7 +128,7 @@ DB_SPECS = {
     "mlst": {
         "label": "mlst_db",
         "path": lambda: os.path.join(DB_ROOT, "mlst_db"),
-        "type": "git-only",
+        "type": "BIGSdb REST",
     },
     "serotypefinder": {
         "label": "serotypefinder_db",
@@ -153,6 +155,27 @@ DB_SPECS = {
     },
 }
 
+# The original CGE ``mlst_db`` Bitbucket repository was removed in 2026.
+# These endpoints expose the same profile/allele data through BIGSdb's
+# documented REST API, allowing us to retain the existing CGE mlst.py
+# algorithm and its historical BactiPipe scheme names.
+MLST_SCHEMES = (
+    ("abaumannii", "Acinetobacter baumannii", "https://rest.pubmlst.org/db/pubmlst_abaumannii_seqdef/schemes/1"),
+    ("cperfringens", "Clostridium perfringens", "https://rest.pubmlst.org/db/pubmlst_cperfringens_seqdef/schemes/1"),
+    ("cfetus", "Campylobacter fetus", "https://rest.pubmlst.org/db/pubmlst_campylobacter_nonjejuni_seqdef/schemes/9"),
+    ("cjejuni", "Campylobacter jejuni/coli", "https://rest.pubmlst.org/db/pubmlst_campylobacter_seqdef/schemes/1"),
+    ("ecoli", "Escherichia coli", "https://rest.pubmlst.org/db/pubmlst_escherichia_seqdef/schemes/1"),
+    ("kpneumoniae", "Klebsiella pneumoniae species complex", "https://bigsdb.pasteur.fr/api/db/pubmlst_klebsiella_seqdef/schemes/1"),
+    ("lmonocytogenes", "Listeria monocytogenes", "https://bigsdb.pasteur.fr/api/db/pubmlst_listeria_seqdef/schemes/2"),
+    ("pmultocida", "Pasteurella multocida", "https://rest.pubmlst.org/db/pubmlst_pmultocida_seqdef/schemes/1"),
+    ("senterica", "Salmonella enterica", "https://rest.pubmlst.org/db/pubmlst_salmonella_seqdef/schemes/2"),
+    ("sepidermidis", "Staphylococcus epidermidis", "https://rest.pubmlst.org/db/pubmlst_sepidermidis_seqdef/schemes/1"),
+    ("saureus", "Staphylococcus aureus", "https://rest.pubmlst.org/db/pubmlst_saureus_seqdef/schemes/1"),
+    ("spseudintermedius", "Staphylococcus pseudintermedius", "https://rest.pubmlst.org/db/pubmlst_spseudintermedius_seqdef/schemes/1"),
+    ("szooepidemicus", "Streptococcus equi subsp. zooepidemicus", "https://rest.pubmlst.org/db/pubmlst_szooepidemicus_seqdef/schemes/1"),
+    ("orhinotracheale", "Ornithobacterium rhinotracheale", "https://rest.pubmlst.org/db/pubmlst_orhinotracheale_seqdef/schemes/1"),
+)
+
 def _run(cmd, cwd=None):
     """Run a shell command with printing and error propagation."""
     if isinstance(cmd, str):
@@ -177,7 +200,7 @@ def list_databases():
         location = ""
 
         # --- CGE git-based DBs ---
-        if db_type.startswith("git"):
+        if db_type.startswith("git") or db_type == "BIGSdb REST":
             if path and os.path.isdir(path) and os.listdir(path):
                 status = "installed"
             else:
@@ -394,6 +417,168 @@ def _update_kmerfinder():
     url = "https://cge.food.dtu.dk/services/KmerFinder/etc/kmerfinder_db.tar.gz"
     _download_and_extract_tar_gz(url=url, dest_dir=db_dir, label="kmerfinder_db")
 
+
+def _download_url(url: str, *, attempts: int = 3) -> bytes:
+    """Download a BIGSdb resource with bounded retries and a useful agent."""
+    headers = {"User-Agent": "BactiPipe database updater"}
+    hostname = urllib.parse.urlparse(url).hostname
+    authorization_variable = {
+        "rest.pubmlst.org": "BACTIPIPE_PUBMLST_AUTHORIZATION",
+        "bigsdb.pasteur.fr": "BACTIPIPE_PASTEUR_AUTHORIZATION",
+    }.get(hostname)
+    authorization = (
+        os.environ.get(authorization_variable, "").strip()
+        if authorization_variable
+        else ""
+    )
+    if authorization:
+        headers["Authorization"] = authorization
+    request = urllib.request.Request(
+        url,
+        headers=headers,
+    )
+    last_error = None
+    for attempt in range(1, attempts + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=120) as response:
+                return response.read()
+        except Exception as exc:
+            last_error = exc
+            if attempt < attempts:
+                print(
+                    f"[bactipipe] Download attempt {attempt} failed for {url}; retrying…",
+                    flush=True,
+                )
+                time.sleep(attempt)
+    raise RuntimeError(f"Unable to download {url}: {last_error}") from last_error
+
+
+def _download_legacy_mlst_scheme(
+    destination: str,
+    scheme_name: str,
+    organism_name: str,
+    scheme_url: str,
+) -> dict:
+    """Create one CGE mlst.py-compatible scheme from a BIGSdb scheme."""
+    try:
+        scheme_info = json.loads(_download_url(scheme_url).decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"Invalid BIGSdb scheme response for {scheme_name}") from exc
+
+    loci_urls = scheme_info.get("loci") or []
+    profiles_url = scheme_info.get("profiles_csv")
+    if not loci_urls or not profiles_url:
+        raise RuntimeError(
+            f"BIGSdb scheme {scheme_name} has no loci or profile download URL"
+        )
+
+    loci = [
+        urllib.parse.unquote(url.rstrip("/").rsplit("/", 1)[-1])
+        for url in loci_urls
+    ]
+    profiles = _download_url(profiles_url).decode("utf-8-sig")
+    profile_lines = profiles.splitlines()
+    if not profile_lines:
+        raise RuntimeError(f"BIGSdb scheme {scheme_name} returned no profiles")
+    header = profile_lines[0].split("\t")
+    if not header or header[0].strip().lower() not in {"st", "sequence_type"}:
+        raise RuntimeError(f"BIGSdb scheme {scheme_name} has no ST profile column")
+    if header[1 : len(loci) + 1] != loci:
+        raise RuntimeError(
+            f"BIGSdb scheme {scheme_name} profile loci do not match its scheme loci"
+        )
+
+    scheme_dir = os.path.join(destination, scheme_name)
+    os.makedirs(scheme_dir)
+    profile_path = os.path.join(scheme_dir, f"{scheme_name}.tsv")
+    with open(profile_path, "w", encoding="utf-8", newline="") as handle:
+        handle.write("\n".join(profile_lines) + "\n")
+
+    fasta_path = os.path.join(scheme_dir, f"{scheme_name}.fsa")
+    with open(fasta_path, "wb") as handle:
+        for locus, locus_url in zip(loci, loci_urls):
+            allele_data = _download_url(f"{locus_url}/alleles_fasta")
+            if not allele_data.lstrip().startswith(b">"):
+                raise RuntimeError(
+                    f"BIGSdb locus {locus} returned no FASTA sequences"
+                )
+            handle.write(allele_data.rstrip() + b"\n")
+
+    return {
+        "scheme": scheme_name,
+        "organism": organism_name,
+        "source": scheme_url,
+        "description": scheme_info.get("description"),
+        "last_updated": scheme_info.get("last_updated"),
+        "records": scheme_info.get("records") or scheme_info.get("profile_count"),
+        "loci": loci,
+        "access_note": scheme_info.get("message"),
+    }
+
+
+def _update_mlst():
+    """Rebuild the legacy CGE MLST layout from authoritative BIGSdb APIs."""
+    db_dir = DB_SPECS["mlst"]["path"]()
+    os.makedirs(DB_ROOT, exist_ok=True)
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    backup_dir = f"{db_dir}.bak-{timestamp}"
+
+    with tempfile.TemporaryDirectory(prefix="bactipipe_mlst_", dir=DB_ROOT) as tmpd:
+        payload = os.path.join(tmpd, "mlst_db")
+        os.makedirs(payload)
+        config_rows = [
+            "# Database configuration file generated from BIGSdb REST APIs",
+            "# species_db\tspecies_name\tfolder_content(locilist,profilefile)",
+        ]
+        source_rows = []
+
+        for scheme_name, organism_name, scheme_url in MLST_SCHEMES:
+            print(
+                f"[bactipipe] Downloading MLST scheme: {scheme_name}",
+                flush=True,
+            )
+            source = _download_legacy_mlst_scheme(
+                payload, scheme_name, organism_name, scheme_url
+            )
+            config_rows.append(
+                f"{scheme_name}\t{organism_name}\t{','.join(source['loci'])}"
+            )
+            source_rows.append(source)
+
+        with open(os.path.join(payload, "config"), "w", encoding="utf-8") as handle:
+            handle.write("\n".join(config_rows) + "\n")
+        with open(
+            os.path.join(payload, "bactipipe_mlst_sources.json"),
+            "w",
+            encoding="utf-8",
+        ) as handle:
+            json.dump(
+                {
+                    "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+                    "format": "CGE mlst.py legacy database",
+                    "schemes": source_rows,
+                },
+                handle,
+                indent=2,
+                sort_keys=True,
+            )
+            handle.write("\n")
+
+        if os.path.isdir(db_dir) and os.listdir(db_dir):
+            print(f"[bactipipe] Backing up existing mlst_db to: {backup_dir}")
+            shutil.move(db_dir, backup_dir)
+        elif os.path.exists(db_dir):
+            shutil.rmtree(db_dir)
+
+        try:
+            shutil.move(payload, db_dir)
+        except Exception:
+            if os.path.isdir(backup_dir) and not os.path.exists(db_dir):
+                shutil.move(backup_dir, db_dir)
+            raise
+
+    print(f"[bactipipe] MLST database install complete: {db_dir}")
+
 def _update_simple_git_db(key, url):
     _ensure_git()
     db_dir = DB_SPECS[key]["path"]()
@@ -417,7 +602,7 @@ def update_databases(args):
         elif db == "kmerfinder":
             _update_kmerfinder()
         elif db == "mlst":
-            _update_simple_git_db("mlst", "https://bitbucket.org/genomicepidemiology/mlst_db.git")
+            _update_mlst()
         elif db == "serotypefinder":
             _update_simple_git_db("serotypefinder", "https://bitbucket.org/genomicepidemiology/serotypefinder_db.git")
         elif db == "virulencefinder":
@@ -613,10 +798,6 @@ def check_updates():
             print(f"{label:18} check not implemented")
 
     print("\nDone.\n")
-
-
-
-
 
 
 

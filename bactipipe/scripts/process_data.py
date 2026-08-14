@@ -3,6 +3,7 @@ from Bio import SeqIO
 import subprocess
 import os
 import csv
+import shlex
 
 from bactipipe.scripts.pdf_renderer import render_pdf_from_tsv, LayoutConfig
 from reportlab.lib.units import inch
@@ -21,9 +22,10 @@ def trimmer(sample, raw_reads, newReadsFolder, cpus=24, logfile=None):
         fastq2 = raw_reads[1]
         newRead1 = os.path.join(newReadsFolder, sample, f'{sample}_R1.fastq.gz')
         newRead2 = os.path.join(newReadsFolder, sample, f'{sample}_R2.fastq.gz')
-        cmd = f'fastp -i {fastq1} -I {fastq2} -o {newRead1} -O {newRead2} -w {cpus} -j /dev/null -h /dev/null -q 30 -u 10 -l 100 -z 4' 
+        cmd = ["fastp", "-i", fastq1, "-I", fastq2, "-o", newRead1, "-O", newRead2, "-w", str(cpus), "-j", "/dev/null", "-h", "/dev/null", "-q", "30", "-u", "10", "-l", "100", "-z", "4"]
+        execute = None
         if not os.path.exists(newRead1) and not os.path.exists(newRead2):
-            execute = subprocess.run(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            execute = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         outmessage = [
         '\n\tDone Trimming:\n',
         f'\t---> Trimmed read1: {newRead1}',
@@ -33,15 +35,16 @@ def trimmer(sample, raw_reads, newReadsFolder, cpus=24, logfile=None):
     elif len(raw_reads) == 1:
         single_reads = raw_reads[0]
         newRead = os.path.join(newReadsFolder, sample, f'{sample}.fastq.gz')
-        cmd = f'fastp -i {single_reads}  -o {newRead} -w {cpus} -j /dev/null -h /dev/null -q 30 -u 10 -l 100 -z 4'
+        cmd = ["fastp", "-i", single_reads, "-o", newRead, "-w", str(cpus), "-j", "/dev/null", "-h", "/dev/null", "-q", "30", "-u", "10", "-l", "100", "-z", "4"]
+        execute = None
         if not os.path.exists(newRead):
-            execute = subprocess.run(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            execute = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         outmessage = [
         '\n\tDone Trimming:\n',
         f'\t---> Trimmed reads: {newRead}',
         ]
 
-    if execute.returncode != 0:
+    if execute is not None and execute.returncode != 0:
         time_print("Failed to trimming reads for quality.", "Fail") # Check the log file for more details.")
         return
     else:
@@ -78,12 +81,18 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
             tool = "flye"
         elif assembler == "skesa":
             tool = "skesa"
+        else:
+            return_info = f"Assembler {assembler} is not supported."
+            if single:
+                time_print(return_info, "Fail")
+            logger(log, return_info)
+            return
 
         # Get tool version
-        vercmd = f'{tool} --version'
-        stdout = subprocess.run(vercmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out = stdout.stdout.decode('utf-8')
-        version = out.split()[-1]
+        vercmd = [tool, "--version"]
+        stdout = subprocess.run(vercmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out = (stdout.stdout or stdout.stderr).decode('utf-8', errors='replace')
+        version = out.split()[-1] if out.split() else "Unknown"
 
         if single:
             simple_print(f'\t---> Assembler: {assembler} (version: {version})')
@@ -111,21 +120,21 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
         if sequencer.lower() == "illumina":
             if assembler == "unicycler":
                 if len(reads) == 2:
-                    cmd1 = f'unicycler -1 {read1} -2 {read2} -o {tempDir} --threads {cpus}'
+                    cmd1 = ["unicycler", "-1", read1, "-2", read2, "-o", tempDir, "--threads", str(cpus)]
                 elif len(reads) == 1:
-                    cmd1 = f'unicycler -s {single_reads} -o {tempDir} --threads {cpus}'
+                    cmd1 = ["unicycler", "-s", single_reads, "-o", tempDir, "--threads", str(cpus)]
                 draft_assembly = f'{tempDir}/assembly.fasta'
             elif assembler == "spades":
                 if len(reads) == 2:
-                    cmd1 = f'spades.py --isolate -1 {read1} -2 {read2} -o {tempDir} --threads {cpus}'
+                    cmd1 = ["spades.py", "--isolate", "-1", read1, "-2", read2, "-o", tempDir, "--threads", str(cpus)]
                 elif len(reads) == 1:
-                    cmd1 = f'spades.py --isolate -s {single_reads} -o {tempDir} --threads {cpus}'
+                    cmd1 = ["spades.py", "--isolate", "-s", single_reads, "-o", tempDir, "--threads", str(cpus)]
                 draft_assembly = f'{tempDir}/scaffolds.fasta'
             elif assembler == "skesa":
                 if len(reads) == 2:
-                    cmd1 = f'skesa --reads {read1},{read2} --contigs_out {tempDir}/assembly.fasta --cores {cpus}'
+                    cmd1 = ["skesa", "--reads", f"{read1},{read2}", "--contigs_out", f"{tempDir}/assembly.fasta", "--cores", str(cpus)]
                 elif len(reads) == 1:
-                    cmd1 = f'skesa --reads {single_reads} --contigs_out {tempDir}/assembly.fasta --cores {cpus}'
+                    cmd1 = ["skesa", "--reads", single_reads, "--contigs_out", f"{tempDir}/assembly.fasta", "--cores", str(cpus)]
                 draft_assembly = f'{tempDir}/assembly.fasta'
             else:
                 return_info = f"Assembler {assembler} is not supported for Illumina reads. Please use Skesa, Spades or Unicycler."
@@ -136,10 +145,10 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
         
         elif sequencer.lower() == "nanopore":
             if assembler == "unicycler":
-                cmd1 = f'unicycler -l {single_reads} -o {tempDir} --threads {cpus}'
+                cmd1 = ["unicycler", "-l", single_reads, "-o", tempDir, "--threads", str(cpus)]
                 draft_assembly = f'{tempDir}/assembly.fasta'
             elif assembler == "flye":
-                cmd1 = f'flye --nano-raw {single_reads} --out-dir {tempDir} --threads {cpus} --asm-coverage 50 --g {gsize} --iterations 2'
+                cmd1 = ["flye", "--nano-hq", single_reads, "--out-dir", tempDir, "--threads", str(cpus), "--asm-coverage", "50", "--g", str(gsize), "--iterations", "2"]
                 draft_assembly = f'{tempDir}/assembly.fasta'
             else:
                 return_info = f"Assembler {assembler} is not supported for Nanopore reads. Please use Unicycler or Flye."
@@ -151,11 +160,11 @@ def assemble(sample, reads, assembly_dir, assembler, sequencer, cpus=24, logfile
         if not os.path.exists(finalAssembly):
             # message1 = f'\t---> Assembling the reads for sample {sample}'
             # print(message1)
-            info2 = f"Running: {cmd1}"
+            info2 = f"Running: {shlex.join(cmd1)}"
             if single:
                 time_print(info2, s_type="command")
             logger(log, info2, s_type="command")
-            execute = subprocess.run(cmd1, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            execute = subprocess.run(cmd1, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
             if execute.returncode != 0:
                 return_info = f"Assembly failed for {sample}: exit {execute.returncode}"
@@ -192,14 +201,15 @@ def checkM_stats(genomes_dir, outdir, cpus=24, logfile=None):
         os.makedirs(outdir)
     
     # Get checkM version
-    vercmd = 'checkm -h'
-    stdout = subprocess.run(vercmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    vercmd = ["checkm", "-h"]
+    stdout = subprocess.run(vercmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if stdout.returncode != 0:
         message = f"CheckM is not installed. Please install CheckM to proceed"
         logger(log, message)
-        return
+        return {}, "Unknown"
     else:
         out = stdout.stdout.decode('utf-8')
+        version = "Unknown"
         for line in out.split('\n'):
             if ":::" in line:
                 version = line.split(":::")[1].strip().split()[-1]
@@ -210,26 +220,28 @@ def checkM_stats(genomes_dir, outdir, cpus=24, logfile=None):
     logger(log, checkm_intro, "Header")
     
     checkM_out = os.path.join(outdir, 'checkM_stats.txt')
-    cmd = f'checkm lineage_wf -t {cpus} --pplacer_threads {int(int(cpus) / 4)} -q --tab_table -x fasta {genomes_dir} {outdir} > {checkM_out}'
+    pplacer_threads = max(1, int(int(cpus) / 4))
+    cmd = ["checkm", "lineage_wf", "-t", str(cpus), "--pplacer_threads", str(pplacer_threads), "-q", "--tab_table", "-x", "fasta", genomes_dir, outdir]
     
     checkM_done = False
     if os.path.exists(checkM_out):
         with open(checkM_out, 'r') as file:
-            line = file.readline()
-            if line.startswith("Bin Id"):
+            if any(line.startswith("Bin Id\t") for line in file):
                 message = f'The CheckM output file exists already. Skipping CheckM!!!\n'
                 logger(log, message)
                 time_print(message)
                 checkM_done = True
     if not checkM_done:
-        info3 = f"Running: {cmd}"
+        info3 = f"Running: {shlex.join(cmd)} > {checkM_out}"
         time_print(info3, s_type='command')
         logger(log, info3, s_type='command')
-        execute = subprocess.run(cmd, shell=True)
+        with open(checkM_out, "w") as out_fh:
+            execute = subprocess.run(cmd, stdout=out_fh, stderr=subprocess.STDOUT)
         if execute.returncode != 0:
             return_info = f"CheckM failed. For more detaisls, check the CheckM log file in the directory '{checkM_out}"
             time_print(return_info, "Fail")
             logger(log, return_info) #" Check the log file for more details.")
+            return {}, version
         else:
             return_info = f"Command exit status: Success!"
             time_print(return_info, "Pass")
@@ -238,13 +250,27 @@ def checkM_stats(genomes_dir, outdir, cpus=24, logfile=None):
     checkM_output = {}
     with open(checkM_out, 'r') as file:
         for line in file:
-            if not line.startswith("Bin Id"):
-                line = line.strip().split('\t')
-                checkM_output[line[0]] = [line[-3], line[-2]] # Completeness and contamination
+            fields = line.rstrip("\n").split('\t')
+            if len(fields) < 3 or fields[0] == "Bin Id":
+                continue
+            try:
+                float(fields[-3])
+                float(fields[-2])
+            except (TypeError, ValueError):
+                continue
+            checkM_output[fields[0]] = [fields[-3], fields[-2]] # Completeness and contamination
 
     return checkM_output, version
 
-def make_summary(qc_summary, temp_qc_summary, header, checkm_out, logfile=None):
+def make_summary(
+    qc_summary,
+    temp_qc_summary,
+    header,
+    checkm_out,
+    logfile=None,
+    min_completeness=90,
+    max_contamination=10,
+):
     log = logfile
     with(open(qc_summary , 'w')) as qc_sum, open(temp_qc_summary, 'r') as temp_sum:
         writer = csv.writer(qc_sum, dialect='excel-tab')
@@ -259,8 +285,8 @@ def make_summary(qc_summary, temp_qc_summary, header, checkm_out, logfile=None):
                 continue
             if sample in checkm_out:
                 completeness, contamination = checkm_out[sample]
-                completeness_verdict = "Pass" if float(completeness) >= 90 else "Fail"
-                contamination_verdict = "Pass" if float(contamination) <= 10 else "Fail"
+                completeness_verdict = "Pass" if float(completeness) >= min_completeness else "Fail"
+                contamination_verdict = "Pass" if float(contamination) <= max_contamination else "Fail"
             else:
                 completeness, contamination = "N/A", "N/A"
                 completeness_verdict = "Fail"

@@ -1,0 +1,8 @@
+name: kleborate
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.11
+  - kleborate=3.2.4

@@ -15,6 +15,7 @@ from importlib.resources import files as resource_files
 from bactipipe.scripts.utils import compress_qc_fastqs, logger, pipeheader, excel_reader, time_print, simple_print
 from tqdm.contrib.concurrent import process_map
 from collections import OrderedDict
+from bactipipe.__version__ import __version__
 
 
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -58,6 +59,8 @@ optional_args.add_argument("--cpus_per_sample", help="Number of CPUs per sample.
 
 optional_args.add_argument("-m", "--mincov", help="Minimum genome coverage depth.", default=50, type=int)
 optional_args.add_argument("-q", "--minqual", help="Average read quality threshold.", default=15, type=int)
+optional_args.add_argument("--min_completeness", help="Minimum CheckM completeness percentage.", default=90, type=float)
+optional_args.add_argument("--max_contamination", help="Maximum CheckM contamination percentage.", default=10, type=float)
 optional_args.add_argument ("-a", "--assembler", help="Genome assembler to use.",  choices=["Flye", "Unicycler"], default="Flye")
 
 optional_args.add_argument("--use-s3", help="Use S3 for input. Default: False", action="store_true")
@@ -75,21 +78,14 @@ optional_args.add_argument("-h", "--help",
 args = parser.parse_args()
 
 # Version of BactiPipe
-bactipipe_version = "v0.1.1" # To be updated manually
+bactipipe_version = f"v{__version__}"
 
     # Function to run quality control for a single sample
 def process_sample(line):
 
     sample, organism, barcode = line.strip().split('\t')
     barcode = barcode.replace("NB", "barcode")
-    # Determine genome size as a float, raising an error if unknown
-    if organism == "Lambda":
-        genome_size = 48502
-    else:
-        size = bacteria.get(organism, 5e6) # Placeholder for unknown organisms/ Recalculate after assembly
-        if size is None:
-            raise ValueError(f"Unknown organism: {organism}")
-        genome_size = int(size)
+    genome_size = _genome_size_for(organism)
     raw_folder = os.path.join(source, barcode)
     output_fastq = f"{sample}.fastq"
     output_dir = os.path.join(qc_out, sample)
@@ -118,7 +114,7 @@ else:
 def assemble_sample(assembly_input):
     sample = assembly_input[0]
     fastq = assembly_input[1]
-    genome_size = 48502 if organism == "Lambda" else bacteria.get(organism, 5e6)
+    genome_size = assembly_input[2]
     # Assemble the genomes of the samples that passed the quality control
     assembly_dir = os.path.join(outDir, "assemblies")
     genome = os.path.join(assembly_dir, "genomes", f"{sample}.fasta")
@@ -168,9 +164,9 @@ except Exception as e:
 
 # Manage computational resources
 if args.threads:
-    cpus = args.threads
+    cpus = int(args.threads)
 else:
-    cpus = os.cpu_count()
+    cpus = int(os.cpu_count() or 1)
 
 
 opt_cpus = max(1, cpus // 8)  # type: ignore # Optimal number of CPUs per sample
@@ -184,7 +180,7 @@ mem = psutil.virtual_memory()
 a_mem = mem.available / 1024**3  # available memory in GB
 t_mem = mem.total / 1024**3  # total memory in GB
  
-allowed_samps = a_mem // 8  # 8 GB per sample
+allowed_samps = max(1, int(a_mem // 8))  # 8 GB per sample
 
 if allowed_samps < 1:
     logger(log, "Insufficient memory available to run the pipeline.")
@@ -192,12 +188,12 @@ if allowed_samps < 1:
     sys.exit(1)
 
 if allowed_samps < defaut_max_samps:
-    pool_size = allowed_samps
+    pool_size = int(allowed_samps)
 else:
-    pool_size = defaut_max_samps
+    pool_size = int(defaut_max_samps)
 
 if args.cpus_per_sample:
-    cpus_per_sample = args.cpus_per_sample
+    cpus_per_sample = int(args.cpus_per_sample)
 else:
     cpus_per_sample = max(1, cpus // pool_size) # type: ignore
 
@@ -276,17 +272,24 @@ with open(org_list, 'r') as orgL:
             name, size = parts[-1], parts[1]
             bacteria[name] = int(size)
 
+def _genome_size_for(organism):
+    if organism == "Lambda":
+        return 48502
+    return int(bacteria.get(organism, 5e6))
+
 # Validate the sample sheet
 bad_organisms = []
 bad_samples = []
 bad_barcodes = []
+sample_genome_sizes = {}
 
 
 # with open(sample_list, 'r') as sampL:
 for line in sample_info:
-    if line.startswith("#"):
+    if not line.strip() or line.startswith("#"):
         continue
     sample, organism, barcode = line.strip().split('\t')
+    sample_genome_sizes[sample] = _genome_size_for(organism)
     if organism.strip() not in bacteria and organism.lower() not in [ "lambda", "organism", "unknown"]:
         logger(log, f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
         time_print(f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
@@ -325,8 +328,20 @@ if bad_samples:
     time_print(f"WARNING: These samples don't have corresponding fastq data. They will be skipped: {b_s}.", "Fail")
     logger(log, f"WARNING: These samples don't have corresponding fastq data. They will be skipped: {b_s}.")
 
-sample_number = sum(1 for line in sample_info if not line.startswith("#")) - len(bad_samples)
+sample_lines = []
+for line in sample_info:
+    if not line.strip() or line.startswith("#"):
+        continue
+    sample = line.strip().split('\t')[0]
+    if sample not in bad_samples:
+        sample_lines.append(line.strip())
 
+sample_number = len(sample_lines)
+
+if sample_number == 0:
+    time_print("No valid samples to process. Exiting pipeline.", "Fail")
+    logger(log, "No valid samples to process. Exiting pipeline.")
+    sys.exit(1)
 
 if pool_size > sample_number:
     pool_size = sample_number
@@ -357,14 +372,6 @@ time_print(f"\nTotal number of samples to be processed: {sample_number}\n")
 print()
 logger(log, f"Total number of samples to be processed: {sample_number}\n")
 
-
-# Read sample list and process in parallel
-# with open(sample_list, 'r') as sampL:
-# lines = 
-if sample_info[0].startswith('#'):
-    sample_lines = [line.strip() for line in sample_info[1:]]
-else:
-    sample_lines = sample_info
 
 # QC stage (multiprocessing) ----
 q_bar_fmt = '{l_bar} {bar:40} {n_fmt}/{total_fmt} [{elapsed}{postfix}]'
@@ -406,13 +413,16 @@ time_print(assembly_start_msg, "Header")
 logger(log, assembly_start_msg, "Header")
 
 fastq_files = []
-for sample in os.listdir(qc_out):
+for sample in sorted(os.listdir(qc_out)):
+    sample_dir = os.path.join(qc_out, sample)
+    if not os.path.isdir(sample_dir):
+        continue
     p_fastq = os.path.join(qc_out, sample, f"{sample}.fastq")
     p_gz = os.path.join(qc_out, sample, f"{sample}.fastq.gz")
     if os.path.exists(p_fastq):
-        fastq_files.append(p_fastq)
+        fastq_files.append([sample, p_fastq, sample_genome_sizes.get(sample, 5e6)])
     elif os.path.exists(p_gz):
-        fastq_files.append(p_gz)
+        fastq_files.append([sample, p_gz, sample_genome_sizes.get(sample, 5e6)])
 
 pass_msg = f"Available for assembly: {len(fastq_files)} of {sample_number} samples."
 time_print(pass_msg, "Pass")
@@ -423,21 +433,19 @@ if not os.path.exists(genomes_dir):
     os.makedirs(genomes_dir)
 
 existing_genomes = [f.split(".")[0] for f in os.listdir(genomes_dir) if f.endswith(".fasta") and os.path.getsize(os.path.join(genomes_dir, f)) > 0]
+assembly_input = []
+num_to_assemble = 0
 
 if len(existing_genomes) == 0:
     num_to_assemble = len(fastq_files)
-    assembly_input = [[sample, fastq] for sample in os.listdir(qc_out) 
-                      for fastq in fastq_files 
-                      if os.path.basename(fastq).startswith(sample)]
+    assembly_input = fastq_files
 
     print(f"  ---> Genomes for {len(fastq_files)} samples will be assembled.")
     logger(log, f"  ---> Genomes for {len(fastq_files)} samples will be assembled.")
 
 elif len(existing_genomes) > 0 and len(existing_genomes) < len(fastq_files):
     num_to_assemble = len(fastq_files) - len(existing_genomes)
-    assembly_input = [[sample, fastq] for sample in os.listdir(qc_out) 
-                      for fastq in fastq_files 
-                      if os.path.basename(fastq).startswith(sample)]
+    assembly_input = [item for item in fastq_files if item[0] not in existing_genomes]
     time_print(f"Genomes for {len(existing_genomes)} samples have been assembled already.")
     logger(log, f"Genomes for {len(existing_genomes)} samples have been assembled already.")
 
@@ -451,9 +459,13 @@ elif len(existing_genomes) == passed_number:
     logger(log, "Genomes for all samples have been assembled already. Skiping assembly!")
 
 if not assembly_input:
-    time_print("No samples to assemble. Exiting pipeline.", "Fail")
-    logger(log, "No samples to assemble. Exiting pipeline.")
-    sys.exit(1)
+    if existing_genomes:
+        time_print("Genomes for all available samples have been assembled already. Skipping assembly.")
+        logger(log, "Genomes for all available samples have been assembled already. Skipping assembly.")
+    else:
+        time_print("No samples to assemble. Exiting pipeline.", "Fail")
+        logger(log, "No samples to assemble. Exiting pipeline.")
+        sys.exit(1)
 
 if assembly_input:
     if num_to_assemble < pool_size:
@@ -461,12 +473,11 @@ if assembly_input:
     
     if assembler == "unicycler":
         cpus_per_sample = max(cpus_per_sample, 10)
-        pool_size = cpus // cpus_per_sample
+        pool_size = max(1, cpus // cpus_per_sample)
 
-    vercmd = f'{assembler} --version'
-    stdout = subprocess.run(vercmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out = stdout.stdout.decode('utf-8')
-    assembly_version = out.split()[-1]
+    stdout = subprocess.run([assembler, "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out = (stdout.stdout or stdout.stderr).decode('utf-8', errors='replace')
+    assembly_version = out.split()[-1] if out.split() else "Unknown"
     if not assembly_version.lower().startswith("v"):
         assembly_version = "v" + assembly_version
 
@@ -582,12 +593,21 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             cov_verdict = "N/A"
             cov_display = "N/A"
 
-        # Find organism 
-        hit, tax_confirm, possibilities = find_organism.find_species_with_kmrf(s_name=sample, lab_species=sys_organism, genome=genome, dataOut=outDir, org_type="bacteria", logfile=log)
+        # Find organism
+        try:
+            kmer_result = find_organism.find_species_with_kmrf(s_name=sample, lab_species=sys_organism, genome=genome, dataOut=outDir, org_type="bacteria", logfile=log)
+            if not kmer_result:
+                continue
+            hit, tax_confirm, possibilities = kmer_result
+        except Exception as e:
+            time_print(f"Error at find organism step: {e}", "Fail")
+            logger(log, f"Error at find organism step: {e}")
+            continue
 
         best_org = None
         best_percent = None
         best_other_org = None
+        identified_org = None
         if tax_confirm == "Pass" or tax_confirm == "N/A":
             best_org = hit.split(" (")[0]
             best_percent = hit.split(" (")[1].strip(")")
@@ -634,9 +654,9 @@ tool_lines = ["\n"] # Blank line before tools section
 for tool, version in tools.items():
     tool_lines.append(f"{tool}>>{version}")
 tool_lines.extend([
-    "Required Mean quality>>15",
-    "Completeness cutoff>>90%",
-    "Contamination cutoff>>10%"
+    f"Required Mean quality>>{args.minqual}",
+    f"Completeness cutoff>>{args.min_completeness:g}%",
+    f"Contamination cutoff>>{args.max_contamination:g}%"
 ])
 
 sep_len = max(len(line) for line in tool_lines)
@@ -645,7 +665,15 @@ tools_block = [sep] + tool_lines + [sep]
 
 header += tools_block
 
-process_data.make_summary(qc_summary=qc_summary, temp_qc_summary=temp_qc_summary, header=header, checkm_out=checkm_out, logfile=log)
+process_data.make_summary(
+    qc_summary=qc_summary,
+    temp_qc_summary=temp_qc_summary,
+    header=header,
+    checkm_out=checkm_out,
+    logfile=log,
+    min_completeness=args.min_completeness,
+    max_contamination=args.max_contamination,
+)
 
 # Delete fastq samples from the QC step
 if args.clean:
@@ -688,9 +716,3 @@ end_message = f"PIPELINE COMPLETED: Processed {sample_number} samples in {int(ho
 time_print(end_message, "Header")
 logger(log, end_message, "Header")
 print("\n")
-
-# Cleanly stop the logging listener
-try:
-    log_listener.stop()
-except Exception:
-    pass

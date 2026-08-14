@@ -11,10 +11,18 @@ setup(
     author="Maurice Byukusenge",
     author_email="bmaurice@psu.edu",
     install_requires=[
+        "Pillow>=10.0",
         "boto3>=1.40.6",
-        "tqdm>=4.67",
         "biopython>=1.85",
+        "colorama",
+        "openpyxl>=3.1",
+        "pandas>=2.0",
+        "psutil>=7.0",
+        "pyfastx",
+        "reportlab>=4.4",
         "tabulate>=0.9",
+        "textwrap3>=0.9",
+        "tqdm>=4.67",
     ],
     entry_points={
         "console_scripts": [
@@ -23,9 +31,9 @@ setup(
     },
     include_package_data=True,
     package_data={
-        "bactipipe": ["data/lambda.fasta", "data/pathogenic_bacteria.txt", "data/all_vf_category_map.tsv", "data/dx_vf_category_map.tsv", "data/amr_mutation_map.tsv","data/amr_acquired_map.tsv"],
+        "bactipipe": ["data/lambda.fasta", "data/pathogenic_bacteria.txt", "data/*.tsv"],
     },
-    python_requires=">=3.7",
+    python_requires=">=3.10",
     url="https://github.com/mauricebyuka/bactiPipe",  # optional
     classifiers=[
         "Programming Language :: Python :: 3",

@@ -13,6 +13,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Layout configuration
 # ──────────────────────────────────────────────────────────────────────────────
@@ -83,6 +84,7 @@ def render_pdf_from_rows(
         layout=layout,
         run_name=run_name,
     )
+
 
 def render_pdf_from_tsv(
     tsv_path: str,

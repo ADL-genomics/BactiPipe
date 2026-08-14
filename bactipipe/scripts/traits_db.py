@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import os
 import re
+import json
 import subprocess
 from typing import Dict, Tuple, Optional
 
@@ -110,9 +111,6 @@ def ensure_and_collect_versions(
             ver = list_map.get("card")
             if ver:
                 dbs["card_db"] = ver
-        print(tools)
-        print(dbs)
-
     return {"tools": tools, "databases": dbs}
 
 
@@ -167,18 +165,22 @@ def _amrfinder_versions() -> Tuple[Optional[str], Optional[str]]:
 def _virulencefinder_version() -> Optional[str]:
     """
     Best-effort discovery of VirulenceFinder version.
-    Strategy:
-      1) conda list virulencefinder (preferred when installed via conda)
-      2) fallback to a safe default 'v3.2.0' if not resolvable.
+    Query the configured viramr environment. Never report a hard-coded version
+    when the installed version cannot be verified.
     """
-    # Try conda list in the current (possibly env-routed) context
-    cmd = _env_launch("bash", "-lc", "conda list | grep 'virulencefinder' | awk '{print $2}' | head -n1")
-    rc, out, _ = _run_cmd(cmd)
-    ver = (out or "").strip()
-    if rc == 0 and ver:
-        return _fmt_ver(ver)
-
-    return "v3.2.0"
+    env_name = os.environ.get("VIRAMR_ENV", "viramr")
+    rc, out, _ = _run_cmd(["conda", "list", "-n", env_name, "virulencefinder", "--json"])
+    if rc != 0 or not out.strip():
+        return None
+    try:
+        records = json.loads(out)
+    except (TypeError, ValueError):
+        return None
+    for record in records:
+        if str(record.get("name", "")).casefold() == "virulencefinder":
+            version = str(record.get("version", "")).strip()
+            return _fmt_ver(version) if version else None
+    return None
 
 
 def _virulencefinder_db_version(db_root: Optional[str]) -> Optional[str]:

@@ -15,6 +15,7 @@ from typing import Iterable, Callable, Optional, Dict, List, Tuple, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import io, gzip, threading, math
 from Bio import SeqIO
+from bactipipe.__version__ import __version__
 import csv
 import socket
 from pathlib import Path
@@ -28,7 +29,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 
-bactipipe_version = "v1.0.0"  # Update as needed
+bactipipe_version = f"v{__version__}"
 
 _LEVEL_MAP = {
     "Norm": logging.INFO,
@@ -136,7 +137,7 @@ def simple_print(message, message_type="", s_type='plain'):
     else:
         print(message)  
 
-        
+
 def check_required(programs, python_packages):
     missing_programs = []
     missing_packages = []
@@ -164,20 +165,20 @@ def check_required(programs, python_packages):
         print("Please install the missing programs and packages and try again.")
         sys.exit(1)
 
-def pipeheader(date, tech_name, hostname, ip_address, run_name, sample_list, raw_reads, outDir, cpus):
-    header = f'''
-    =======================================
-    Penn State Animal Diagnostic Laboratory
-    Bacteria WGS QC Pipeline v.1.0.0
-    Run name: {run_name}
-    Date: {date}
-    Analysis by: {tech_name}
-    Server Host Name: {hostname}
-    =======================================
-    '''
-    header = header.split('\n')
-     
-    run_info = f'''
+def pipeheader(platform, date, tech_name, hostname, ip_address, run_name, sample_list, raw_reads, outDir, cpus):
+    header_lines = [
+        "Bacteria WGS QC Pipeline Results",
+        f"Platform: {platform}",
+        f"Run name: {run_name}",
+        f"Date: {date}",
+        f"Analysis by: {tech_name}",
+        f"Server Host Name: {hostname}",
+    ]
+    sep_len = max(len(line) for line in header_lines)
+    sep = "=" * sep_len
+    header = [sep] + header_lines + [sep]
+
+    run_info = textwrap3.dedent(f'''
     Run Parameters:
     ===============
     \tRun name: {run_name}
@@ -185,7 +186,7 @@ def pipeheader(date, tech_name, hostname, ip_address, run_name, sample_list, raw
     \tInput directory (fastq reads): {raw_reads}
     \tOutput directory (results): {os.path.abspath(outDir)}
     \tNumber of threads: {cpus}
-    '''
+    ''')
     run_info = run_info.split('\n')
     return header, run_info
 
@@ -716,7 +717,7 @@ def filtlong_with_metrics(filtlong_cmd, out_fastq_path: str):
 ## For merging files
 def merge_gz_fastqs(raw_folder: str, output_gz: str, *, verify: bool = False) -> str:
     """
-    Merge all *.fastq.gz in raw_folder into output_gz using a single `cat`.
+    Merge all *.fastq.gz/.fq.gz files in deterministic natural-sort order.
     Writes to <output_gz>.tmp then atomically renames. Returns output path.
     """
     if not output_gz.endswith(".gz"):
@@ -726,10 +727,19 @@ def merge_gz_fastqs(raw_folder: str, output_gz: str, *, verify: bool = False) ->
     os.makedirs(out_dir, exist_ok=True)
 
     tmp_out = output_gz + ".tmp"
+    inputs = [
+        os.path.join(raw_folder, name)
+        for name in os.listdir(raw_folder)
+        if name.endswith((".fastq.gz", ".fq.gz"))
+    ]
+    inputs.sort(key=_natural_key)
+    if not inputs:
+        raise FileNotFoundError(f"No .fastq.gz/.fq.gz files found in {raw_folder}")
 
-    # One fast cat. Important: command string is a single, quoted argument after -c.
-    cmd = f'cat "{raw_folder}"/*.fastq.gz > "{tmp_out}"'
-    subprocess.run(["/bin/sh", "-c", cmd], check=True)
+    with open(tmp_out, "wb") as out_fh:
+        for in_path in inputs:
+            with open(in_path, "rb") as in_fh:
+                shutil.copyfileobj(in_fh, out_fh, length=8 * 1024 * 1024)
 
     if verify:
         gz = shutil.which("pigz") or shutil.which("gzip")
@@ -740,6 +750,20 @@ def merge_gz_fastqs(raw_folder: str, output_gz: str, *, verify: bool = False) ->
     return output_gz
 
 #S3 sources: merge_gz_fastqs_s3
+
+def _natural_key(value: str):
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", value)]
+
+
+def _gz_integrity_ok(path: str) -> bool:
+    gz = shutil.which("pigz") or shutil.which("gzip")
+    if not gz:
+        return True
+    return subprocess.run(
+        [gz, "-t", path],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0
 
 def _parse_s3_uri(uri: str) -> Tuple[str, str]:
     if not uri.startswith("s3://"):

@@ -20,7 +20,7 @@ def main():
     #     updater.check_outdated_pip()
     #     updater.check_outdated_conda()
     #     updater.check_database_versions()
-    #     config.update_last_checked() 
+    #     config.update_last_checked()
     
     usage = '''\nUsage: bactipipe <command> [options]
 
@@ -28,7 +28,7 @@ def main():
     qc-illumina        :  Run the Illumina QC pipeline.
     qc-nanopore        :  Run the Nanopore QC pipeline.
     relate             :  Run genome typing and strain relatedness analysis.
-    detect             :  Detect virulence and antimicrobial resistance genes in assemblies.    
+    detect             :  Detect virulence and antimicrobial resistance genes in assemblies.
 
     Package / Environment Management:
     check-updates      :  Check for available updates to environments and databases.
@@ -85,7 +85,7 @@ def main():
             sys.exit(e.code or 1)
         except subprocess.CalledProcessError as e:
             sys.stderr.write(f"\n[bactipipe:update-db] ERROR (exit {e.returncode}): {e}\n")
-            sys.exit(e.returncode)        
+            sys.exit(e.returncode)
 
 
     tool_manage_commands = ["list-db", "update-db", "check-updates", "update-packages"]

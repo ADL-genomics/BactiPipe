@@ -14,7 +14,9 @@ def merge_for_sample(sample: str, amr_rows: List[Dict[str,str]], vf_rows: List[D
         k = _key_amr(r)
         if k in amr_seen:
             i = amr_seen[k]
-            if amr_merged[i]["tool"] != "AMRFinderPlus" and r["tool"] == "AMRFinderPlus":
+            current_tool = (amr_merged[i].get("tool") or "").casefold()
+            new_tool = (r.get("tool") or "").casefold()
+            if current_tool != "amrfinder" and new_tool == "amrfinder":
                 amr_merged[i] = r
         else:
             amr_seen[k] = len(amr_merged)

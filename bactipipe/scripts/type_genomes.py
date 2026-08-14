@@ -13,16 +13,14 @@ from typing import Iterable, List, Optional, Tuple, Dict
 import sys
 import logging
 import textwrap
-import subprocess
 import shutil
-from venv import logger
 from bactipipe.scripts.caps import CAPS, supported_rows
 from bactipipe.scripts import ska as ska2
 from bactipipe.scripts.runner import run as _run, ensure_dir as _ensure_dir
 from bactipipe.scripts.serotyping import serotype_dispatch
-from bactipipe.scripts import caps
 import time
 from contextlib import contextmanager
+from datetime import datetime
 from bactipipe.scripts import utils as U
 # ----------------------------
 # Data structures
@@ -181,6 +179,12 @@ def _read_sample_sheet(path: Path, logger: logging.Logger) -> List[Tuple[str, st
             rows.append((sample, isolate, specimen))
     if not rows:
         raise ValueError("Sample sheet appears empty after parsing valid rows.")
+    sample_ids = [row[0] for row in rows]
+    display_names = [row[1] for row in rows]
+    if len(sample_ids) != len(set(sample_ids)):
+        raise ValueError("Duplicate sample IDs are not allowed in --sample-sheet.")
+    if len(display_names) != len(set(display_names)):
+        raise ValueError("Duplicate sample display names are not allowed in --sample-sheet.")
     logger.info(f"Loaded {len(rows)} sample entries from: {path}")
     return rows
 
@@ -777,7 +781,7 @@ def _load_manifest_tsv(path: Path, logger: logging.Logger) -> List[SampleRecord]
 # ----------------------------
 def _build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="type-genomes",
+        prog="bactipipe relate",
         formatter_class=argparse.RawTextHelpFormatter,
         description=textwrap.dedent(
             """
@@ -799,7 +803,7 @@ def _build_argparser() -> argparse.ArgumentParser:
     req.add_argument("-a", "--accession", dest="accession",
                 help="Accession / Case ID / output reports prefix.")
 
-    req.add_argument("--organism", help="Organism label name). Check spelling with --list-organisms.")
+    req.add_argument("--organism", help="Organism label. Check spelling with --list-organisms.")
     req.add_argument("--assemblies-dir", type=Path, 
     help="<sample>.fasta directory.")
     req.add_argument("--sample-sheet", type=Path, help="4-column TSV. Default: try common Dropbox locations.")
@@ -815,11 +819,12 @@ def _build_argparser() -> argparse.ArgumentParser:
     opt.add_argument("--no-ska", action="store_true", help="Disable SKA split-kmer relatedness (enabled by default).")
     opt.add_argument("--no-ani", action="store_true", help="Disable ANI analysis (enabled by default).")
     opt.add_argument("--no-cgmlst", action="store_true", help="Disable cgMLST typing (enabled by default for supported organisms).")
+    opt.add_argument("--no-pdf", action="store_true", help="Do not generate the consolidated PDF report.")
     opt.add_argument("-v", "--verbose", action="store_true", help="More console detail (DEBUG).")
     opt.add_argument(
     "--resume",
     action="store_true",
-    help="Skip heavy steps (serotype/MLST/cgMLST/ANI/SKA) when final outputs already exist; parse and reuse them.",
+    help="Reuse valid per-sample serotype/MLST/cgMLST outputs. Cohort ANI and SKA results are recomputed.",
     )
     opt.add_argument("--title", default="Strain Relatedness Analysis",
                 help="Report title (used in PDF header).")
@@ -829,7 +834,7 @@ def _build_argparser() -> argparse.ArgumentParser:
                    default=os.environ.get("BACTIPIPE_ENV_SEQSERO2") or "genepid",
                    help=argparse.SUPPRESS)
     opt.add_argument("--kleborate-env",
-                   default=os.environ.get("BACTIPIPE_ENV_KLEBORATE") or "bactipipe",
+                   default=os.environ.get("BACTIPIPE_ENV_KLEBORATE") or "kleborate",
                    help=argparse.SUPPRESS)
     opt.add_argument("--cge-env",
                    default=os.environ.get("BACTIPIPE_ENV_CGE") or "genepid",
@@ -840,6 +845,7 @@ def _build_argparser() -> argparse.ArgumentParser:
 def main(argv: Optional[List[str]] = None) -> int:
     ap = _build_argparser()
     args = ap.parse_args(argv)
+    started_at = datetime.now().astimezone()
 
     # --- short-circuit: just list organisms and exit ---
     if args.list_organisms:
@@ -900,12 +906,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     mlst_scheme   = caps.get("mlst_scheme") if need_mlst else None
     cgmlst_scheme = caps.get("cgmlst_scheme") if need_cgmlst else None
 
-    # Determine which serotyper this organism uses
+    # Determine which serotyper this organism uses. An empty capability means
+    # that serotyping is not supported for this organism.
     serotyper_label = (caps.get("serotyper") or "").lower()
-    # Default (unknown/empty serotyper) falls back to SerotypeFinder for non-Salmonella
-    uses_serofinder = (serotyper_label == "serotypefinder") or (
-        serotyper_label == "" and org not in {"salmonella"}
-    )
+    uses_serofinder = serotyper_label in {"serotypefinder", "sero", "finder", "kleborate"}
 
     run_cfg = {
         "run_name": run_name,
@@ -920,6 +924,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         "cgmlst_db_dir": str(cgmlst_db_dir) if need_cgmlst else None,
         "serotypefinder_db_dir": str(serotypefinder_db_dir) if uses_serofinder else None,
         "threads": args.threads,
+        "resume": bool(args.resume),
+        "run_ani": not args.no_ani,
+        "run_ska": not args.no_ska,
+        "run_cgmlst": not args.no_cgmlst,
+        "render_pdf": not args.no_pdf,
         "phase": 2,
         "envs": {
             "seqsero2": args.seqsero2_env,
@@ -949,11 +958,11 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # serotyper (by organism)
     serotyper_label = (caps.get("serotyper") or "").lower()
-    if args.organism.lower() == "salmonella":
+    if serotyper_label == "seqsero2":
         ok &= _must("SeqSero2_package.py", env=run_cfg["envs"].get("seqsero2"))
     elif serotyper_label == "kleborate":
         ok &= _must("kleborate", env=run_cfg["envs"].get("kleborate"))
-    else:
+    elif serotyper_label in {"serotypefinder", "sero", "finder"}:
         ok &= _must("serotypefinder", env=run_cfg["envs"].get("serotypefinder"))
 
     # MLST / cgMLST (if used)
@@ -963,7 +972,6 @@ def main(argv: Optional[List[str]] = None) -> int:
     # ANI tools
     if not args.no_ani:
         has_ref = bool(args.reference)
-        ani_mode = args.ani_tool
         if has_ref:
             if args.ani_tool == "skani":
                 ok &= _must("skani", env=ani_env_skani)
@@ -1006,10 +1014,6 @@ def main(argv: Optional[List[str]] = None) -> int:
     if uses_serofinder and not serotypefinder_db_dir.exists():
         logger.error(f"SerotypeFinder DB not found: {serotypefinder_db_dir}"); err = True
 
-    # SerotypeFinder DB is only needed for organisms using it via dispatch
-    uses_serofinder = caps.get("serotyper", "").lower() in {"serotypefinder", "sero", "finder"}
-    if uses_serofinder and not serotypefinder_db_dir.exists():
-        logger.error(f"SerotypeFinder DB not found: {serotypefinder_db_dir}"); err = True
     if err:
         return 2
 
@@ -1019,20 +1023,6 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     _ensure_layout(outdir, create_tmp=True)
     tmpdir.mkdir(parents=True, exist_ok=True)
-
-    # Parse samples and build manifest (Phase 1)
-    try:
-        rows = _read_sample_sheet(sample_sheet, logger)
-    except Exception as e:
-        logger.exception(f"Failed to read sample sheet: {e}")
-        return 2
-
-    manifest = _build_manifest(rows, assemblies_dir, logger)
-    if args.reference:
-        manifest = _prepend_reference_to_manifest(manifest, args.reference, args.reference_id, logger)
-    # If a reference is provided, prepend it as row 1 and run it like any sample
-    if args.reference:
-        manifest = _prepend_reference_to_manifest(manifest, args.reference, args.reference_id, logger)
 
     # Persist manifest + run config
     manifest_path = outdir / f"{accession}_manifest.tsv"
@@ -1092,9 +1082,22 @@ def main(argv: Optional[List[str]] = None) -> int:
     total = len(manifest)
     for idx, rec in enumerate(manifest, start=1):
         logger.info(f"[{idx}/{total}] Sample: {rec.sample}")
+        if not rec.exists:
+            with paths["serotypes_tsv"].open("a", newline="") as fh:
+                csv.writer(fh, delimiter="\t").writerow([rec.sample, "NA", "NA"])
+            if need_mlst:
+                with paths["mlst_tsv"].open("a", newline="") as fh:
+                    csv.writer(fh, delimiter="\t").writerow([rec.sample, "NA"])
+            if need_cgmlst:
+                with paths["cgmlst_tsv"].open("a", newline="") as fh:
+                    csv.writer(fh, delimiter="\t").writerow([rec.sample, "NA"])
+            continue
+
         # Serotyping
         if rec.sample in prev_sero:
             serotype, formula = prev_sero[rec.sample]
+        elif not serotyper_label:
+            serotype, formula = "NA", "NA"
         else:
             sero, formula, species = serotype_dispatch(
                 organism=args.organism,
@@ -1205,7 +1208,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 ska_root=paths["ska_root"],
                 out_prefix=f"{accession}_ska",
                 k=31,
-                threads=None,
+                threads=max(1, args.threads),
             )
             (paths["ska_root"] / "ska.stdout.txt").write_text(ska_stdout)
 
@@ -1262,38 +1265,82 @@ def main(argv: Optional[List[str]] = None) -> int:
         logger.info(f"ANI vs reference: {paths['ani_tsv']}")
     
     # === PDF report ===
-    with _step(logger, "Render PDF report"):
-        header_block = U.make_report_header_block(
-            title=args.title,
-            run_name=args.run_name,
-            tech_name=args.tech_name,
-            accession=args.accession or "",
-        )
-        used = U.detect_used_tools(
-            paths,
-            logger,
-            env_overrides={
-                "seqsero2": getattr(args, "seqsero2_env", None),
-                "cge":      getattr(args, "cge_env", None),
-                "kleborate":getattr(args, "kleborate_env", None),
-                "skani":    getattr(args, "skani_env", None),
-                "ska":      getattr(args, "ska_env", None),
-            },
-        )
-        versions = U.collect_tool_versions(used, logger)
+    if not args.no_pdf:
+        with _step(logger, "Render PDF report"):
+            header_block = U.make_report_header_block(
+                title=args.title,
+                run_name=args.run_name,
+                tech_name=args.tech_name,
+                accession=args.accession or "",
+            )
+            used = U.detect_used_tools(
+                paths,
+                logger,
+                env_overrides={
+                    "seqsero2": getattr(args, "seqsero2_env", None),
+                    "cge": getattr(args, "cge_env", None),
+                    "kleborate": getattr(args, "kleborate_env", None),
+                    "skani": getattr(args, "skani_env", None),
+                    "ska": getattr(args, "ska_env", None),
+                },
+            )
+            versions = U.collect_tool_versions(used, logger)
 
-        final_tsv = outdir / f"{accession}_relate.tsv"
-        out_pdf   = outdir / f"{accession}_relate.pdf"
+            final_tsv = outdir / f"{accession}_relate.tsv"
+            out_pdf = outdir / f"{accession}_relate.pdf"
 
-        U.render_pdf_type_genomes_full(
-            final_tsv=final_tsv,
-            out_pdf=out_pdf,
-            title=args.title,
-            header_text=header_block,
-            tool_versions=versions,
-            run_name=run_name,
-            accession=accession,
-        )
+            U.render_pdf_type_genomes_full(
+                final_tsv=final_tsv,
+                out_pdf=out_pdf,
+                title=args.title,
+                header_text=header_block,
+                tool_versions=versions,
+                run_name=run_name,
+                accession=accession,
+            )
+
+    completed_at = datetime.now().astimezone()
+    result_payload = {
+        "schema_version": 1,
+        "command": "relate",
+        "status": "completed",
+        "run_name": run_name,
+        "accession": accession,
+        "organism": args.organism,
+        "started_at": started_at.isoformat(),
+        "completed_at": completed_at.isoformat(),
+        "reference_sample": manifest[0].sample if args.reference and manifest else None,
+        "parameters": {
+            "ani": not args.no_ani,
+            "ani_tool": args.ani_tool if not args.no_ani else None,
+            "ska": not args.no_ska,
+            "cgmlst": need_cgmlst,
+            "threads": args.threads,
+            "resume": bool(args.resume),
+        },
+        "samples": [
+            {
+                "sample_id": rec.sample,
+                "isolate": rec.isolate,
+                "specimen": rec.specimen,
+                "is_reference": bool(args.reference and index == 0),
+                "assembly_present": rec.exists,
+            }
+            for index, rec in enumerate(manifest)
+        ],
+        "outputs": {
+            "manifest": f"{accession}_manifest.tsv",
+            "summary_tsv": f"{accession}_relate.tsv",
+            "summary_pdf": None if args.no_pdf else f"{accession}_relate.pdf",
+            "serotypes_tsv": f"{accession}_serotypes.tsv",
+            "mlst_tsv": f"{accession}_mlst.tsv",
+            "cgmlst_tsv": f"{accession}_cgmlst.tsv",
+            "assembly_summary_tsv": f"{accession}_assembly_summary.tsv",
+            "ani_tsv": f"{accession}_ani.tsv" if args.reference and not args.no_ani else None,
+            "ska_distances_tsv": f"ska/{accession}_ska.distances.tsv" if not args.no_ska else None,
+        },
+    }
+    (outdir / "analysis_result.json").write_text(json.dumps(result_payload, indent=2))
 
     logger.info("Pipeline complete.")
 

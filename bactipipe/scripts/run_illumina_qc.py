@@ -13,6 +13,7 @@ from bactipipe.scripts.qualityProc import ProcQuality, fastp_version
 from bactipipe.scripts.utils import time_print, simple_print, logger, pipeheader, excel_reader, download_s3
 from importlib.resources import files as resource_files
 from collections import OrderedDict
+from bactipipe.__version__ import __version__
 
 # Argument Parsing
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -58,8 +59,17 @@ optional_args.add_argument ("-a", "--assembler", help="Genome assembler to use."
 
 optional_args.add_argument("-t", "--threads",
                     help="Number of threads. Default: all available")
+optional_args.add_argument("-q", "--minqual", help="Average read quality threshold.", default=28, type=float)
+optional_args.add_argument("--min_completeness", help="Minimum CheckM completeness percentage.", default=90, type=float)
+optional_args.add_argument("--max_contamination", help="Maximum CheckM contamination percentage.", default=10, type=float)
 
+optional_args.add_argument("--s3_bucket", "--s3-bucket", dest="s3_bucket",
+                    default=os.getenv("ANALYSIS_S3_BUCKET"),
+                    help="S3 bucket for s3 storage_type. Defaults to ANALYSIS_S3_BUCKET.")
 
+optional_args.add_argument("--s3_prefix", "--s3-prefix", dest="s3_prefix",
+                    default=os.getenv("ANALYSIS_S3_PREFIX", ""),
+                    help="S3 prefix for s3 storage_type. Defaults to ANALYSIS_S3_PREFIX.")
 
 optional_args.add_argument("-h", "--help",
                            action="help",
@@ -68,7 +78,7 @@ optional_args.add_argument("-h", "--help",
 args = parser.parse_args()
 
 # Version of BactiPipe
-bactipipe_version = "v0.1.1" # To be updated manually
+bactipipe_version = f"v{__version__}"
 
 sample_list = os.path.abspath(args.sample_sheet)
 run_name = args.run_name
@@ -105,16 +115,25 @@ def assembly_version():
 
 def get_fastqs(sample, raw_reads):
     fastqs = []
-    for item in os.listdir(raw_reads):
+    fastq1 = None
+    fastq2 = None
+    if not raw_reads or not os.path.isdir(raw_reads):
+        return fastqs
+
+    for item in sorted(os.listdir(raw_reads)):
         if item.startswith(sample):
-            for file in os.listdir(os.path.join(raw_reads, item)):
+            item_dir = os.path.join(raw_reads, item)
+            if not os.path.isdir(item_dir):
+                continue
+            for file in sorted(os.listdir(item_dir)):
                 if "_R1" in file and (file.endswith("fastq") or file.endswith("fastq.gz")):
                     fastq1 = os.path.join(raw_reads, item, file)
                 elif "_R2" in file and (file.endswith("fastq") or file.endswith("fastq.gz")):
                     fastq2 = os.path.join(raw_reads, item, file)
-    if not fastq2:  # If the data is single end
+
+    if fastq1 and not fastq2:  # If the data is single end
         fastqs.append(fastq1)
-    else:
+    elif fastq1 and fastq2:
         fastqs.append(fastq1)
         fastqs.append(fastq2)
     return fastqs
@@ -202,15 +221,17 @@ bad_organisms = []
 bad_samples = []
 # with open(sample_list, 'r') as sampL:
 for line in sample_info:
-    if line.startswith("#"):
+    if not line.strip() or line.startswith("#"):
         continue  # Skip comment lines
     sample, organism = line.strip().split('\t')
+    if sample == "sample_ID":
+        continue
     if organism.strip() not in bacteria and organism.lower() not in ["organism", "unknown"]:
         time_print(f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
         logger(log, f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
         bad_organisms.append(f"{sample}:{organism}")
 
-    if not sample in ','.join(os.listdir(raw_reads)) and sample != "sample_ID":
+    if not get_fastqs(sample, raw_reads) and sample != "sample_ID":
         time_print(f"WARNING: Sample [{sample}] does not have corresponding fastq files", "Fail")
         logger(log, f"WARNING: Sample [{sample}] does not have corresponding fastq files")
         bad_samples.append(sample)
@@ -229,7 +250,12 @@ logger(log, "PIPELINE STARTED", "Header")
 time_print("PIPELINE STARTED", "Header")
 
 # Count total number of samples
-sample_number = sum(1 for line in sample_info if not line.startswith("#")) - len(bad_samples)
+sample_number = sum(
+    1
+    for line in sample_info
+    if line.strip() and not line.startswith("#") and line.strip().split('\t')[0] != "sample_ID"
+) - len(bad_samples)
+sample_number = max(0, sample_number)
 
 time_print(f"Total number of samples to be processed: {sample_number}\n")
 logger(log, f"Total number of samples to be processed: {sample_number}\n")
@@ -250,19 +276,27 @@ if args.storage_type != "local":
    
 if args.storage_type == "s3":
     if not os.path.exists(temp_dir) or not os.listdir(temp_dir):
+        if not args.s3_bucket:
+            time_print("S3 storage selected, but no S3 bucket was provided.", "Fail")
+            logger(log, "S3 storage selected, but no S3 bucket was provided.")
+            sys.exit(1)
         time_print("Downloading raw reads from S3 bucket...")
         logger(log, "Downloading raw reads from S3 bucket...")
-        # Download the files
-        raw_reads = download_s3(bucket="adl-pathogen-bucket", prefix=f"ngslab/DATA/illuminaData/{run_name}", target_root=temp_dir)
+        prefix = "/".join(
+            part.strip("/")
+            for part in [args.s3_prefix, "DATA", "illuminaData", run_name]
+            if part and part.strip("/")
+        )
+        raw_reads = download_s3(bucket=args.s3_bucket, prefix=prefix, target_root=temp_dir)
     else:
         time_print("WARNING: Using existing temporary directory for raw reads.")
         logger(log, "WARNING:Using existing temporary directory for raw reads.")
         raw_reads = os.path.join(temp_dir, run_name)
 
 elif args.storage_type == "network_mount":
-    cp_cmd = f"cp -r {raw_reads} {temp_dir}"
-    subprocess.run(cp_cmd, shell=True, check=True)
-    raw_reads = os.path.join(temp_dir, os.path.basename(raw_reads))
+    copied_reads = os.path.join(temp_dir, os.path.basename(raw_reads))
+    shutil.copytree(raw_reads, copied_reads, dirs_exist_ok=True)
+    raw_reads = copied_reads
 
 #Write the temporary summary file that will be updated after CheckM analysis
 temp_qc_summary = os.path.join(qc_out, "temp_qc_summary.tsv")
@@ -272,10 +306,18 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
 
     # with open(sample_list, 'r') as sampL:
     for line in sample_info:
+        if not line.strip() or line.startswith("#"):
+            continue
         sample, organism = line.strip().split('\t')
+        if sample == "sample_ID":
+            continue
         if sample in bad_samples:
             continue
         fastqs = get_fastqs(sample, raw_reads)
+        if not fastqs:
+            time_print(f"WARNING: Sample [{sample}] does not have corresponding fastq files", "Fail")
+            logger(log, f"WARNING: Sample [{sample}] does not have corresponding fastq files")
+            continue
         if organism not in bacteria:
             sys_organism = "unknown"
             genome_size = None
@@ -308,12 +350,13 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
 
         taxonomy = [taxID, organism]
 
-        if avqc >= 28:
+        if avqc >= args.minqual:
             qc_verdict = 'Pass'
         else:
             qc_verdict = "Fail"
 
         # Coverage
+        min_cov = 50
         if avqc >= 30:
             min_cov = 30
         elif avqc >= 29:
@@ -370,6 +413,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             best_org = None
             best_percent = None
             best_other_org = None
+            identified_org = None
             if tax_confirm == "Pass" or tax_confirm == "N/A":
                 best_org = hit.split(" (")[0]
                 best_percent = f"{float(hit.split(' (')[1].strip(')%')):.2f}"
@@ -432,9 +476,9 @@ tool_lines = ["\n"] # Blank line before tools section
 for tool, version in tools.items():
     tool_lines.append(f"{tool}>>{version}")
 tool_lines.extend([
-    "Required Mean quality>>28",
-    "Completeness cutoff>>90%",
-    "Contamination cutoff>>10%"
+    f"Required Mean quality>>{args.minqual:g}",
+    f"Completeness cutoff>>{args.min_completeness:g}%",
+    f"Contamination cutoff>>{args.max_contamination:g}%"
 ])
 
 sep_len = max(len(line) for line in tool_lines)
@@ -444,7 +488,15 @@ tools_block = [sep] + tool_lines + [sep]
 header += tools_block
 
 
-process_data.make_summary(qc_summary=qc_summary, temp_qc_summary=temp_qc_summary, header=header, checkm_out=checkm_out, logfile=log)
+process_data.make_summary(
+    qc_summary=qc_summary,
+    temp_qc_summary=temp_qc_summary,
+    header=header,
+    checkm_out=checkm_out,
+    logfile=log,
+    min_completeness=args.min_completeness,
+    max_contamination=args.max_contamination,
+)
 
 # Remove temp_dir
 if os.path.exists(temp_dir):

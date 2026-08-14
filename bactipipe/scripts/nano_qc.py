@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from bactipipe.scripts.utils import fastq_metrics, filtlong_with_metrics, merge_gz_fastqs, merge_gz_fastqs_s3, logger as file_logger
 
@@ -39,7 +40,7 @@ def qc_nano(
     if s3 and not bucket:
         log("S3 mode requires bucket to be set.")
         return
-    
+
     try: 
         clutter = []
         if not os.path.exists(output_dir):
@@ -54,8 +55,8 @@ def qc_nano(
                 log(f"[{s_name}] Consolidating nanopore raw reads into one file...")
                 if not os.path.exists(fastq_file):
                     if s3:
-                        s3_glob = f"s3://{bucket}/{raw_folder}/*.fastq.gz"
-                        if not merge_gz_fastqs_s3(s3_glob, fastq_file, concurrency=32):
+                        s3_prefix = f"s3://{bucket}/{raw_folder.strip('/')}/"
+                        if not merge_gz_fastqs_s3(s3_prefix, fastq_file):
                             return
 
                     elif not merge_gz_fastqs(raw_folder, fastq_file):
@@ -146,7 +147,7 @@ def qc_nano(
             for item in clutter:
                 if os.path.exists(item):
                     if os.path.isdir(item):
-                        subprocess.run(["rm", "-r", item])
+                        shutil.rmtree(item)
                     else:
                         os.remove(item)
             if coverage_target < min_coverage:
@@ -157,4 +158,3 @@ def qc_nano(
     except Exception as e:
         log(f"[{s_name}] Unexpected error in qc_nano: {e}", "Fail")
         return
-    

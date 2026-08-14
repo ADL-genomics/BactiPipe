@@ -37,9 +37,9 @@ def find_species_with_kkn(reads, kkn_db, s_name, expected_taxonomy, dataOut, org
 
 
     # Running the kraken2 command
-    vercmd = f'kraken2 --version'
-    stdout = subprocess.run(vercmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    stdout = subprocess.run(["kraken2", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out = stdout.stdout.decode('utf-8')
+    version = "Unknown"
     for line in out.split('\n'):
         if line.startswith('Kraken 2'):
             version = line.split()[-1]
@@ -50,16 +50,16 @@ def find_species_with_kkn(reads, kkn_db, s_name, expected_taxonomy, dataOut, org
     logger(log, kkninfo)
 
     if len(reads) == 2:
-        cmd = f"kraken2 --db {kkn_db} --output {out_folder}/{s_name}_kkn.out --report {kkn_report} --paired {reads[0]} {reads[1]}"
+        cmd = ["kraken2", "--db", kkn_db, "--output", f"{out_folder}/{s_name}_kkn.out", "--report", kkn_report, "--paired", reads[0], reads[1]]
 
     elif len(reads) == 1:
-        cmd = f"kraken2 --db {kkn_db}  --output {out_folder}/{s_name}_kkn.out --report {kkn_report} {reads[0]}"
+        cmd = ["kraken2", "--db", kkn_db, "--output", f"{out_folder}/{s_name}_kkn.out", "--report", kkn_report, reads[0]]
     
     if not os.path.exists(kkn_report):
-        cmdinfo = f"Running: {cmd}"
+        cmdinfo = f"Running: {' '.join(cmd)}"
         time_print(cmdinfo, s_type='command')
         logger(log, cmdinfo, s_type='command')
-        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         out, err = process.communicate()
     else:
         info = f"Skipping Kraken2 analysis. Report already exists"  
@@ -202,8 +202,3 @@ def find_species_with_kmrf(s_name, lab_species, genome, dataOut, org_type="bacte
         bh_display = f"Determined: {bh_display}) --- Expected: {lab_species}"
 
     return bh_display, tax_confirm, others
-
-# Use Blast to clean genome fasta contigs
-
-
-

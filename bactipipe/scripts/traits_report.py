@@ -77,7 +77,7 @@ def write_sample_tsvs(sample: str, merged: Dict[str, List[Dict[str, str]]], out_
         "contig","start","end","strand","source","database","accession","tool","subtype"
     ]
     vf_schema = [
-        "sample","gene","category","identity","coverage","length",
+        "sample","gene","base_gene","category","note","identity","coverage","length",
         "contig","start","end","strand","source","database","accession","tool"
     ]
 
@@ -810,7 +810,7 @@ def write_consolidated_tsv(
       3) AMR Mutations:
          Header: Type   Mutation   Phenotype   <sample...> (Type='Mutation')
 
-    all_merged: { sample_display_name: { "vf": [...], "amr_acq": [...], "amr_mut": [...] } }
+    all_merged: { sample_display_name: { "vf": [...], "amr": [...] } }
     """
     sample_names = list(all_merged.keys())
 
@@ -837,9 +837,12 @@ def write_consolidated_tsv(
                 vf_seen.add(key); vf_order.append(key)
             vf_presence[key].add(sname)
 
-        # AMR acquired
-        for row in (merged.get("amr_acq") or []):
-            gene = row.get("name") or row.get("gene") or ""
+        # AMR acquired. Normalized per-sample data stores acquired and mutation
+        # records together under "amr" and distinguishes them with "type".
+        for row in (merged.get("amr") or []):
+            if _is_mutation_amr(row):
+                continue
+            gene = row.get("determinant") or row.get("name") or row.get("gene") or ""
             phenotype = row.get("phenotype") or row.get("class") or ""
             key = (gene, phenotype)
             if key not in acq_seen:
@@ -847,8 +850,10 @@ def write_consolidated_tsv(
             acq_presence[key].add(sname)
 
         # AMR mutations
-        for row in (merged.get("amr_mut") or []):
-            mut = row.get("mutation") or row.get("name") or ""
+        for row in (merged.get("amr") or []):
+            if not _is_mutation_amr(row):
+                continue
+            mut = row.get("determinant") or row.get("mutation") or row.get("name") or ""
             phenotype = row.get("phenotype") or ""
             key = (mut, phenotype)
             if key not in mut_seen:
@@ -891,4 +896,3 @@ def write_consolidated_tsv(
                 w.writerow(row)
 
     return out_path
-    
