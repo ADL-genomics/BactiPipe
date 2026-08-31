@@ -27,6 +27,7 @@ class DownstreamSample:
     specimen: str = ""
     collection_date: str = ""
     role: str = "sample"
+    reference_name: str = ""
     reference_path: str = ""
 
 
@@ -64,6 +65,8 @@ _HEADER_ALIASES = {
     "analysis command": "command",
     "command": "command",
     "organism": "organism",
+    "other organism": "other_organism",
+    "other_organism": "other_organism",
     "sample": "sample_id",
     "sample id": "sample_id",
     "sample_id": "sample_id",
@@ -76,6 +79,8 @@ _HEADER_ALIASES = {
     "collection date": "collection_date",
     "collection_date": "collection_date",
     "role": "role",
+    "reference name": "reference_name",
+    "reference_name": "reference_name",
     "reference path": "reference_path",
     "reference_path": "reference_path",
     "run ani": "run_ani",
@@ -163,7 +168,10 @@ def _read_xlsx(path: Path) -> list[list[object]]:
     except ImportError as exc:  # pragma: no cover - dependency message is environment-specific
         raise DownstreamManifestError("openpyxl is required to read Excel manifests.") from exc
     workbook = load_workbook(path, read_only=True, data_only=True)
-    worksheet = workbook.active
+    # Guided templates contain Instructions and Examples worksheets. Users may
+    # save after viewing one of them, so prefer the contract sheet by name rather
+    # than relying on whichever tab happened to be active at save time.
+    worksheet = workbook["Manifest"] if "Manifest" in workbook.sheetnames else workbook.active
     return [list(row) for row in worksheet.iter_rows(values_only=True)]
 
 
@@ -215,19 +223,33 @@ def _build_cohort(cohort_id: str, records: list[dict[str, str]]) -> DownstreamCo
 
     command = _single_value(records, "command", cohort_id).casefold()
     organism = _single_value(records, "organism", cohort_id)
+    other_organism = _single_value(records, "other_organism", cohort_id)
     if command not in COMMANDS:
         raise DownstreamManifestError(
             f"Cohort {cohort_id!r}: command must be 'relate' or 'detect'."
         )
     if not organism:
         raise DownstreamManifestError(f"Cohort {cohort_id!r}: organism is required.")
+    if organism.casefold() == "other":
+        if not other_organism:
+            raise DownstreamManifestError(
+                f"Cohort {cohort_id!r}: other_organism is required when organism is Other."
+            )
+        organism = other_organism
+    elif other_organism:
+        raise DownstreamManifestError(
+            f"Cohort {cohort_id!r}: other_organism may be used only when organism is Other."
+        )
 
     samples = []
     for record in records:
         row_number = record["_row_number"]
         sample_id = record.get("sample_id", "")
         if not sample_id:
-            raise DownstreamManifestError(f"Row {row_number}: sample_id is required.")
+            raise DownstreamManifestError(
+                f"Row {row_number}: sample_id is required, including for a reference row. "
+                "Use a stable reference identifier in that column."
+            )
         role = (record.get("role") or "sample").casefold()
         if role not in ROLES:
             raise DownstreamManifestError(f"Row {row_number}: role must be sample or reference.")
@@ -238,6 +260,7 @@ def _build_cohort(cohort_id: str, records: list[dict[str, str]]) -> DownstreamCo
                 specimen=record.get("specimen", ""),
                 collection_date=record.get("collection_date", ""),
                 role=role,
+                reference_name=record.get("reference_name", ""),
                 reference_path=record.get("reference_path", ""),
             )
         )
@@ -250,14 +273,23 @@ def _build_cohort(cohort_id: str, records: list[dict[str, str]]) -> DownstreamCo
         raise DownstreamManifestError(f"Cohort {cohort_id!r}: only one reference is allowed.")
     if command == "detect" and references:
         raise DownstreamManifestError(f"Cohort {cohort_id!r}: reference applies only to relate.")
-    invalid_reference_paths = [
+    invalid_references = [
         sample.sample_id
         for sample in samples
-        if sample.reference_path and sample.role != "reference"
+        if (sample.reference_name or sample.reference_path) and sample.role != "reference"
     ]
-    if invalid_reference_paths:
+    if invalid_references:
         raise DownstreamManifestError(
-            f"Cohort {cohort_id!r}: reference_path is allowed only on the reference row."
+            f"Cohort {cohort_id!r}: reference_name and reference_path are allowed only on the reference row."
+        )
+    conflicting_references = [
+        sample.sample_id
+        for sample in samples
+        if sample.reference_name and sample.reference_path
+    ]
+    if conflicting_references:
+        raise DownstreamManifestError(
+            f"Cohort {cohort_id!r}: use reference_name or reference_path, not both."
         )
     if command == "relate" and len(samples) < 2:
         raise DownstreamManifestError(f"Cohort {cohort_id!r}: relate requires at least two samples.")
