@@ -17,6 +17,16 @@ The current CLI exposes four analysis commands:
 
 Run `bactipipe <command> --help` for the current input contract and options.
 
+The installed application version is available through either alias:
+
+```bash
+bactipipe -v
+bactipipe --version
+```
+
+BactiPipe follows the repository's [versioning policy](VERSIONING.md), with
+release notes maintained in the [changelog](CHANGELOG.md).
+
 For the `relate`/`detect` helper environment, create the compatible base and
 then install the exact legacy CGE/SeqSero wrappers without their obsolete
 dependency metadata:
