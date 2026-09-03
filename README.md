@@ -17,6 +17,11 @@ The current CLI exposes four analysis commands:
 
 Run `bactipipe <command> --help` for the current input contract and options.
 
+For either QC command, repeat `--only-sample SAMPLE_ID` to select samples and
+add `--update-existing` to safely replace only those samples in an existing
+run output. BactiPipe stages the reanalysis separately and publishes it with a
+directory swap; failed reanalysis leaves the existing output unchanged.
+
 The installed application version is available through either alias:
 
 ```bash

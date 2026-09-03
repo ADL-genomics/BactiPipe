@@ -16,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import io, gzip, threading, math
 from Bio import SeqIO
 from bactipipe.__version__ import __version__
+from bactipipe.reproducibility import database_identity_label
 import csv
 import socket
 from pathlib import Path
@@ -205,7 +206,6 @@ def excel_reader(filepath: str, platform: str = "nanopore"):
             "Host and Source",
             "Bacteria Species",
             "gDNA Prep ID",
-            "Native Barcode Index",
         ]
         idx_col = "Native Barcode Index"
         pattern = re.compile(r"^(?:NB\d{2}|barcode\d{2})$", re.IGNORECASE)
@@ -245,6 +245,10 @@ def excel_reader(filepath: str, platform: str = "nanopore"):
         if all(col in row_vals for col in needed):
             header_row = i
             header_vals = row_vals
+            if plat == "nanopore" and idx_col in row_vals:
+                needed.append(idx_col)
+            if "Other Bacteria Species" in row_vals:
+                needed.append("Other Bacteria Species")
             break
 
     if header_row is None:
@@ -277,8 +281,20 @@ def excel_reader(filepath: str, platform: str = "nanopore"):
     # 7) Clean up every cell
     df = df.apply(lambda col: col.map(normalize))
 
-    # 8) Keep only rows where the index‐column matches the regex
-    df = df[df[idx_col].astype(bool) & df[idx_col].str.match(pattern)]
+    if "Other Bacteria Species" in df.columns:
+        other_mask = df["Bacteria Species"].str.casefold() == "other"
+        missing_other = other_mask & ~df["Other Bacteria Species"].astype(bool)
+        if missing_other.any():
+            samples = ", ".join(df.loc[missing_other, "Accession Number"].tolist())
+            raise ValueError(f"Other Bacteria Species is required for: {samples}.")
+        df.loc[other_mask, "Bacteria Species"] = df.loc[
+            other_mask, "Other Bacteria Species"
+        ]
+
+    # 8) Illumina rows require a valid well. Nanopore barcode is optional for
+    # explicitly sample-mapped uploads; when absent the sample folder is used.
+    if plat == "illumina":
+        df = df[df[idx_col].astype(bool) & df[idx_col].str.match(pattern)]
 
     # 9) Drop any row missing the two critical fields
     df = df[df["Accession Number"].astype(bool) & df["Bacteria Species"].astype(bool)]
@@ -287,7 +303,10 @@ def excel_reader(filepath: str, platform: str = "nanopore"):
 
     if plat == "nanopore":
         out = df.apply(
-            lambda row: f"{row['Accession Number']}\t{row['Bacteria Species']}\t{row[idx_col]}",
+            lambda row: (
+                f"{row['Accession Number']}\t{row['Bacteria Species']}\t"
+                f"{row[idx_col] if idx_col in df.columns and row[idx_col] else row['Accession Number']}"
+            ),
             axis=1
         ).tolist()
     elif plat == "illumina":
@@ -1078,7 +1097,10 @@ def collect_tool_versions(used: Dict[str, Dict[str, Optional[str]]], logger) -> 
     Supports entries with a prefilled 'version' OR with ('exe','env') to probe via get_tool_version.
     Normalizes everything to start with 'v', returns 'N/A' on failure.
     """
-    versions: Dict[str, str] = {"BactiPipe": bactipipe_version}
+    versions: Dict[str, str] = {
+        "BactiPipe": bactipipe_version,
+        "BactiPipe database": database_identity_label(),
+    }
 
     for name, meta in used.items():
         # Be tolerant: someone may accidentally pass a string

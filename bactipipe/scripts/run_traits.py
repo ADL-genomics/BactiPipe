@@ -4,6 +4,8 @@ import multiprocessing as mp
 from datetime import datetime
 from pathlib import Path
 
+from bactipipe.reproducibility import database_identity, source_identity
+
 # Reuse your existing BactiPipe utilities
 from bactipipe.scripts.utils import time_print, logger as file_logger
 
@@ -432,6 +434,9 @@ def main(argv=None):
     completed_at = datetime.now().astimezone()
     result_payload = {
         "schema_version": 1,
+        "output_contract_version": "bactipipe-detect-v1",
+        "pipeline": source_identity(),
+        "database": database_identity(cfg["db_root"]),
         "command": "detect",
         "status": "completed",
         "run_name": cfg["run_name"],

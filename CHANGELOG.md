@@ -6,6 +6,13 @@ Releases follow [Semantic Versioning](VERSIONING.md), and Git tags use the
 
 ## Unreleased
 
+- Isolate per-sample QC, assembly, and organism-identification failures so other batch samples can finish.
+- Add repeatable `--only-sample` selectors, transactional `--update-existing`
+  publication, and `sample_failures.tsv` for targeted QC reanalysis.
+- Keep Nanopore sample-folder/barcode resolution aligned with the web launcher.
+- Record deterministic application source and formal database identities in downstream result provenance.
+- Include the formal BactiPipe database identity in QC and downstream reports.
+
 ## 0.1.0 - 2026-08-31
 
 Initial formally versioned development release.

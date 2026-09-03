@@ -18,6 +18,7 @@ def qc_nano(
     raw_folder=None,
     genome_size=5e6,
     min_avg_quality=15,
+    min_read_length=1000,
     min_coverage=100,
     desired_coverage=300,
     output_fastq="trimmed_reads.fastq",
@@ -98,14 +99,14 @@ def qc_nano(
             if total_bases < min_required_bases:
                 log(f"[{s_name}] Insufficient data for {min_coverage}X coverage. Total bases available: {total_bases:,}. Required: {min_required_bases:,}.")
                 log(f"[{s_name}] Keeping the best 90% of reads...")
-                filtlong_command = ["filtlong", "--min_mean_q", str(min_avg_quality), "--keep_percent", "90", "--min_length", "500", fastq_file]
+                filtlong_command = ["filtlong", "--min_mean_q", str(min_avg_quality), "--keep_percent", "90", "--min_length", str(min_read_length), fastq_file]
                 coverage_target = 1
             
             else:
                 log(f"[{s_name}] QC: Min quality = {min_avg_quality}, target coverage: {desired_coverage}X coverage")
                 coverage_target = desired_coverage
                 required_bases = int(coverage_target * genome_size)
-                filtlong_command = ["filtlong", "--min_mean_q", str(min_avg_quality), "--target_bases", str(required_bases), "--min_length", "500", fastq_file]
+                filtlong_command = ["filtlong", "--min_mean_q", str(min_avg_quality), "--target_bases", str(required_bases), "--min_length", str(min_read_length), fastq_file]
 
             try:
                 os.makedirs(os.path.dirname(trimmed_output), exist_ok=True)

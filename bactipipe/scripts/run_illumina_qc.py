@@ -9,11 +9,14 @@ import subprocess
 from datetime import datetime
 from bactipipe.scripts import find_organism
 from bactipipe.scripts import process_data
+from bactipipe.scripts import sample_failures as sample_failure_audit
+from bactipipe.scripts.sample_update import run_qc_sample_update
 from bactipipe.scripts.qualityProc import ProcQuality, fastp_version
 from bactipipe.scripts.utils import time_print, simple_print, logger, pipeheader, excel_reader, download_s3
 from importlib.resources import files as resource_files
 from collections import OrderedDict
 from bactipipe.__version__ import __version__
+from bactipipe.reproducibility import database_identity_label
 
 # Argument Parsing
 class CustomHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -62,6 +65,21 @@ optional_args.add_argument("-t", "--threads",
 optional_args.add_argument("-q", "--minqual", help="Average read quality threshold.", default=28, type=float)
 optional_args.add_argument("--min_completeness", help="Minimum CheckM completeness percentage.", default=90, type=float)
 optional_args.add_argument("--max_contamination", help="Maximum CheckM contamination percentage.", default=10, type=float)
+optional_args.add_argument(
+    "--only-sample",
+    action="append",
+    default=[],
+    metavar="SAMPLE_ID",
+    help="Process only this sample-sheet sample. Repeat for multiple samples.",
+)
+optional_args.add_argument(
+    "--update-existing",
+    action="store_true",
+    help=(
+        "Atomically replace the selected samples in an existing run output. "
+        "Requires --only-sample."
+    ),
+)
 
 optional_args.add_argument("--s3_bucket", "--s3-bucket", dest="s3_bucket",
                     default=os.getenv("ANALYSIS_S3_BUCKET"),
@@ -87,7 +105,22 @@ raw_reads = os.path.abspath(args.fastq_dir)
 # raw_reads = os.path.join(raw_reads, run_name)
 tech_name = args.name
 
-outDir = os.path.join(args.outdir, run_name)
+outdir_parent = os.path.abspath(args.outdir or os.getcwd())
+outDir = os.path.join(outdir_parent, run_name)
+
+if args.update_existing:
+    try:
+        run_qc_sample_update(
+            script_path=__file__,
+            argv=sys.argv[1:],
+            outdir_parent=outdir_parent,
+            run_name=run_name,
+            sample_names=args.only_sample,
+        )
+    except (OSError, RuntimeError, ValueError) as exc:
+        sys.stderr.write(f"BactiPipe sample update failed: {exc}\n")
+        sys.exit(1)
+    sys.exit(0)
 
 def assembly_version():
     assembler = args.assembler.lower()
@@ -205,6 +238,34 @@ else:
                 logger(log, "Sample list file must have two columns: sample, organism.")
                 sys.exit(1)
 
+if args.only_sample:
+    requested_samples = tuple(
+        dict.fromkeys(value.strip() for value in args.only_sample if value.strip())
+    )
+    selected_lines = []
+    found_samples = set()
+    for line in sample_info:
+        if not line.strip() or line.startswith("#"):
+            continue
+        sample_id = line.strip().split("\t", 1)[0]
+        if sample_id == "sample_ID":
+            selected_lines.append(line)
+        elif sample_id in requested_samples:
+            selected_lines.append(line)
+            found_samples.add(sample_id)
+    missing_samples = [
+        sample_id for sample_id in requested_samples if sample_id not in found_samples
+    ]
+    if missing_samples:
+        message = (
+            "Requested sample(s) were not found in the sample sheet: "
+            + ", ".join(missing_samples)
+        )
+        print(message)
+        logger(log, message)
+        sys.exit(1)
+    sample_info = selected_lines
+
 # Load pathogenic bacteria information
 bacteria = {}
 org_list = resource_files('bactipipe.data').joinpath('pathogenic_bacteria.txt')
@@ -219,6 +280,8 @@ with open(org_list, 'r') as orgL:
 # Validate the sample sheet
 bad_organisms = []
 bad_samples = []
+sample_failures = {}
+expected_organisms = {}
 # with open(sample_list, 'r') as sampL:
 for line in sample_info:
     if not line.strip() or line.startswith("#"):
@@ -226,6 +289,7 @@ for line in sample_info:
     sample, organism = line.strip().split('\t')
     if sample == "sample_ID":
         continue
+    expected_organisms[sample] = organism
     if organism.strip() not in bacteria and organism.lower() not in ["organism", "unknown"]:
         time_print(f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
         logger(log, f"WARNING: Organism [{organism.strip()}] for sample {sample} is not a valid organism name")
@@ -235,6 +299,12 @@ for line in sample_info:
         time_print(f"WARNING: Sample [{sample}] does not have corresponding fastq files", "Fail")
         logger(log, f"WARNING: Sample [{sample}] does not have corresponding fastq files")
         bad_samples.append(sample)
+        sample_failure_audit.record_failure(
+            sample_failures,
+            sample,
+            "input",
+            "No corresponding FASTQ files were found.",
+        )
 
 if bad_organisms:
     time_print("WARNING: Invalid organism names may cause QC failures.", "Fail")
@@ -300,6 +370,7 @@ elif args.storage_type == "network_mount":
 
 #Write the temporary summary file that will be updated after CheckM analysis
 temp_qc_summary = os.path.join(qc_out, "temp_qc_summary.tsv")
+reported_samples = set()
 with(open(temp_qc_summary , 'w')) as qc_sum:
     writer = csv.writer(qc_sum, dialect='excel-tab')
     writer.writerow(["Sample",  "Mean_quality", "qc_verdict", "Expected organism", "Identified organism", "% Match", "Coverage Depth", "min_cov", "cov_verdict", "tax_confirm"])
@@ -328,25 +399,44 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             taxID = bacteria.get(organism, None)[1]
         qc_file = os.path.join(qc_out, f"{sample}_metrics.txt")
         if not os.path.exists(qc_file) or os.path.getsize(qc_file) == 0:
-            qualdata = ProcQuality(fastqs, genome_size, os.path.join(qc_out, sample), sample, logfile=log)
-
-            qualdata.plot_quality_distribution()
-            qualdata.plot_quality_metrics()
-
-            avqc = qualdata.average_quality
-            coverage = qualdata.coverage
+            try:
+                qualdata = ProcQuality(
+                    fastqs,
+                    genome_size,
+                    os.path.join(qc_out, sample),
+                    sample,
+                    logfile=log,
+                )
+                qualdata.plot_quality_distribution()
+                qualdata.plot_quality_metrics()
+                avqc = qualdata.average_quality
+                coverage = qualdata.coverage
+            except Exception as e:
+                reason = f"Read quality processing failed: {e}"
+                time_print(f"Sample {sample}: {reason}", "Fail")
+                logger(log, f"Sample {sample}: {reason}")
+                sample_failure_audit.record_failure(
+                    sample_failures, sample, "qc", reason
+                )
+                continue
         else:
-            with open(qc_file, 'r') as qcFile:
-                lines = qcFile.readlines()
-            qual_line = next((l for l in lines if "Avg Quality:" in l), None)
-            avqc = float(qual_line.split(":")[1].strip()) if qual_line else 0.0
+            try:
+                with open(qc_file, 'r') as qcFile:
+                    lines = qcFile.readlines()
+                qual_line = next((l for l in lines if "Avg Quality:" in l), None)
+                avqc = float(qual_line.split(":")[1].strip()) if qual_line else 0.0
 
-            bases_line = next((l for l in lines if "Total bases:" in l), None)
-            if bases_line is None:
-                bases_line = next((l for l in lines if "Tot bases:" in l), None)
+                bases_line = next((l for l in lines if "Total bases:" in l), None)
+                if bases_line is None:
+                    bases_line = next((l for l in lines if "Tot bases:" in l), None)
 
-            total_bases = int(float(bases_line.split(":")[1].strip().replace(",", ""))) if bases_line else 0
-            coverage = total_bases / genome_size if genome_size and total_bases > 0 else "N/A"
+                total_bases = int(float(bases_line.split(":")[1].strip().replace(",", ""))) if bases_line else 0
+                coverage = total_bases / genome_size if genome_size and total_bases > 0 else "N/A"
+            except (OSError, TypeError, ValueError) as e:
+                sample_failure_audit.record_failure(
+                    sample_failures, sample, "qc", f"QC metrics could not be read: {e}"
+                )
+                continue
 
         taxonomy = [taxID, organism]
 
@@ -402,11 +492,26 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
                 logger(log, f"Error at assembly step: {e}")
                 genome = None
 
+            if not genome or not os.path.isfile(genome) or os.path.getsize(genome) == 0:
+                sample_failure_audit.record_failure(
+                    sample_failures,
+                    sample,
+                    "assembly",
+                    "Genome assembly did not produce a usable FASTA file.",
+                )
+                continue
+
             try:
                 hit, tax_confirm, possibilities = find_organism.find_species_with_kmrf(s_name=sample, lab_species=sys_organism, genome=genome, dataOut=outDir, org_type="bacteria", logfile=log)
             except Exception as e:
                 time_print(f"Error at find organism step: {e}", "Fail")
                 logger(log, f"Error at find organism step: {e}")
+                sample_failure_audit.record_failure(
+                    sample_failures,
+                    sample,
+                    "organism_identification",
+                    f"Organism identification failed: {e}",
+                )
                 continue
 
             #######
@@ -414,13 +519,22 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             best_percent = None
             best_other_org = None
             identified_org = None
-            if tax_confirm == "Pass" or tax_confirm == "N/A":
-                best_org = hit.split(" (")[0]
-                best_percent = f"{float(hit.split(' (')[1].strip(')%')):.2f}"
-            else:
-                best_other_hit = hit.split(" --- ")[0].split(": ")[1]
-                best_other_org = best_other_hit.split(" (")[0]
-                best_other_percent = best_other_hit.split(" (")[1].strip(")")
+            try:
+                if tax_confirm == "Pass" or tax_confirm == "N/A":
+                    best_org = hit.split(" (")[0]
+                    best_percent = f"{float(hit.split(' (')[1].strip(')%')):.2f}"
+                else:
+                    best_other_hit = hit.split(" --- ")[0].split(": ")[1]
+                    best_other_org = best_other_hit.split(" (")[0]
+                    best_other_percent = best_other_hit.split(" (")[1].strip(")")
+            except (AttributeError, IndexError, TypeError, ValueError) as e:
+                sample_failure_audit.record_failure(
+                    sample_failures,
+                    sample,
+                    "organism_identification",
+                    f"Organism-identification output could not be parsed: {e}",
+                )
+                continue
             # Update coverage for samples with pre-unknown organisms
             if coverage == "N/A":# and organism != "unknown":
                 if best_org:
@@ -446,6 +560,7 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
                 writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, f'Closest: {best_other_org}', best_other_percent, f'{cov_display}', min_cov, cov_verdict, tax_confirm])
             else:
                 writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, cov_display, min_cov, cov_verdict, tax_confirm])
+            reported_samples.add(sample)
 
         else:
             best_org = "N/A"
@@ -453,6 +568,19 @@ with(open(temp_qc_summary , 'w')) as qc_sum:
             tax_confirm = "N/A"
 
             writer.writerow([sample, f'{avqc:.2f}', qc_verdict, organism, best_org, best_percent, cov_display, min_cov, cov_verdict, tax_confirm])
+            reported_samples.add(sample)
+
+sample_failure_audit.publish_failures(
+    outDir,
+    temp_qc_summary,
+    expected_organisms,
+    sample_failures,
+    required_depth=0,
+)
+if not reported_samples:
+    time_print("No samples completed analysis. Exiting pipeline.", "Fail")
+    logger(log, "No samples completed analysis. Exiting pipeline.")
+    sys.exit(1)
 # Assess Genome Quality with CheckM
 genomes_dir = os.path.join(outDir, "assemblies", "genomes")
 checkm_dir = os.path.join(outDir, "checkM")
@@ -466,6 +594,7 @@ logger(log, 'Final summary', "Header")
 
 tools = OrderedDict([
     ("BactiPipe", bactipipe_version),
+    ("BactiPipe database", database_identity_label()),
     ("Fastp", fastp_version()),
     (args.assembler, assembly_version()),
     ("KmerFinder", find_organism.kmerfinder_version),

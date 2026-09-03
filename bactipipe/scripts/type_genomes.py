@@ -21,6 +21,7 @@ from bactipipe.scripts.serotyping import serotype_dispatch
 import time
 from contextlib import contextmanager
 from datetime import datetime
+from bactipipe.reproducibility import database_identity, source_identity
 from bactipipe.scripts import utils as U
 # ----------------------------
 # Data structures
@@ -1302,6 +1303,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     completed_at = datetime.now().astimezone()
     result_payload = {
         "schema_version": 1,
+        "output_contract_version": "bactipipe-relate-v1",
+        "pipeline": source_identity(),
+        "database": database_identity(db_dir),
         "command": "relate",
         "status": "completed",
         "run_name": run_name,
